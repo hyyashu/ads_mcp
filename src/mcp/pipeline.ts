@@ -71,6 +71,11 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
       requestedBy: auth.userId,
     });
     await audit(deps.db, { tenantId: auth.tenantId, userId: auth.userId, event: deduplicated ? "approval.deduplicated" : "approval.requested", tool: tool.name, accountId: ctx.account!.id, refId: row.id });
+    // A duplicate of a change that is running or was just applied is not "pending": never tell the caller it is awaiting approval.
+    if (row.status === "executing") throw new ToolError("conflict", "This exact change is being applied right now. Nothing new was queued.", { details: { approval_id: row.id } });
+    if (row.status === "executed") {
+      throw new ToolError("conflict", "This exact change was already approved and applied a few minutes ago, so nothing new was queued. If it has since been reverted, retry in a few minutes or change the arguments.", { details: { approval_id: row.id } });
+    }
     return approvalEnvelope(
       {
         approval_id: row.id,

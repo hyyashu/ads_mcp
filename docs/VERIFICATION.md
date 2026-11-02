@@ -78,3 +78,26 @@ Still unverified (written from knowledge, not confirmed on any fetched page):
 - REST paths `customers/{id}/adGroupCriteria:mutate` and `campaignCriteria:mutate` (the method pages did not show REST).
 - Whether `campaign_criterion.cpc_bid_micros` is not selectable (we only select it for ad groups).
 - Negative keywords at campaign level are not applicable to Performance Max campaigns through this path; not tested or documented by Google in the pages read.
+
+## Batch 4: negative keyword lists and ad lifecycle (checked 2026-11-02)
+
+Confirmed from the v26 references: `SharedSet.name` must be unique among active shared sets of the same type, 1 to 255 UTF-8 bytes;
+`SharedSetType` includes `NEGATIVE_KEYWORDS` (and separately `ACCOUNT_LEVEL_NEGATIVE_KEYWORDS`, which these tools do not touch);
+`member_count` and `reference_count` are output only; `SharedCriterion` and `CampaignSharedSet` support create and remove only
+(no update); resource names `sharedSets/{id}`, `sharedCriteria/{set}~{criterion}`, `campaignSharedSets/{campaign}~{set}`;
+`GoogleAdsService.Mutate` supports temporary negative ids, used to create a list with its keywords atomically;
+`AdGroupAd` ad_group, ad and resource_name are immutable, status is ENABLED/PAUSED/REMOVED, `policy_summary` and `ad_strength` are
+output only, resource name `adGroupAds/{ad_group_id}~{ad_id}`, and the operation is create/update/remove with `remove` taking the resource name.
+
+Still unverified (from knowledge): GAQL resources and fields `shared_criterion.keyword.*`, `campaign_shared_set.status`,
+`ad_group_ad.ad.responsive_search_ad.headlines/descriptions/path1/path2`, `shared_set.member_count/reference_count` in a SELECT, filtering
+`shared_criterion` by `shared_set.id`; REST paths `sharedCriteria:mutate`, `campaignSharedSets:mutate`, `adGroupAds:mutate`; the value
+`APPROVED` of the policy approval status; behaviour of `*:mutate` for a removed ad group ad (whether it stays queryable as REMOVED).
+Detaching a list from a campaign is supported by the API (remove on `campaignSharedSets`) but is not in the tool inventory.
+
+## Defect found while testing batch 4
+
+The approval pipeline answered a duplicate request for a change that was **already executed** (inside the 10-minute dedupe window)
+with `pending_approval` / "Nothing has been changed", although nothing was pending. Reproduction: pause an ad, approve, have someone
+resume it, ask to pause again. Fixed in `src/mcp/pipeline.ts`: a duplicate of an executing or just-applied change now returns a `conflict`
+error saying so. A regression test covers it.

@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 25,
+    "implemented": 35,
     "external_limitation": 0,
-    "pending": 202
+    "pending": 192
   },
   "rows": [
     {
@@ -327,10 +327,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_placement_exclusions",
@@ -652,10 +652,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "bulk_update_ad_group_status",
@@ -687,10 +687,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "bulk_update_campaign_status",
@@ -826,10 +826,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_pmax_campaign",
@@ -949,10 +949,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_group_audiences",
@@ -1034,10 +1034,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_policy_violations",
@@ -1429,10 +1429,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_placement_performance",
@@ -1841,10 +1841,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "pause_ad_group",
@@ -1893,10 +1893,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_ad_group",
@@ -2304,10 +2304,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "resume_ad_group",
