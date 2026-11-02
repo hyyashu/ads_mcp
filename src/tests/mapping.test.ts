@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { mapTool } from "../../inventory/mapping";
 import { loadInventory } from "../inventory";
+import { googleTools } from "../platforms/google";
 
 const inv = loadInventory();
 
@@ -44,5 +45,16 @@ describe("implementation plan (inventory/mapping.ts)", () => {
     const risk = (n: string) => mapTool(inv.find((t) => t.name === n)!).risk;
     for (const n of ["create_search_campaign", "create_meta_image_campaign", "resume_campaign", "resume_meta_campaign", "update_campaign", "update_bid_strategy", "bulk_update_campaign_status", "duplicate_meta_campaign"]) expect(risk(n), n).toBe("high_impact");
     for (const n of ["pause_campaign", "pause_meta_campaign", "add_keywords"]) expect(risk(n), n).toBe("write");
+  });
+
+  it("every implemented tool declares exactly the risk tier the plan assigns it (a mis-tiered resume_* could be self-approved)", () => {
+    expect(googleTools.length).toBeGreaterThan(0);
+    for (const tool of googleTools) {
+      const t = inv.find((i) => i.name === tool.name);
+      expect(t, `${tool.name} is not in the inventory`).toBeDefined();
+      const planned = mapTool(t!).risk;
+      const declared = tool.kind === "read" ? "read" : tool.risk;
+      expect(declared, `${tool.name}: declared ${declared}, planned ${planned}`).toBe(planned);
+    }
   });
 });

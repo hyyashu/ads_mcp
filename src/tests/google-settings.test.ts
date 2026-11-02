@@ -1,15 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { GoogleTokenProvider } from "../auth/token-providers";
-import { type Db } from "../db";
-import { loadInventory } from "../inventory";
-import { createExecutor, runTool, type PipelineDeps } from "../mcp/pipeline";
-import { ToolRegistry } from "../mcp/registry";
-import { googleTools } from "../platforms/google";
-import { GoogleAdsHttp } from "../platforms/google/http";
-import { createServicesFactory } from "../platforms/google/services";
-import { ApprovalService } from "../security/approvals";
-import { RateLimiter } from "../security/rate-limit";
-import { addUser, seedAccount, seedTenant, testDb } from "./helpers";
+import type { FetchLike } from "../auth/token-providers";
+import { googleHarness, type GoogleHarness } from "./support/harness";
 
 const C = "customers/1234567890";
 type Camp = { name: string; status: string; start: string; end?: string; budget: string; shared?: boolean };
@@ -39,10 +30,7 @@ function applyUpdate(resourceName: string, update: any, mask: string) {
   }
 }
 
-const http = new GoogleAdsHttp({
-  apiVersion: "v99",
-  sleep: async () => {},
-  fetch: async (url, init) => {
+const fake: FetchLike = async (url, init) => {
     const path = url.replace("https://googleads.googleapis.com/v99/", "");
     const body = JSON.parse(String(init?.body ?? "{}"));
     if (path.endsWith("googleAds:search")) {
@@ -64,19 +52,13 @@ const http = new GoogleAdsHttp({
     if (path.endsWith("googleAds:mutate")) for (const op of body.mutateOperations) { const o = op.campaignOperation ?? op.campaignBudgetOperation; applyUpdate(o.update.resourceName, o.update, o.updateMask); }
     else for (const op of body.operations) applyUpdate(op.update.resourceName, op.update, op.updateMask);
     return J({ results: [{}], mutateOperationResponses: [{}] });
-  },
-});
+};
 
-let db: Db, tenantId: string, owner: string, second: string, accountId: string, d: PipelineDeps, approvals: ApprovalService;
+let kit: GoogleHarness;
+let owner: string, second: string;
 beforeAll(async () => {
-  db = await testDb();
-  const t = await seedTenant(db, "ST", "owner");
-  tenantId = t.tenant.id;
-  owner = t.user.id;
-  second = (await addUser(db, tenantId, "adm", "admin")).id;
-  accountId = (await seedAccount(db, tenantId, "google_ads")).id;
-  approvals = new ApprovalService(db);
-  d = { db, registry: new ToolRegistry(loadInventory()).registerAll(googleTools), approvals, tenantLimiter: new RateLimiter(10_000, 10_000), accountLimiter: new RateLimiter(10_000, 10_000), createServices: createServicesFactory({ db, google: { tokens: { getAccessToken: async () => "tok" } as unknown as GoogleTokenProvider, http } }) };
+  kit = await googleHarness("SE", fake);
+  ({ owner, second } = kit);
 });
 let n = 0;
 beforeEach(() => {
@@ -89,9 +71,8 @@ beforeEach(() => {
   sent.length = 0;
 });
 
-const asOwner = { tenantId: "", userId: "", role: "owner" as const, scopes: ["ads:read", "ads:write"] };
-const run = (name: string, args: Record<string, unknown>) => runTool(d, d.registry.get(name)!, { account_id: accountId, ...args }, { ...asOwner, tenantId, userId: owner });
-const approve = (id: string, by = second) => approvals.decide({ tenantId, approvalId: id, decider: { userId: by, role: by === owner ? "owner" : "admin" }, decision: "approve", execute: createExecutor(d) });
+const run = (name: string, args: Record<string, unknown>) => kit.run(name, args);
+const approve = (id: string, by = second) => kit.approveAs(id, by);
 // Each test uses a distinct value so identical requests are not deduplicated onto an earlier approval.
 const day = () => `2027-02-${String(10 + n).padStart(2, "0")}`;
 

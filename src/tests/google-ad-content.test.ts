@@ -1,15 +1,7 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import type { GoogleTokenProvider } from "../auth/token-providers";
-import { type Db } from "../db";
-import { loadInventory } from "../inventory";
-import { createExecutor, runTool, type PipelineDeps } from "../mcp/pipeline";
-import { ToolRegistry } from "../mcp/registry";
-import { googleTools } from "../platforms/google";
-import { GoogleAdsHttp } from "../platforms/google/http";
-import { createServicesFactory } from "../platforms/google/services";
-import { ApprovalService } from "../security/approvals";
-import { RateLimiter } from "../security/rate-limit";
-import { addUser, seedAccount, seedTenant, testDb } from "./helpers";
+import type { FetchLike } from "../auth/token-providers";
+import { googleHarness, type GoogleHarness } from "./support/harness";
+import type { PipelineDeps } from "../mcp/pipeline";
 
 const C = "customers/1234567890";
 type A = { text: string; pinnedField?: string };
@@ -36,10 +28,7 @@ function googleSays(ops: any[]): Response | null {
   return null;
 }
 
-const http = new GoogleAdsHttp({
-  apiVersion: "v99",
-  sleep: async () => {},
-  fetch: async (url, init) => {
+const fake: FetchLike = async (url, init) => {
     const path = url.replace("https://googleads.googleapis.com/v99/", "");
     const body = JSON.parse(String(init?.body ?? "{}"));
     if (path.endsWith("googleAds:search")) {
@@ -71,19 +60,14 @@ const http = new GoogleAdsHttp({
       }
     }
     return J({ results: body.operations.map(() => ({})) });
-  },
-});
+};
 
-let db: Db, tenantId: string, owner: string, accountId: string, d: PipelineDeps, approvals: ApprovalService;
+let kit: GoogleHarness;
+let owner: string, d: PipelineDeps;
 beforeAll(async () => {
-  db = await testDb();
-  const t = await seedTenant(db, "AC", "owner");
-  tenantId = t.tenant.id;
-  owner = t.user.id;
-  await addUser(db, tenantId, "adm", "admin");
-  accountId = (await seedAccount(db, tenantId, "google_ads")).id;
-  approvals = new ApprovalService(db);
-  d = { db, registry: new ToolRegistry(loadInventory()).registerAll(googleTools), approvals, tenantLimiter: new RateLimiter(10_000, 10_000), accountLimiter: new RateLimiter(10_000, 10_000), createServices: createServicesFactory({ db, google: { tokens: { getAccessToken: async () => "tok" } as unknown as GoogleTokenProvider, http } }) };
+  kit = await googleHarness("AC", fake);
+  ({ owner } = kit);
+  d = kit.deps;
 });
 
 let n = 0;
@@ -102,8 +86,8 @@ beforeEach(() => {
   dropWrites = false;
 });
 
-const run = (name: string, args: Record<string, unknown>) => runTool(d, d.registry.get(name)!, { account_id: accountId, ...args }, { tenantId, userId: owner, role: "owner", scopes: ["ads:read", "ads:write"] });
-const approve = (aid: string) => approvals.decide({ tenantId, approvalId: aid, decider: { userId: owner, role: "owner" }, decision: "approve", execute: createExecutor(d) });
+const run = (name: string, args: Record<string, unknown>) => kit.run(name, args);
+const approve = (aid: string) => kit.approveAs(aid, owner);
 const u = (s: string) => `${s} ${n}`;
 const heads = (...t: string[]) => t.map((text) => ({ text }));
 
