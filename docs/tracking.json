@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 35,
+    "implemented": 39,
     "external_limitation": 0,
-    "pending": 192
+    "pending": 188
   },
   "rows": [
     {
@@ -731,18 +731,18 @@
       "platform": "google_ads",
       "action": "Create",
       "domain": "ads",
-      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "api": "AdGroupAdService.MutateAdGroupAds (create; responsive search ad, always PAUSED)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Responsive search ads only. Counts 3-15 headlines, 2-4 descriptions confirmed in docs; limits validated by Google via validate_only.",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_app_campaign",
@@ -2501,36 +2501,36 @@
       "platform": "google_ads",
       "action": "Update",
       "domain": "ads",
-      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "api": "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_ad_descriptions",
       "platform": "google_ads",
       "action": "Update",
       "domain": "ads",
-      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "api": "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_ad_group_demographics",
@@ -2571,18 +2571,18 @@
       "platform": "google_ads",
       "action": "Update",
       "domain": "ads",
-      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "api": "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_bid_strategy",

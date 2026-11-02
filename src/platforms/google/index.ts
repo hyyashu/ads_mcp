@@ -1,5 +1,6 @@
 import type { AnyTool } from "../../mcp/tool";
 import { reportingTools } from "./tools/reporting";
+import { adContentTools } from "./tools/ad-content";
 import { adTools } from "./tools/ads";
 import { negativeListTools } from "./tools/negative-lists";
 import { keywordTools } from "./tools/keywords";
@@ -7,4 +8,4 @@ import { settingsTools } from "./tools/settings";
 import { statusTools } from "./tools/status";
 
 /** Google Ads tools. A tool is added here only when it has a real handler, schemas and tests. */
-export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools] as AnyTool[];
+export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools] as AnyTool[];

@@ -101,3 +101,36 @@ The approval pipeline answered a duplicate request for a change that was **alrea
 with `pending_approval` / "Nothing has been changed", although nothing was pending. Reproduction: pause an ad, approve, have someone
 resume it, ask to pause again. Fixed in `src/mcp/pipeline.ts`: a duplicate of an executing or just-applied change now returns a `conflict`
 error saying so. A regression test covers it.
+
+## Batch 5: responsive search ad create and edit (checked 2026-11-02)
+
+Confirmed from the Google Ads docs: a responsive search ad has 3-15 headlines and 2-4 descriptions; headlines pin only to
+HEADLINE_1..3 and descriptions only to DESCRIPTION_1..2 (other positions fail with INVALID_PINNED_FIELD); `path2` can only be set
+when `path1` is set; every position must be fillable; `AdService.MutateAds` updates ads by `customers/{c}/ads/{ad_id}` with an
+`update_mask` and does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be
+removed through MutateAds; `PolicyValidationParameter.ignorable_policy_topics` exists (deliberately not used: these tools never
+bypass policy checks).
+
+**Not confirmed by any reachable page: the character limits of headlines, descriptions and display paths.** They are not hard-coded.
+`plan()` runs Google's own `validate_only` check on the exact request, so Google's limits and policy findings are returned when the
+change is requested, before approval. Local validation is limited to what the docs state (counts, pin positions, path2 needs path1,
+http(s) URLs) plus abuse bounds (300 characters) that are not Google's limits. Trade-off: planning makes one extra API call.
+
+Still unverified (from knowledge): REST path `ads:mutate` and `adGroupAds:mutate` create semantics, the GAQL path
+`ad_group_ad.ad.resource_name`, `ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'` as a filter literal, the shape of a
+`validate_only` success response, and whether Google normalizes whitespace/case in ad text on read-back (we compare trimmed text).
+Behaviour not covered: Display, Demand Gen, Shopping and App ad creation (separate tools); `suggest_ad_content` is deferred (see below).
+
+## Defect found while testing batch 5
+
+Snapshots are stored as JSONB, which does not preserve object key order. `ad-content.ts` compared whole snapshot objects with
+`JSON.stringify`, so any edit that changed more than one field kind (for example final URL plus paths) always failed at approval time
+with "The ad changed since this was requested." Single-field edits passed by luck. Fixed by comparing with `canonicalJson` (sorted keys).
+The other tools compare arrays or individual fields, which JSONB preserves. A regression test covers it.
+
+## Needs a decision: suggest_ad_content
+
+Inventory risk "read", plan "GAQL: ad_group_ad_asset performance, plus character-limit validation". The server cannot honestly generate
+marketing copy, and the character limits are unconfirmed. A reduced, honest form is possible: return grounded inputs (the ad group's
+keywords, top converting search terms, existing copy and its asset performance labels) and rule-based coverage gaps (fewer than 15
+headlines, fewer than 4 descriptions, duplicate texts), leaving copywriting to the client model. Not built until the owner agrees.
