@@ -1,17 +1,13 @@
 import { z } from "zod";
 import type { InternalServices, ReadTool } from "../../../mcp/tool";
 import { Gaql, fromMicros, lit, num, pick } from "../gaql";
-import { ADS_SCOPE, Money, accountId, campaignIds, dateClause, dateFields, datesMsg, datesOk, googleRead, nullable, ratio, round } from "./common";
+import { ADS_SCOPE, Money, accountId, campaignIds, dateClause, dateFields, datesMsg, datesOk, googleRead, nullable, ratio, round, str } from "./common";
 import { and, eq, gte, sql } from "drizzle-orm";
 import { platformConnection, usageCounter } from "../../../db/schema";
 
 /** An id field must exist: a row without one is a malformed response and fails output validation. */
 const idStr = (row: Record<string, unknown>, f: string) => String(pick(row, f) ?? "");
 
-const str = (row: Record<string, unknown>, f: string) => {
-  const v = pick(row, f);
-  return v === undefined || v === null ? null : String(v);
-};
 
 // ---------------------------------------------------------------------------------------------------------------
 export const listCampaigns = googleRead({

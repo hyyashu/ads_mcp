@@ -2,18 +2,13 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
 import { Gaql, fromMicros, lit, num, pick } from "../gaql";
-import { Money, accountId, dateClause, dateFields, datesMsg, datesOk, googleRead, googleWrite, ratio, round } from "./common";
+import { Money, accountId, dateClause, dateFields, datesMsg, datesOk, googleRead, googleWrite, idSchema as id, ratio, round, str } from "./common";
 
 // v26 references (checked 2026-11-02): AdGroupAd.ad_group, ad and resource_name are immutable; status is
 // ENABLED/PAUSED/REMOVED; resource name customers/{c}/adGroupAds/{ad_group_id}~{ad_id}; AdGroupAdOperation is
 // create/update/remove with update_mask, `remove` takes the resource name; policy_summary and ad_strength are output only.
 
-const id = z.string().regex(/^\d{1,20}$/, "numeric id");
-const str = (r: Record<string, unknown>, f: string) => {
-  const v = pick(r, f);
-  return v === undefined || v === null ? null : String(v);
-};
-const keyOf = (ag: string, ad: string) => `${ag}~${ad}`;
+const adKey = (ag: string, ad: string) => `${ag}~${ad}`;
 
 interface AdInfo { adGroupId: string; adId: string; status: string; approval: string | null; resourceName: string }
 
@@ -26,30 +21,30 @@ async function readAds(ads: GoogleAdsClient, pairs: { ad_group_id: string; ad_id
     .where(`ad_group_ad.ad.id IN ${lit.list([...new Set(pairs.map((p) => lit.id(p.ad_id)))])}`)
     .limit(5000);
   const rows = await ads.query(q, { maxRows: 5000 });
-  const wanted = new Set(pairs.map((p) => keyOf(p.ad_group_id, p.ad_id)));
+  const wanted = new Set(pairs.map((p) => adKey(p.ad_group_id, p.ad_id)));
   const out = new Map<string, AdInfo>();
   for (const r of rows) {
     const ag = String(pick(r, "ad_group.id") ?? ""), ad = String(pick(r, "ad_group_ad.ad.id") ?? "");
-    if (!wanted.has(keyOf(ag, ad))) continue;
-    out.set(keyOf(ag, ad), { adGroupId: ag, adId: ad, status: str(r, "ad_group_ad.status") ?? "", approval: str(r, "ad_group_ad.policy_summary.approval_status"), resourceName: str(r, "ad_group_ad.resource_name") ?? `customers/${ads.customerId}/adGroupAds/${ag}~${ad}` });
+    if (!wanted.has(adKey(ag, ad))) continue;
+    out.set(adKey(ag, ad), { adGroupId: ag, adId: ad, status: str(r, "ad_group_ad.status") ?? "", approval: str(r, "ad_group_ad.policy_summary.approval_status"), resourceName: str(r, "ad_group_ad.resource_name") ?? `customers/${ads.customerId}/adGroupAds/${ag}~${ad}` });
   }
   return out;
 }
 
 async function requireLive(ads: GoogleAdsClient, pairs: { ad_group_id: string; ad_id: string }[]): Promise<AdInfo[]> {
   const found = await readAds(ads, pairs);
-  const missing = pairs.filter((p) => !found.has(keyOf(p.ad_group_id, p.ad_id)));
+  const missing = pairs.filter((p) => !found.has(adKey(p.ad_group_id, p.ad_id)));
   if (missing.length) {
-    throw new ToolError("not_found", `Not found (an ad is identified by both its ad group id and ad id): ${missing.slice(0, 10).map((p) => keyOf(p.ad_group_id, p.ad_id)).join(", ")}`);
+    throw new ToolError("not_found", `Not found (an ad is identified by both its ad group id and ad id): ${missing.slice(0, 10).map((p) => adKey(p.ad_group_id, p.ad_id)).join(", ")}`);
   }
-  const all = pairs.map((p) => found.get(keyOf(p.ad_group_id, p.ad_id))!);
+  const all = pairs.map((p) => found.get(adKey(p.ad_group_id, p.ad_id))!);
   const gone = all.filter((a) => a.status === "REMOVED");
-  if (gone.length) throw new ToolError("invalid_argument", `Already removed and cannot be changed: ${gone.slice(0, 10).map((a) => keyOf(a.adGroupId, a.adId)).join(", ")}`);
+  if (gone.length) throw new ToolError("invalid_argument", `Already removed and cannot be changed: ${gone.slice(0, 10).map((a) => adKey(a.adGroupId, a.adId)).join(", ")}`);
   return all;
 }
 
 const adRef = z.object({ ad_group_id: id, ad_id: id });
-const uniquePairs = <T extends { ad_group_id: string; ad_id: string }>(xs: T[]) => [...new Map(xs.map((x) => [keyOf(x.ad_group_id, x.ad_id), x])).values()].sort((a, b) => keyOf(a.ad_group_id, a.ad_id).localeCompare(keyOf(b.ad_group_id, b.ad_id)));
+const uniquePairs = <T extends { ad_group_id: string; ad_id: string }>(xs: T[]) => [...new Map(xs.map((x) => [adKey(x.ad_group_id, x.ad_id), x])).values()].sort((a, b) => adKey(a.ad_group_id, a.ad_id).localeCompare(adKey(b.ad_group_id, b.ad_id)));
 const policyNote = (a: AdInfo) => (a.approval && a.approval !== "APPROVED" ? ` [policy: ${a.approval}${a.approval === "DISAPPROVED" ? ": it will not serve until approved" : ""}]` : "");
 
 // --------------------------------------------------------------------------------------------- status tools
@@ -68,7 +63,7 @@ function statusTool(name: string, title: string, to: "ENABLED" | "PAUSED", risk:
       return { summary: `${verb} ad ${a.ad_id} in ad group ${a.ad_group_id}: ${ad!.status} -> ${to}${to === "ENABLED" ? policyNote(ad!) : ""}`, snapshot: { status: ad!.status } };
     },
     verify: async (a, ctx, run) => {
-      const cur = (await readAds(ctx.services.ads, [a])).get(keyOf(a.ad_group_id, a.ad_id));
+      const cur = (await readAds(ctx.services.ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
       if (!cur) return { outcome: "indeterminate", detail: "ad not found" };
       if (cur.status === to) return { outcome: "applied" };
       return cur.status === (run.snapshot as { status: string }).status ? { outcome: "not_applied" } : { outcome: "indeterminate", detail: `status is ${cur.status}` };
@@ -79,7 +74,7 @@ function statusTool(name: string, title: string, to: "ENABLED" | "PAUSED", risk:
       const before = (run.snapshot as { status: string }).status;
       if (cur!.status !== before) throw new ToolError("conflict", `The ad changed since this was requested (now ${cur!.status}).`);
       await ads.mutate("adGroupAds", [{ update: { resourceName: cur!.resourceName, status: to }, updateMask: "status" }]);
-      const after = (await readAds(ads, [a])).get(keyOf(a.ad_group_id, a.ad_id));
+      const after = (await readAds(ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
       if (after?.status !== to) throw new ToolError("unknown_outcome", `Google accepted the request but the ad reads ${after?.status ?? "missing"}.`);
       return { ad_group_id: a.ad_group_id, ad_id: a.ad_id, status: to, previous_status: before } as { ad_group_id: string; ad_id: string; status: typeof to; previous_status: string };
     },
@@ -101,7 +96,7 @@ export const removeAd = googleWrite({
     return { summary: `Permanently remove ad ${a.ad_id} from ad group ${a.ad_group_id} (currently ${ad!.status}). This cannot be undone.`, snapshot: { status: ad!.status } };
   },
   verify: async (a, ctx, run) => {
-    const cur = (await readAds(ctx.services.ads, [a])).get(keyOf(a.ad_group_id, a.ad_id));
+    const cur = (await readAds(ctx.services.ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
     if (!cur || cur.status === "REMOVED") return { outcome: "applied" };
     return cur.status === (run.snapshot as { status: string }).status ? { outcome: "not_applied" } : { outcome: "indeterminate", detail: `status is ${cur.status}` };
   },
@@ -110,7 +105,7 @@ export const removeAd = googleWrite({
     const [cur] = await requireLive(ads, [a]);
     if (cur!.status !== (run.snapshot as { status: string }).status) throw new ToolError("conflict", "The ad changed since this was requested.");
     await ads.mutate("adGroupAds", [{ remove: cur!.resourceName }]);
-    const after = (await readAds(ads, [a])).get(keyOf(a.ad_group_id, a.ad_id));
+    const after = (await readAds(ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
     if (after && after.status !== "REMOVED") throw new ToolError("unknown_outcome", `Google accepted the request but the ad still reads ${after.status}.`);
     return { ad_group_id: a.ad_group_id, ad_id: a.ad_id, removed: true as const };
   },
@@ -129,7 +124,7 @@ export const bulkUpdateAdStatus = googleWrite({
     const changing = live.filter((x) => x.status !== a.status);
     if (!changing.length) throw new ToolError("invalid_argument", `All of these ads are already ${a.status.toLowerCase()}.`);
     const warn = a.status === "ENABLED" ? changing.filter((x) => x.approval && x.approval !== "APPROVED").length : 0;
-    return { summary: `Set ${changing.length} ad(s) to ${a.status}${changing.length < pairs.length ? ` (${pairs.length - changing.length} already ${a.status.toLowerCase()})` : ""}: ${changing.slice(0, 10).map((x) => keyOf(x.adGroupId, x.adId)).join(", ")}${changing.length > 10 ? ", …" : ""}${warn ? `. ${warn} of them are not policy-approved and will not serve until approved` : ""}`, snapshot: { changing: changing.map((x) => keyOf(x.adGroupId, x.adId)).sort() } };
+    return { summary: `Set ${changing.length} ad(s) to ${a.status}${changing.length < pairs.length ? ` (${pairs.length - changing.length} already ${a.status.toLowerCase()})` : ""}: ${changing.slice(0, 10).map((x) => adKey(x.adGroupId, x.adId)).join(", ")}${changing.length > 10 ? ", …" : ""}${warn ? `. ${warn} of them are not policy-approved and will not serve until approved` : ""}`, snapshot: { changing: changing.map((x) => adKey(x.adGroupId, x.adId)).sort() } };
   },
   verify: async (a, ctx, run) => {
     const { changing } = run.snapshot as { changing: string[] };
@@ -142,11 +137,11 @@ export const bulkUpdateAdStatus = googleWrite({
     const pairs = uniquePairs(a.ads);
     const live = await requireLive(ads, pairs);
     const changing = live.filter((x) => x.status !== a.status);
-    const keys = changing.map((x) => keyOf(x.adGroupId, x.adId)).sort();
+    const keys = changing.map((x) => adKey(x.adGroupId, x.adId)).sort();
     if (JSON.stringify(keys) !== JSON.stringify((run.snapshot as { changing: string[] }).changing)) throw new ToolError("conflict", "The ads changed since this was requested.");
     await ads.mutate("adGroupAds", changing.map((x) => ({ update: { resourceName: x.resourceName, status: a.status }, updateMask: "status" })));
     const after = await readAds(ads, pairs);
-    if (changing.some((x) => after.get(keyOf(x.adGroupId, x.adId))?.status !== a.status)) throw new ToolError("unknown_outcome", "Google accepted the request but some ads do not read back as requested.");
+    if (changing.some((x) => after.get(adKey(x.adGroupId, x.adId))?.status !== a.status)) throw new ToolError("unknown_outcome", "Google accepted the request but some ads do not read back as requested.");
     return { updated: changing.length, ads: changing.map((x) => ({ ad_group_id: x.adGroupId, ad_id: x.adId })), status: a.status };
   },
 });

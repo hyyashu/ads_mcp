@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
 import { Gaql, lit, num, pick } from "../gaql";
-import { accountId, googleRead, googleWrite } from "./common";
+import { accountId, googleRead, googleWrite, idSchema as id, keywordItem as kwItem, keywordKey as keyOf, splitNewKeywords as newOnly, str } from "./common";
 
 // v26 references (checked 2026-11-02): SharedSet.name is unique among active shared sets of the same type and 1-255 UTF-8
 // bytes; type is immutable; member_count and reference_count are output only. SharedCriterion supports create and remove
@@ -10,16 +10,7 @@ import { accountId, googleRead, googleWrite } from "./common";
 // sharedSets/{id}, sharedCriteria/{shared_set_id}~{criterion_id}, campaignSharedSets/{campaign_id}~{shared_set_id}.
 // GoogleAdsService.Mutate allows temporary negative ids so a set and its keywords are created atomically.
 
-const id = z.string().regex(/^\d{1,20}$/, "numeric id");
-const matchType = z.enum(["BROAD", "PHRASE", "EXACT"]);
-const kwText = z.string().trim().min(1).max(80).regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters").refine((t) => t.split(/\s+/).length <= 10, "at most 10 words");
-const kwItem = z.object({ text: kwText, match_type: matchType });
 const listName = z.string().trim().min(1).refine((s) => Buffer.byteLength(s) <= 255, "at most 255 bytes").regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters");
-const keyOf = (t: string, m: string) => `${t.trim().toLowerCase()}|${m}`;
-const str = (r: Record<string, unknown>, f: string) => {
-  const v = pick(r, f);
-  return v === undefined || v === null ? null : String(v);
-};
 
 interface ListInfo { id: string; name: string; memberCount: number | null; referenceCount: number | null }
 
@@ -46,21 +37,6 @@ async function attachedCampaigns(ads: GoogleAdsClient, setId: string) {
   const q = new Gaql().select("campaign.id", "campaign.name").from("campaign_shared_set").where(`shared_set.id = ${lit.id(setId)}`).where("campaign_shared_set.status = 'ENABLED'").orderBy("campaign.id").limit(500);
   return (await ads.query(q, { maxRows: 500 })).map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name") }));
 }
-
-const newOnly = <T extends { text: string; match_type: string }>(items: T[], have: Member[]) => {
-  const h = new Set(have.map((m) => keyOf(m.text, m.matchType)));
-  const seen = new Set<string>();
-  const toAdd: T[] = [];
-  const skipped = new Set<string>();
-  for (const it of items) {
-    const k = keyOf(it.text, it.match_type);
-    if (seen.has(k)) continue; // repeated within the request
-    seen.add(k);
-    if (h.has(k)) skipped.add(k);
-    else toAdd.push(it);
-  }
-  return { toAdd, skipped: [...skipped].sort() };
-};
 
 // ---------------------------------------------------------------------------------- create_negative_keyword_list
 export const createNegativeKeywordList = googleWrite({

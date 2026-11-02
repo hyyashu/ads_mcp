@@ -46,7 +46,7 @@ const http = new GoogleAdsHttp({
       const q: string = body.query;
       const from = /FROM (\w+)/.exec(q)![1]!;
       if (from === "ad_group") { const s = adGroups[idIn(q, "ad_group.id")!]; return J(s ? { results: [{ adGroup: { id: idIn(q, "ad_group.id"), status: s } }] } : {}); }
-      if (from === "campaign") { const s = campaigns[idIn(q, "campaign.id")!]; return J(s ? { results: [{ campaign: { id: idIn(q, "campaign.id") } }] } : {}); }
+      if (from === "campaign") { const s = campaigns[idIn(q, "campaign.id")!]; return J(s ? { results: [{ campaign: { id: idIn(q, "campaign.id"), status: s } }] } : {}); }
       if (from === "ad_group_ad") {
         const ag = idIn(q, "ad_group.id"), ad = idIn(q, "ad_group_ad.ad.id");
         const rows = ads.filter((a) => (!ag || a.ag === ag) && (!ad || a.id === ad) && (!q.includes("status != 'REMOVED'") || a.status !== "REMOVED") && (!q.includes("ad.type = 'RESPONSIVE_SEARCH_AD'") || a.type === "RESPONSIVE_SEARCH_AD"));

@@ -3,7 +3,7 @@ import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
 import { canonicalJson } from "../../../security/canonical";
 import { Gaql, lit, pick } from "../gaql";
-import { accountId, googleWrite } from "./common";
+import { accountId, googleWrite, idSchema as id, requireParent, str } from "./common";
 
 // Checked against the Google Ads API docs on 2026-11-02:
 //  - A responsive search ad has 3-15 headlines and 2-4 descriptions; headlines may be pinned only to HEADLINE_1..3 and
@@ -15,7 +15,6 @@ import { accountId, googleWrite } from "./common";
 // not hard-coded. plan() asks Google to validate the exact request with validate_only (which changes nothing), so Google's own
 // limits and policy checks surface when the change is requested, before anyone is asked to approve it.
 
-const id = z.string().regex(/^\d{1,20}$/, "numeric id");
 const clean = (max: number) => z.string().trim().min(1).max(max).regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters");
 // 300 is an abuse bound, not Google's limit.
 const headline = z.object({ text: clean(300), pinned_field: z.enum(["HEADLINE_1", "HEADLINE_2", "HEADLINE_3"]).optional() });
@@ -34,10 +33,6 @@ interface Patch { headlines?: Asset[]; descriptions?: Asset[]; final_urls?: stri
 
 const canon = (xs: Asset[]) => xs.map((x) => `${x.pinned_field ?? ""}|${x.text.trim()}`).sort();
 const sameAssets = (a: Asset[], b: Asset[]) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
-const str = (r: Record<string, unknown>, f: string) => {
-  const v = pick(r, f);
-  return v === undefined || v === null ? null : String(v);
-};
 const assets = (v: unknown): Asset[] => ((v as { text?: string; pinnedField?: string }[] | undefined) ?? []).filter((x) => typeof x.text === "string").map((x) => ({ text: String(x.text), pinned_field: x.pinnedField && !/^UNSPECIFIED$/.test(x.pinnedField) ? String(x.pinnedField) : null }));
 const toApi = (xs: Asset[]) => xs.map((x) => ({ text: x.text.trim(), ...(x.pinned_field ? { pinnedField: x.pinned_field } : {}) }));
 
@@ -182,11 +177,6 @@ export const updateAdContent = googleWrite({
 });
 
 // ---------------------------------------------------------------------------------------------------- create_ad
-async function adGroupState(ads: GoogleAdsClient, agId: string): Promise<string | null> {
-  const [r] = await ads.query(new Gaql().select("ad_group.id", "ad_group.status").from("ad_group").where(`ad_group.id = ${lit.id(agId)}`).limit(1), { maxRows: 1 });
-  return r ? str(r, "ad_group.status") : null;
-}
-
 async function findIdentical(ads: GoogleAdsClient, agId: string, h: Asset[], d: Asset[]): Promise<Rsa | null> {
   const q = new Gaql().select(...RSA_FIELDS).from("ad_group_ad").where(`ad_group.id = ${lit.id(agId)}`).where("ad_group_ad.status != 'REMOVED'").where("ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'").limit(1000);
   const rows = await ads.query(q, { maxRows: 1000 });
@@ -202,12 +192,7 @@ export const createAd = googleWrite({
   output: z.object({ ad_group_id: z.string(), ad_id: z.string(), status: z.literal("PAUSED"), headline_count: z.number(), description_count: z.number() }),
   plan: async (a, ctx) => {
     const ads = ctx.services.ads;
-    const state = await adGroupState(ads, a.ad_group_id);
-    if (state === null) {
-      const [c] = await ads.query(new Gaql().select("campaign.id").from("campaign").where(`campaign.id = ${lit.id(a.ad_group_id)}`).limit(1), { maxRows: 1 });
-      throw new ToolError(c ? "invalid_argument" : "not_found", c ? `${a.ad_group_id} is a campaign id, not an ad group id. Ads belong to ad groups: use get_campaign_structure to find them.` : `No ad group ${a.ad_group_id} in this account.`);
-    }
-    if (state === "REMOVED") throw new ToolError("invalid_argument", "The ad group is removed.");
+    const state = await requireParent(ads, "ad_group", a.ad_group_id, "Ads");
     const dup = await findIdentical(ads, a.ad_group_id, a.headlines, a.descriptions);
     if (dup) throw new ToolError("invalid_argument", `An ad with exactly these headlines and descriptions already exists in this ad group (ad ${dup.adId}).`);
     await ads.mutate("adGroupAds", [createOp(ads.customerId, a)], { validateOnly: true });

@@ -1,6 +1,8 @@
 import { z } from "zod";
-import type { ReadTool } from "../../../mcp/tool";
-import { DURING, lit } from "../gaql";
+import { ToolError } from "../../../mcp/errors";
+import type { ReadTool, WriteTool } from "../../../mcp/tool";
+import type { GoogleAdsClient } from "../client";
+import { DURING, Gaql, lit, pick } from "../gaql";
 import type { GoogleServices } from "../services";
 
 export const ADS_SCOPE = "https://www.googleapis.com/auth/adwords";
@@ -50,7 +52,6 @@ export function googleRead<I extends z.ZodObject, O extends z.ZodType>(def: Read
 
 export const Money = z.number().describe("In the account's currency (micros converted to units).");
 
-import type { WriteTool } from "../../../mcp/tool";
 
 type WriteDef<I extends z.ZodObject, O extends z.ZodType> = Omit<WriteTool<I, O, GoogleServices>, "kind" | "platform" | "permissions"> & { permissions?: Partial<WriteTool["permissions"]> };
 
@@ -67,4 +68,73 @@ export function googleWrite<I extends z.ZodObject, O extends z.ZodType>(def: Wri
       ...def.permissions,
     },
   };
+}
+
+// ---------------------------------------------------------------------------------------------------------------
+// Helpers shared by the tool files. Keep one definition of each: copies drift apart (this has already caused bugs).
+
+
+/** A Google Ads numeric resource id (campaign, ad group, ad, criterion, shared set). */
+export const idSchema = z.string().regex(/^\d{1,20}$/, "numeric id");
+
+/** A field from a GAQL row as a string, or null when absent. */
+export const str = (row: Record<string, unknown>, field: string): string | null => {
+  const v = pick(row, field);
+  return v === undefined || v === null ? null : String(v);
+};
+
+/** Currency units to micros, rounded to the nearest micro. */
+export const toMicros = (units: number): number => Math.round(units * 1_000_000);
+
+/** Sorted, de-duplicated copy: the stable form used in plan snapshots. */
+export const sortedUnique = (xs: string[]): string[] => [...new Set(xs)].sort();
+
+// Keyword input shared by campaign/ad group keywords and shared negative lists. Limits confirmed in the v26 KeywordInfo reference:
+// text is at most 80 characters and 10 words; match types are BROAD, PHRASE and EXACT.
+export const matchTypeSchema = z.enum(["BROAD", "PHRASE", "EXACT"]);
+export const keywordText = z.string().trim().min(1).max(80).regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters").refine((t) => t.split(/\s+/).length <= 10, "at most 10 words");
+export const keywordItem = z.object({ text: keywordText, match_type: matchTypeSchema });
+
+/** Identity of a keyword for duplicate detection: Google treats text case-insensitively. */
+export const keywordKey = (text: string, matchType: string): string => `${text.trim().toLowerCase()}|${matchType}`;
+
+/** Splits requested keywords into those to add and the keys that already exist. Repeats inside the request are dropped. */
+export function splitNewKeywords<T extends { text: string; match_type: string }>(items: T[], existing: { text: string; matchType: string }[]): { toAdd: T[]; skipped: string[] } {
+  const have = new Set(existing.map((m) => keywordKey(m.text, m.matchType)));
+  const seen = new Set<string>();
+  const toAdd: T[] = [];
+  const skipped = new Set<string>();
+  for (const it of items) {
+    const k = keywordKey(it.text, it.match_type);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    if (have.has(k)) skipped.add(k);
+    else toAdd.push(it);
+  }
+  return { toAdd, skipped: [...skipped].sort() };
+}
+
+/** Status of a campaign or ad group, or null if it does not exist in this account. */
+export async function entityStatus(ads: GoogleAdsClient, resource: "campaign" | "ad_group", id: string): Promise<string | null> {
+  const [r] = await ads.query(new Gaql().select(`${resource}.id`, `${resource}.status`).from(resource).where(`${resource}.id = ${lit.id(id)}`).limit(1), { maxRows: 1 });
+  return r ? str(r, `${resource}.status`) : null;
+}
+
+/**
+ * The campaign or ad group must exist and not be removed. A campaign id passed where an ad group id belongs (and the reverse)
+ * is called out, because it is the most common mistake: keywords and ads attach to ad groups, not campaigns.
+ * `noun` names what attaches ("Keywords", "Ads") in that message.
+ */
+export async function requireParent(ads: GoogleAdsClient, level: "campaign" | "ad_group", id: string, noun = "Keywords"): Promise<string> {
+  const status = await entityStatus(ads, level, id);
+  const label = level === "ad_group" ? "ad group" : "campaign";
+  if (status === null) {
+    const other = await entityStatus(ads, level === "ad_group" ? "campaign" : "ad_group", id);
+    if (other !== null) {
+      throw new ToolError("invalid_argument", level === "ad_group" ? `${id} is a campaign id, not an ad group id. ${noun} attach to ad groups: use get_campaign_structure to find them.` : `${id} is an ad group id, not a campaign id.`);
+    }
+    throw new ToolError("not_found", `No ${label} ${id} in this account.`);
+  }
+  if (status === "REMOVED") throw new ToolError("invalid_argument", `The ${label} is removed.`);
+  return status;
 }

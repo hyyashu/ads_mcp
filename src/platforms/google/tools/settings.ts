@@ -2,14 +2,8 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
 import { Gaql, fromMicros, isRealDate, lit, num, pick } from "../gaql";
-import { Money, accountId, campaignIds, googleRead, googleWrite } from "./common";
+import { Money, accountId, campaignIds, googleRead, googleWrite, idSchema as id, str, toMicros } from "./common";
 
-const id = z.string().regex(/^\d{1,20}$/, "numeric id");
-const str = (r: Record<string, unknown>, f: string) => {
-  const v = pick(r, f);
-  return v === undefined || v === null ? null : String(v);
-};
-const toMicros = (units: number) => Math.round(units * 1_000_000);
 const dateOnly = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "YYYY-MM-DD").refine(isRealDate, "not a real date");
 
 // Campaign start/end are `start_date_time` / `end_date_time`, "yyyy-MM-dd HH:mm:ss" in the account's time zone

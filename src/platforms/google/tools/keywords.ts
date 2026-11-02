@@ -2,24 +2,13 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
 import { Gaql, fromMicros, lit, num, pick } from "../gaql";
-import { Money, accountId, dateClause, dateFields, datesMsg, datesOk, googleRead, googleWrite, ratio, round } from "./common";
+import { Money, accountId, dateClause, dateFields, datesMsg, datesOk, googleRead, googleWrite, idSchema as id, keywordItem as kwItem, keywordKey as keyOf, ratio, requireParent as requireParentOf, round, sortedUnique as sortedKeys, splitNewKeywords, str, toMicros } from "./common";
 
 // Verified against the v26 reference (2026-11-02): KeywordInfo.text is at most 80 characters and 10 words; match types are
 // BROAD, PHRASE, EXACT; criterion keyword/negative/ad_group/campaign are immutable (change text = remove + re-add);
 // resource names are customers/{c}/adGroupCriteria/{ad_group_id}~{criterion_id} and customers/{c}/campaignCriteria/{campaign_id}~{criterion_id};
 // `remove` takes the resource name. Atomic by default (partial_failure false).
 
-const id = z.string().regex(/^\d{1,20}$/, "numeric id");
-const matchType = z.enum(["BROAD", "PHRASE", "EXACT"]);
-const kwText = z.string().trim().min(1).max(80).regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters").refine((t) => t.split(/\s+/).length <= 10, "at most 10 words");
-const kwItem = z.object({ text: kwText, match_type: matchType });
-const keyOf = (text: string, m: string) => `${text.trim().toLowerCase()}|${m}`;
-const sortedKeys = (ks: string[]) => [...new Set(ks)].sort();
-const str = (r: Record<string, unknown>, f: string) => {
-  const v = pick(r, f);
-  return v === undefined || v === null ? null : String(v);
-};
-const toMicros = (units: number) => Math.round(units * 1_000_000);
 
 interface Scope {
   level: "ad_group" | "campaign";
@@ -34,23 +23,8 @@ interface Crit {
   cpcMicros: number | null;
 }
 
-async function exists(ads: GoogleAdsClient, resource: "campaign" | "ad_group", cid: string): Promise<string | null> {
-  const [r] = await ads.query(new Gaql().select(`${resource}.id`, `${resource}.status`).from(resource).where(`${resource}.id = ${lit.id(cid)}`).limit(1), { maxRows: 1 });
-  return r ? str(r, `${resource}.status`) : null;
-}
-
-/** The parent must exist and not be removed. A campaign id passed as an ad group id (and vice versa) is called out. */
-async function requireParent(ads: GoogleAdsClient, s: Scope): Promise<void> {
-  const status = await exists(ads, s.level, s.id);
-  if (status === null) {
-    const other = await exists(ads, s.level === "ad_group" ? "campaign" : "ad_group", s.id);
-    if (other !== null) {
-      throw new ToolError("invalid_argument", s.level === "ad_group" ? `${s.id} is a campaign id, not an ad group id. Keywords attach to ad groups: use get_campaign_structure to find them.` : `${s.id} is an ad group id, not a campaign id.`);
-    }
-    throw new ToolError("not_found", `No ${s.level === "ad_group" ? "ad group" : "campaign"} ${s.id} in this account.`);
-  }
-  if (status === "REMOVED") throw new ToolError("invalid_argument", `The ${s.level === "ad_group" ? "ad group" : "campaign"} is removed.`);
-}
+/** The parent must exist and not be removed (see requireParent in common.ts). */
+const requireParent = async (ads: GoogleAdsClient, s: Scope): Promise<void> => void (await requireParentOf(ads, s.level, s.id, "Keywords"));
 
 async function listCriteria(ads: GoogleAdsClient, s: Scope): Promise<Crit[]> {
   const t = s.level === "ad_group" ? "ad_group_criterion" : "campaign_criterion";
@@ -79,21 +53,7 @@ const parentResource = (cid: string, s: Scope) => `customers/${cid}/${s.level ==
 
 // ------------------------------------------------------------------------------------------------ shared add logic
 type Item = { text: string; match_type: string; cpc_bid?: number };
-
-function splitNew(items: Item[], existing: Crit[]) {
-  const have = new Set(existing.map((c) => keyOf(c.text, c.matchType)));
-  const seen = new Set<string>();
-  const toAdd: Item[] = [];
-  const skipped: string[] = [];
-  for (const it of items) {
-    const k = keyOf(it.text, it.match_type);
-    if (seen.has(k)) continue; // repeated within the request
-    seen.add(k);
-    if (have.has(k)) skipped.push(k);
-    else toAdd.push(it);
-  }
-  return { toAdd, skipped: sortedKeys(skipped) };
-}
+const splitNew = splitNewKeywords;
 
 async function planAdd(ads: GoogleAdsClient, s: Scope, items: Item[], label: string) {
   await requireParent(ads, s);
