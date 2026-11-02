@@ -25,13 +25,13 @@ export const listCampaigns = googleRead({
     limit: z.number().int().min(1).max(500).default(100),
   }),
   output: z.object({
-    campaigns: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), channel_type: z.string().nullable(), bidding_strategy: z.string().nullable(), serving_status: z.string().nullable(), daily_budget: Money.nullable(), start_date: z.string().nullable(), end_date: z.string().nullable() })),
+    campaigns: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), channel_type: z.string().nullable(), bidding_strategy: z.string().nullable(), serving_status: z.string().nullable(), daily_budget: Money.nullable(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() })),
     returned: z.number(),
     truncated: z.boolean(),
   }),
   handler: async (a, ctx) => {
     const q = new Gaql()
-      .select("campaign.id", "campaign.name", "campaign.status", "campaign.advertising_channel_type", "campaign.bidding_strategy_type", "campaign.serving_status", "campaign.start_date", "campaign.end_date", "campaign_budget.amount_micros")
+      .select("campaign.id", "campaign.name", "campaign.status", "campaign.advertising_channel_type", "campaign.bidding_strategy_type", "campaign.serving_status", "campaign.start_date_time", "campaign.end_date_time", "campaign_budget.amount_micros")
       .from("campaign")
       .where("campaign.status != 'REMOVED'")
       .where(a.status && `campaign.status = ${lit.enumLit(a.status, ["ENABLED", "PAUSED"] as const)}`)
@@ -49,8 +49,8 @@ export const listCampaigns = googleRead({
         bidding_strategy: str(r, "campaign.bidding_strategy_type"),
         serving_status: str(r, "campaign.serving_status"),
         daily_budget: pick(r, "campaign_budget.amount_micros") === undefined ? null : fromMicros(pick(r, "campaign_budget.amount_micros")),
-        start_date: str(r, "campaign.start_date"),
-        end_date: str(r, "campaign.end_date"),
+        start_date_time: str(r, "campaign.start_date_time"),
+        end_date_time: str(r, "campaign.end_date_time"),
       })),
       returned: shown.length,
       truncated: rows.length > a.limit,

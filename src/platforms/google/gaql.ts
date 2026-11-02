@@ -8,6 +8,13 @@ const RESOURCE = /^[a-z][a-z0-9_]*$/;
 
 export class GaqlError extends Error {}
 
+/** YYYY-MM-DD that is a real calendar date. Date.parse alone accepts impossible dates such as 2027-02-30. */
+export function isRealDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const t = Date.parse(`${value}T00:00:00Z`);
+  return !Number.isNaN(t) && new Date(t).toISOString().startsWith(value);
+}
+
 export const lit = {
   /** Quoted string literal. Control characters are rejected, quotes and backslashes escaped. */
   str(value: string): string {
@@ -26,7 +33,7 @@ export const lit = {
     return s;
   },
   date(value: string): string {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(`${value}T00:00:00Z`))) throw new GaqlError("expected a date as YYYY-MM-DD");
+    if (!isRealDate(value)) throw new GaqlError("expected a date as YYYY-MM-DD");
     return `'${value}'`;
   },
   /** One of a fixed set of enum names, e.g. campaign status. The set is defined in code, never by the caller. */

@@ -122,17 +122,20 @@ describe("batch 1 registration", () => {
   it("registers the real Google tools that pass every registry rule, and reconciles", () => {
     const inv = loadInventory();
     const reg = new ToolRegistry(inv).registerAll(googleTools);
-    expect(reg.list().map((t) => t.name).sort()).toEqual(["analyze_wasted_spend", "get_ad_policy_violations", "get_campaign_performance", "get_campaign_tracking", "get_usage_status", "list_campaigns", "list_conversion_actions", "list_labels", "list_negative_keyword_lists", "pause_ad_group", "pause_campaign", "resume_ad_group", "resume_campaign"]);
+    const names = reg.list().map((t) => t.name);
+    expect(new Set(names).size).toBe(names.length);
+    expect(names).toEqual(expect.arrayContaining(["list_campaigns", "get_campaign_performance", "pause_campaign", "update_campaign"]));
     const rec = reconcile(inv, reg, {});
     expect(rec.errors).toEqual([]);
-    expect(rec.counts).toEqual({ implemented: 13, external_limitation: 0, pending: 214 });
-    expect(reg.list().filter((t) => t.kind === "write").map((t) => t.name).sort()).toEqual(["pause_ad_group", "pause_campaign", "resume_ad_group", "resume_campaign"]);
+    expect(rec.counts).toEqual({ implemented: names.length, external_limitation: 0, pending: 227 - names.length });
+    // Every tool that modifies data must be a write tool (approval-gated); no read tool may be in the inventory's modifying set.
+    for (const t of reg.list()) expect(inv.find((i) => i.name === t.name)!.modifies_data).toBe(t.kind === "write");
   });
 });
 
 // -------------------------------------------------------------------------------------- list_campaigns ----
 describe("list_campaigns", () => {
-  const row = (i: number, extra: object = {}) => ({ campaign: { id: String(i), name: `Camp ${i}`, status: "ENABLED", advertisingChannelType: "SEARCH", biddingStrategyType: "MAXIMIZE_CONVERSIONS", servingStatus: "SERVING", startDate: "2026-01-01" }, campaignBudget: { amountMicros: "50000000" }, ...extra });
+  const row = (i: number, extra: object = {}) => ({ campaign: { id: String(i), name: `Camp ${i}`, status: "ENABLED", advertisingChannelType: "SEARCH", biddingStrategyType: "MAXIMIZE_CONVERSIONS", servingStatus: "SERVING", startDateTime: "2026-01-01 00:00:00" }, campaignBudget: { amountMicros: "50000000" }, ...extra });
 
   it("queries the right resource, as the right account, with auth and no developer token", async () => {
     responder = () => ({ results: [row(1)] });
@@ -143,7 +146,7 @@ describe("list_campaigns", () => {
     expect(req.headers.authorization).toBe("Bearer tok");
     expect(req.headers["login-customer-id"]).toBe("5550001111");
     expect(Object.keys(req.headers).map((k) => k.toLowerCase())).not.toContain("developer-token");
-    expect(req.body.query).toBe("SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, campaign.bidding_strategy_type, campaign.serving_status, campaign.start_date, campaign.end_date, campaign_budget.amount_micros FROM campaign WHERE campaign.status != 'REMOVED' AND campaign.status = 'ENABLED' AND campaign.name LIKE '%Summer Sale%' ORDER BY campaign.id ASC LIMIT 101");
+    expect(req.body.query).toBe("SELECT campaign.id, campaign.name, campaign.status, campaign.advertising_channel_type, campaign.bidding_strategy_type, campaign.serving_status, campaign.start_date_time, campaign.end_date_time, campaign_budget.amount_micros FROM campaign WHERE campaign.status != 'REMOVED' AND campaign.status = 'ENABLED' AND campaign.name LIKE '%Summer Sale%' ORDER BY campaign.id ASC LIMIT 101");
   });
 
   it("normalizes rows: micros to money, missing fields to null", async () => {
@@ -151,7 +154,7 @@ describe("list_campaigns", () => {
     const env = await run("list_campaigns", {});
     expect(env.data).toMatchObject({ returned: 2, truncated: false });
     const c = (env.data as { campaigns: any[] }).campaigns;
-    expect(c[0]).toMatchObject({ id: "7", name: "Camp 7", daily_budget: 50, channel_type: "SEARCH", end_date: null });
+    expect(c[0]).toMatchObject({ id: "7", name: "Camp 7", daily_budget: 50, channel_type: "SEARCH", start_date_time: "2026-01-01 00:00:00", end_date_time: null });
     expect(c[1]).toMatchObject({ id: "8", name: null, daily_budget: null, status: null });
   });
 

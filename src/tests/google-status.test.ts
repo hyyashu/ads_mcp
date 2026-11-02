@@ -12,7 +12,7 @@ import { RateLimiter } from "../security/rate-limit";
 import { addUser, seedAccount, seedTenant, testDb } from "./helpers";
 
 /** A tiny stateful stand-in for the Google Ads API: statuses live in memory, mutate changes them. */
-const state = { campaign: { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED" } as Record<string, string>, ad_group: { "21": "ENABLED" } as Record<string, string> };
+const state = { campaign: { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED", "15": "ENABLED" } as Record<string, string>, ad_group: { "21": "ENABLED" } as Record<string, string> };
 let mutateCalls: { path: string; body: any }[] = [];
 let ignoreMutations = false;
 const J = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
@@ -56,7 +56,7 @@ beforeAll(async () => {
   };
 });
 beforeEach(() => {
-  state.campaign = { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED" };
+  state.campaign = { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED", "15": "ENABLED" };
   state.ad_group = { "21": "ENABLED" };
   mutateCalls = [];
   ignoreMutations = false;
@@ -117,9 +117,12 @@ describe("pause/resume campaign and ad group", () => {
   });
 
   it("refuses to apply when the campaign changed after the request (drift)", async () => {
-    const r = await request("pause_campaign", { campaign_id: "11" });
-    state.campaign["11"] = "PAUSED";
-    await expect(approve(r.approval!.approval_id)).rejects.toMatchObject({ code: "conflict" });
+    const r = await request("pause_campaign", { campaign_id: "15" });
+    expect(r.approval?.status).toBe("pending_approval");
+    state.campaign["15"] = "PAUSED";
+    const done = await approve(r.approval!.approval_id);
+    expect(done.status).toBe("failed");
+    expect(done.result).toMatchObject({ error: { message: expect.stringContaining("already paused") } });
     expect(mutateCalls).toHaveLength(0);
   });
 

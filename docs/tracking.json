@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 13,
+    "implemented": 18,
     "external_limitation": 0,
-    "pending": 214
+    "pending": 209
   },
   "rows": [
     {
@@ -1017,10 +1017,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_performance",
@@ -1121,10 +1121,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_campaign_frequency_caps",
@@ -2561,10 +2561,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_ad_headlines",
@@ -2613,10 +2613,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_campaign_dates",
@@ -2630,10 +2630,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_campaign_frequency_caps",
