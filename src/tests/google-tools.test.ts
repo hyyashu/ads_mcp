@@ -119,14 +119,14 @@ describe("GAQL builder", () => {
 
 // ------------------------------------------------------------------------------------ registration ----
 describe("batch 1 registration", () => {
-  it("registers nine real Google tools that pass every registry rule, and reconciles", () => {
+  it("registers the real Google tools that pass every registry rule, and reconciles", () => {
     const inv = loadInventory();
     const reg = new ToolRegistry(inv).registerAll(googleTools);
-    expect(reg.list().map((t) => t.name).sort()).toEqual(["analyze_wasted_spend", "get_ad_policy_violations", "get_campaign_performance", "get_campaign_tracking", "get_usage_status", "list_campaigns", "list_conversion_actions", "list_labels", "list_negative_keyword_lists"]);
+    expect(reg.list().map((t) => t.name).sort()).toEqual(["analyze_wasted_spend", "get_ad_policy_violations", "get_campaign_performance", "get_campaign_tracking", "get_usage_status", "list_campaigns", "list_conversion_actions", "list_labels", "list_negative_keyword_lists", "pause_ad_group", "pause_campaign", "resume_ad_group", "resume_campaign"]);
     const rec = reconcile(inv, reg, {});
     expect(rec.errors).toEqual([]);
-    expect(rec.counts).toEqual({ implemented: 9, external_limitation: 0, pending: 218 });
-    expect(reg.list().every((t) => t.kind === "read")).toBe(true);
+    expect(rec.counts).toEqual({ implemented: 13, external_limitation: 0, pending: 214 });
+    expect(reg.list().filter((t) => t.kind === "write").map((t) => t.name).sort()).toEqual(["pause_ad_group", "pause_campaign", "resume_ad_group", "resume_campaign"]);
   });
 });
 

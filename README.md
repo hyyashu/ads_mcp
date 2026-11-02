@@ -6,7 +6,7 @@ and never stored.
 
 ## Status (read this first)
 
-**9 of 227 tools are implemented** (all Google Ads, all read-only). `docs/TRACKING.md` (generated) lists every tool, its
+**13 of 227 tools are implemented** (all Google Ads: 9 read-only, 4 approval-gated writes). `docs/TRACKING.md` (generated) lists every tool, its
 plan and its status. A tool is exposed only when it has a real handler, input and output schemas, documented
 permissions and tests; there are no stub or fake-success tools.
 
@@ -16,7 +16,7 @@ unreachable from the build environment, so field names, endpoints and the MCP au
 knowledge and are **not verified against current official documentation**. The matrix marks every tool
 `mocked-api only` until it is proven live (`inventory/live-verified.json`).
 
-Built and tested (201 tests): MCP transport, tool registry with enforced rules, MCP-client OAuth server, Google/Meta
+Built and tested (211 tests): MCP transport, tool registry with enforced rules, MCP-client OAuth server, Google/Meta
 connection flows, human approvals, crash reconciliation, shared rate limiting, GAQL builder and Google client layer.
 
 ## Architecture
@@ -76,7 +76,7 @@ set -a; . ./.env; set +a
 npm run db:migrate                # embedded Postgres in .data/pglite, or set DATABASE_URL
 ADS_MCP_OWNER_PASSWORD='a-long-password' npm run tenant:create -- "My Agency" owner@example.com
 npm start                         # MCP endpoint: $PUBLIC_URL/mcp
-npm test                          # 201 tests
+npm test                          # 211 tests
 npm run inventory:matrix          # regenerate docs/TRACKING.md
 ```
 
@@ -96,7 +96,7 @@ issued with `issueApiToken` (read/write scopes only).
 
 ## Known gaps and limitations
 
-- 218 tools pending. See `docs/TRACKING.md`. Three need platform support verified before they can be built honestly: `get_benchmark_context` (competitive metrics availability), `validate_video` (YouTube Data API key and what Google Ads exposes), `get_meta_audience_insights` (only officially supported capabilities; explicit unsupported errors otherwise).
+- 214 tools pending. See `docs/TRACKING.md`. Three need platform support verified before they can be built honestly: `get_benchmark_context` (competitive metrics availability), `validate_video` (YouTube Data API key and what Google Ads exposes), `get_meta_audience_insights` (only officially supported capabilities; explicit unsupported errors otherwise).
 - No live verification of any tool, OAuth flow or API mapping (see Status).
 - MCP authorization is implemented from the 2025 revisions as known; the current published spec was not reachable to confirm later changes.
 - Meta `debug_token` is called with POST (token kept out of the URL); confirm on the first live run.

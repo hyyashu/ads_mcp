@@ -49,3 +49,22 @@ export function googleRead<I extends z.ZodObject, O extends z.ZodType>(def: Read
 }
 
 export const Money = z.number().describe("In the account's currency (micros converted to units).");
+
+import type { WriteTool } from "../../../mcp/tool";
+
+type WriteDef<I extends z.ZodObject, O extends z.ZodType> = Omit<WriteTool<I, O, GoogleServices>, "kind" | "platform" | "permissions"> & { permissions?: Partial<WriteTool["permissions"]> };
+
+/** Declares a Google Ads write tool. Writes never run directly: the pipeline queues an approval first. */
+export function googleWrite<I extends z.ZodObject, O extends z.ZodType>(def: WriteDef<I, O>): WriteTool<I, O, GoogleServices> {
+  return {
+    ...def,
+    kind: "write",
+    platform: "google_ads",
+    permissions: {
+      scope: "ads:write",
+      platformPermissions: [ADS_SCOPE],
+      notes: "Requires write access to the account for the connected Google user, and Google Ads API access on the Cloud project.",
+      ...def.permissions,
+    },
+  };
+}

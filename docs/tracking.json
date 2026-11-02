@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 9,
+    "implemented": 13,
     "external_limitation": 0,
-    "pending": 218
+    "pending": 214
   },
   "rows": [
     {
@@ -1858,10 +1858,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "pause_campaign",
@@ -1875,10 +1875,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_ad",
@@ -2321,10 +2321,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "resume_campaign",
@@ -2338,10 +2338,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "save_business_profile",
