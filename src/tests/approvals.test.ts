@@ -43,6 +43,28 @@ describe("approval requests", () => {
     expect(c.row.id).not.toBe(a.row.id);
   });
 
+  it("a pending request planned against older state is superseded by a new request with a fresh plan", async () => {
+    const old = await svc.request(base()); // planned when the campaign budget was 50
+    const fresh = await svc.request({ ...base(), summary: "Pause 1 (budget now 60)", snapshot: { s: 2 } });
+    expect(fresh.deduplicated).toBe(false);
+    expect(fresh.row.id).not.toBe(old.row.id);
+    expect(fresh.row.summary).toContain("budget now 60"); // the approver sees the current plan, not a stale one
+    const stale = await svc.get(t1.tenant.id, old.row.id);
+    expect(stale?.status).toBe("expired");
+    expect(stale?.result).toMatchObject({ superseded: true });
+    await expect(svc.decide({ tenantId: t1.tenant.id, approvalId: old.row.id, decider: asAdmin(), decision: "approve", execute: async () => ({}) })).rejects.toMatchObject({ code: "conflict" });
+    let runs = 0;
+    expect((await svc.decide({ tenantId: t1.tenant.id, approvalId: fresh.row.id, decider: asAdmin(), decision: "approve", execute: async () => (runs++, {}) })).status).toBe("executed");
+    expect(runs).toBe(1);
+  });
+
+  it("the same plan is still deduplicated, whatever the summary text", async () => {
+    const a = await svc.request(base());
+    const b = await svc.request({ ...base(), summary: "worded differently" });
+    expect(b.deduplicated).toBe(true);
+    expect(b.row.id).toBe(a.row.id);
+  });
+
   it("does not treat another tenant's identical change as a duplicate", async () => {
     const t2 = await seedTenant(db, "t2", "owner");
     const acc2 = await seedAccount(db, t2.tenant.id, "google_ads");

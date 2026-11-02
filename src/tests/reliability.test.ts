@@ -119,6 +119,23 @@ describe("reconciling unknown mutation outcomes before any retry", () => {
     expect(h.calls.execute).toBe(0);
   });
 
+  it("rows that used up their checks do not starve newer unknown outcomes", async () => {
+    const stuck1 = await unknown("s1");
+    const stuck2 = await unknown("s2");
+    const fresh = await unknown("s3");
+    for (const r of [stuck1, stuck2]) {
+      await h.db.update(schema.approvalRequest).set({ result: { reconcile: { checks: 20, last: now.toISOString(), outcome: "indeterminate" } } }).where(eq(schema.approvalRequest.id, r.id));
+    }
+    // Updated last, so an unordered query would return the exhausted rows first (Postgres appends updated row versions).
+    await h.db.update(schema.approvalRequest).set({ result: { reconcile: { checks: 1, last: new Date(now.getTime() - 86_400_000).toISOString(), outcome: "indeterminate" } } }).where(eq(schema.approvalRequest.id, fresh.id));
+    later(7 * 3600_000);
+    const checked: string[] = [];
+    await svc.reconcileUnknown(async (row) => (checked.push(row.id), { outcome: "applied" }), { limit: 1 });
+    expect(checked).toEqual([fresh.id]); // with a batch of 1, the exhausted rows must not take the slot
+    expect(await status(fresh.id)).toBe("executed");
+    expect(await status(stuck1.id)).toBe("unknown_outcome");
+  });
+
   it("not applied: freed for a NEW human approval, never retried automatically", async () => {
     const row = await unknown("c2");
     later(120_000);

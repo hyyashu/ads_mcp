@@ -6,7 +6,7 @@ import { approvalRequest } from "../db/schema";
 import { ToolError } from "../mcp/errors";
 import type { Risk } from "../mcp/tool";
 import { audit } from "./audit";
-import { hashArgs, sha256 } from "./canonical";
+import { canonicalJson, hashArgs, sha256 } from "./canonical";
 
 type ApprovalRow = typeof approvalRequest.$inferSelect;
 export type WriteRisk = Exclude<Risk, "read">;
@@ -68,13 +68,20 @@ export class ApprovalService {
       if (existing) {
         const age = now.getTime() - existing.createdAt.getTime();
         const live = existing.status === "pending" && existing.expiresAt > now;
-        if (live || existing.status === "executing") return { row: existing, deduplicated: true };
+        // A duplicate of a live request is the same request only if it was planned against the same live state. If the ad account
+        // has changed since, the old request can never be approved successfully (it would conflict) and its summary is out of
+        // date, so it is superseded by the new one instead of being returned.
+        if (live && canonicalJson(existing.planSnapshot ?? null) === canonicalJson(o.snapshot ?? null)) return { row: existing, deduplicated: true };
+        if (existing.status === "executing") return { row: existing, deduplicated: true };
         if (existing.status === "executed" && age < this.dedupeMs) return { row: existing, deduplicated: true };
         if (existing.status === "unknown_outcome") {
           throw new ToolError("conflict", "A previous attempt at this exact change has an unconfirmed outcome. Check the ad platform, then change the arguments or resolve it before retrying.");
         }
-        // Finished long ago, rejected, failed or expired: free the key so the change can be requested again.
-        await tx.update(approvalRequest).set({ idempotencyKey: `${key}:${existing.id}` }).where(eq(approvalRequest.id, existing.id));
+        // Finished long ago, rejected, failed, expired or superseded: free the key so the change can be requested again.
+        await tx
+          .update(approvalRequest)
+          .set({ idempotencyKey: `${key}:${existing.id}`, ...(live ? { status: "expired", result: { superseded: true, reason: "The ad account changed after this was requested; a newer request replaced it." } } : {}) })
+          .where(eq(approvalRequest.id, existing.id));
       }
       const [row] = await tx
         .insert(approvalRequest)
@@ -175,7 +182,14 @@ export class ApprovalService {
    */
   async reconcileUnknown(verify: (row: ApprovalRow) => Promise<VerifyResult>, o: { minAgeMs?: number; limit?: number } = {}): Promise<{ applied: number; notApplied: number; indeterminate: number; skipped: number }> {
     const now = this.now();
-    const rows = await this.db.select().from(approvalRequest).where(eq(approvalRequest.status, "unknown_outcome")).limit(o.limit ?? 50);
+    // Rows that used up their checks are left for manual review and must not occupy the batch: with enough of them, newer unknown
+    // outcomes would never be checked. Never-checked rows come first, then the least recently checked.
+    const rows = await this.db
+      .select()
+      .from(approvalRequest)
+      .where(and(eq(approvalRequest.status, "unknown_outcome"), sql`coalesce((${approvalRequest.result}->'reconcile'->>'checks')::int, 0) < ${MAX_CHECKS}`))
+      .orderBy(sql`coalesce(${approvalRequest.result}->'reconcile'->>'last', '')`, approvalRequest.createdAt)
+      .limit(o.limit ?? 50);
     const tally = { applied: 0, notApplied: 0, indeterminate: 0, skipped: 0 };
 
     for (const row of rows) {
