@@ -1,0 +1,2281 @@
+{
+  "schema_version": 1,
+  "source": "User supplied Adspirer tool inventory dated 2026-11-02",
+  "notes": [
+    "Names and classifications copied from supplied inventory; descriptions and argument schemas not supplied.",
+    "These are implementation targets, not registered or operational MCP tools.",
+    "Live mutations should require authorization and server-enforced approval."
+  ],
+  "tools": [
+    {
+      "platform": "google_ads",
+      "name": "add_ad_group_audiences",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_app_ad_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_asset_group_listing_filter",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_business_name_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_call_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_callout_extensions",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_campaign_label",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_campaign_proximity",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_demandgen_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_demandgen_ad_group",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_display_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_display_ad_group",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_display_audiences",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_display_keywords",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_display_placements",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_display_topics",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_keywords",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_negative_keywords",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_negative_keywords_to_list",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_placement_exclusions",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_pmax_asset_group",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_pmax_asset_group_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_pmax_asset_group_image",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_pmax_audience_signal",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_pmax_campaign_logo",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_pmax_search_themes",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_product_group",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_search_ad_group",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_search_campaign_image",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_shopping_ad_group",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_shopping_product_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_sitelinks",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_structured_snippets",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "analyze_pmax_search_categories",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "analyze_pmax_search_terms",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "analyze_search_terms",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "analyze_wasted_spend",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "attach_negative_keyword_list_to_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "bulk_update_ad_group_status",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "bulk_update_ad_status",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "bulk_update_campaign_status",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "bulk_update_keyword_status",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_app_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_conversion_action",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_demandgen_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_label",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_negative_keyword_list",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_pmax_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_search_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_shopping_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_youtube_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "discover_existing_assets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "explain_performance_anomaly",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_creative",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_group_audiences",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_group_demographics",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_group_device_bid_modifiers",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_group_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_ad_policy_violations",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_asset_group_listing_filters",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_benchmark_context",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_business_profile",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_dates",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_frequency_caps",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_labels",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_structure",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_targeting",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_campaign_tracking",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_conversion_action_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_demandgen_audiences",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_demandgen_channel_controls",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_ad_group_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_audiences",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_demographics",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_frequency_caps",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_keywords",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_placements",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_display_topics",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_merchant_center_links",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_negative_keyword_list",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_placement_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_pmax_asset_groups",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_pmax_asset_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_pmax_audience_signals",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_pmax_conversion_goals",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_pmax_search_themes",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_product_groups",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_reach_frequency",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_shopping_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_usage_status",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "help_user_upload",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "infer_business_profile",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "link_merchant_center",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_call_assets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_campaign_extensions",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_campaigns",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_conversion_actions",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_google_languages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_labels",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_negative_keyword_lists",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_pmax_asset_group_assets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_pmax_asset_group_images",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "optimize_budget_allocation",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "pause_ad",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "pause_ad_group",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "pause_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_ad",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_ad_group",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_app_ad_asset",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_asset_group_listing_filter",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_call_assets",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_callouts",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_campaign_label",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_campaign_proximity",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_display_ad",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_display_ad_group",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_display_criteria",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_keywords",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_negative_keywords",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_pmax_asset_group",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_pmax_asset_group_asset",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_pmax_asset_group_image",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_pmax_audience_signal",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_pmax_search_themes",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_product_group",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_sitelinks",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_structured_snippets",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "replace_demandgen_audiences",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "research_keywords",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "resolve_google_locations",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "resume_ad",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "resume_ad_group",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "resume_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "save_business_profile",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "search_audiences",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "select_google_campaign_type",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "set_ad_group_device_bid_modifiers",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "set_call_asset_status",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "set_campaign_ad_schedule",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "set_campaign_device_bid_modifiers",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "suggest_ad_content",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "unlink_merchant_center",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_ad_content",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_ad_descriptions",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_ad_group_demographics",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_ad_group_settings",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_ad_headlines",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_bid_strategy",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_campaign_dates",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_campaign_frequency_caps",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_conversion_action",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_demandgen_channel_controls",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_display_ad_creative",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_display_campaign_schedule",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_display_demographics",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_display_frequency_caps",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_keyword",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_location_targeting",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_pmax_asset_group",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_pmax_audience_signal",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_product_group",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "validate_and_prepare_assets",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "validate_video",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "add_meta_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "add_meta_ad_set",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "add_meta_catalog_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "add_meta_catalog_ad_set",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "analyze_meta_ad_performance",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "analyze_meta_audiences",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "analyze_meta_catalog_performance",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "analyze_meta_wasted_spend",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "browse_meta_targeting",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "compare_meta_catalog_product_sets",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "create_meta_carousel_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "create_meta_catalog_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "create_meta_dco_ad",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "create_meta_image_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "create_meta_product_set",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "create_meta_video_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "detect_meta_catalog_waste",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "detect_meta_creative_fatigue",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "diagnose_meta_catalog_funnel",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "discover_meta_assets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "duplicate_meta_campaign",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "explain_meta_anomaly",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_ad_creatives",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_adset_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_app_adsets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_app_campaigns",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_app_creatives",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_app_summary",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_audience_insights",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_campaign_details",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_campaign_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_lead_form_submissions",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_pixel_stats",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "get_meta_product_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_ad_sets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_ads",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_campaigns",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_catalogs",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_custom_audiences",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_instagram_accounts",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_lead_forms",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_pixels",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_product_sets",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_products",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "list_meta_promotable_apps",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "optimize_meta_budget",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "optimize_meta_placements",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "pause_meta_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "resume_meta_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "search_meta_targeting",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "select_meta_campaign_type",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "update_meta_ad",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "update_meta_ad_set",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "update_meta_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "update_meta_catalog_ad",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "update_meta_catalog_ad_set",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "update_meta_catalog_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "meta_ads",
+      "name": "validate_and_prepare_meta_assets",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "validate_catalog_readiness",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": false,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    }
+  ]
+}

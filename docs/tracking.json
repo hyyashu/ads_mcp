@@ -1,0 +1,3921 @@
+{
+  "generated_from": "inventory/tool-registry.json",
+  "summary": {
+    "implemented": 9,
+    "external_limitation": 0,
+    "pending": 218
+  },
+  "rows": [
+    {
+      "tool": "add_ad_group_audiences",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "targeting_bidding_settings",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_app_ad_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "app",
+      "api": "AdGroupAdService.MutateAdGroupAds (AppAdInfo asset fields) / AssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "App ad assets are fields on the ad itself: adding or removing one is a replace-style update of the ad. Verify exact semantics against the current API.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_asset_group_listing_filter",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_business_name_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_call_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_callout_extensions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_campaign_label",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "labels",
+      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_campaign_proximity",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService (LOCATION, PROXIMITY, LANGUAGE) / GAQL: campaign_criterion",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_demandgen_ad",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "demand_gen",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_demandgen_ad_group",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "demand_gen",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_display_ad",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "display",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_display_ad_group",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "display",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_display_audiences",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_display_keywords",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "display",
+      "api": "AdGroupCriterionService.MutateAdGroupCriteria (keyword)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_display_placements",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_display_topics",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_keywords",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "keywords",
+      "api": "AdGroupCriterionService.MutateAdGroupCriteria (keyword)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_negative_keywords",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "negative_keywords",
+      "api": "CampaignCriterionService / AdGroupCriterionService (negative keyword criteria)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_negative_keywords_to_list",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "negative_keywords",
+      "api": "SharedCriterionService.MutateSharedCriteria (KEYWORD in a NEGATIVE_KEYWORDS shared set)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_placement_exclusions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "targeting_bidding_settings",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_pmax_asset_group",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_pmax_asset_group_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_pmax_asset_group_image",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_pmax_audience_signal",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetGroupSignalService (audience signals) / GAQL: asset_group_signal",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Audience signals are hints for Performance Max, not hard targeting.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_pmax_campaign_logo",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_pmax_search_themes",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_product_group",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "shopping",
+      "api": "AdGroupCriterionService (LISTING_GROUP) / CampaignService (shopping_setting)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_search_ad_group",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "ad_groups",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_search_campaign_image",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_shopping_ad_group",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "shopping",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_shopping_product_ad",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "shopping",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_sitelinks",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_structured_snippets",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_pmax_search_categories",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "performance_max",
+      "api": "GAQL: campaign_search_term_insight (categories)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_pmax_search_terms",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "performance_max",
+      "api": "GAQL: campaign_search_term_view / campaign_search_term_insight",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_search_terms",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "other",
+      "api": "GAQL: search_term_view metrics, deterministic classification",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_wasted_spend",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GAQL: campaign/ad_group/keyword/search_term metrics, deterministic thresholds",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "attach_negative_keyword_list_to_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "negative_keywords",
+      "api": "SharedSetService + SharedCriterionService + CampaignSharedSetService (NEGATIVE_KEYWORDS)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "bulk_update_ad_group_status",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ad_groups",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "bulk_update_ad_status",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "bulk_update_campaign_status",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "CampaignService.MutateCampaigns",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "bulk_update_keyword_status",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "keywords",
+      "api": "AdGroupCriterionService.MutateAdGroupCriteria (keyword)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_ad",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_app_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "app",
+      "api": "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_conversion_action",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionActionService (GAQL: conversion_action)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_demandgen_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "demand_gen",
+      "api": "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_label",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "labels",
+      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_negative_keyword_list",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "negative_keywords",
+      "api": "SharedSetService + SharedCriterionService + CampaignSharedSetService (NEGATIVE_KEYWORDS)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_pmax_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "performance_max",
+      "api": "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_search_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "campaigns",
+      "api": "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_shopping_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "shopping",
+      "api": "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_youtube_campaign",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "video",
+      "api": "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "discover_existing_assets",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: asset, asset_group_asset, campaign_asset, customer_asset",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "explain_performance_anomaly",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GAQL: metrics by date/segment, deterministic period comparison",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_creative",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "ads",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_group_audiences",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_group_demographics",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "AdGroupCriterionService (AGE_RANGE, GENDER, PARENTAL_STATUS, INCOME_RANGE)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_group_device_bid_modifiers",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService / CampaignService / AdGroupBidModifierService / CampaignBidModifierService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_group_settings",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "ad_groups",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "ads",
+      "api": "GAQL: campaign / ad_group_ad / group_placement_view / asset_group_asset metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ad_policy_violations",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "ads",
+      "api": "GAQL: ad_group_ad.policy_summary",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_asset_group_listing_filters",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_benchmark_context",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "analysis_and_helpers",
+      "api": "GAQL: the account's own history (prior periods) plus Google's official competitive metrics where exposed (impression share, lost impression share)",
+      "risk": "read",
+      "feasibility": "limitation_candidate",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-02): use account history and officially available competitive metrics only; never invent industry benchmarks. Which competitive metrics the API exposes for each campaign type must be verified against current docs; anything unavailable returns an explicit unsupported result.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_business_profile",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "analysis_and_helpers",
+      "api": "GAQL: asset / customer_asset (BUSINESS_NAME, LOGO) plus customer (name, currency, time zone)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-02): read supported business assets and account information from Google Ads. Nothing is stored by this server.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_dates",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_frequency_caps",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignService (frequency caps) / GAQL: campaign.frequency_caps",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_labels",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "labels",
+      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GAQL: campaign / ad_group_ad / group_placement_view / asset_group_asset metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_campaign_structure",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_targeting",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService (LOCATION, PROXIMITY, LANGUAGE) / GAQL: campaign_criterion",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_tracking",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GAQL: campaign (tracking_url_template, final_url_suffix, url_custom_parameters)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_conversion_action_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "conversions",
+      "api": "ConversionActionService (GAQL: conversion_action)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_demandgen_audiences",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "demand_gen",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_demandgen_channel_controls",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "demand_gen",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_ad_group_settings",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_audiences",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_demographics",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "AdGroupCriterionService (AGE_RANGE, GENDER, PARENTAL_STATUS, INCOME_RANGE)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_frequency_caps",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "CampaignService (frequency caps) / GAQL: campaign.frequency_caps",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_keywords",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "AdGroupCriterionService.MutateAdGroupCriteria (keyword)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_placements",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_display_topics",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_merchant_center_links",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "shopping",
+      "api": "GAQL: product_link (MERCHANT_CENTER)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_negative_keyword_list",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "negative_keywords",
+      "api": "SharedSetService + SharedCriterionService + CampaignSharedSetService (NEGATIVE_KEYWORDS)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_placement_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: campaign / ad_group_ad / group_placement_view / asset_group_asset metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_pmax_asset_groups",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_pmax_asset_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "GAQL: campaign / ad_group_ad / group_placement_view / asset_group_asset metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_pmax_audience_signals",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "AssetGroupSignalService (audience signals) / GAQL: asset_group_signal",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Audience signals are hints for Performance Max, not hard targeting.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_pmax_conversion_goals",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "GAQL: campaign_conversion_goal, customer_conversion_goal",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_pmax_search_themes",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_product_groups",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "shopping",
+      "api": "AdGroupCriterionService (LISTING_GROUP) / CampaignService (shopping_setting)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_reach_frequency",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: campaign metrics (unique_users, average_impression_frequency_per_user)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Reach metrics exist only for some campaign types and date ranges. ReachPlanService is forecasting, not reporting.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_shopping_settings",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "shopping",
+      "api": "AdGroupCriterionService (LISTING_GROUP) / CampaignService (shopping_setting)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_usage_status",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "analysis_and_helpers",
+      "api": "Server usage metering (usage_counter) plus API quota state",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [],
+      "accountScope": "none",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "help_user_upload",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "analysis_and_helpers",
+      "api": "Server-side guidance: asset specs and the HTTPS-URL upload path",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "MCP has no binary upload channel: assets must be supplied as HTTPS URLs the server fetches and validates.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "infer_business_profile",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GAQL: asset (business name, logo), customer, campaign final URLs; deterministic extraction",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "No LLM inference: extracts only what the account already contains.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "link_merchant_center",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "shopping",
+      "api": "ProductLinkService.CreateProductLink",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "The Merchant Center side may need to accept the link: the call can succeed while the link stays pending.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_call_assets",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_campaign_extensions",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_campaigns",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GAQL query on the corresponding resource",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_conversion_actions",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "conversions",
+      "api": "ConversionActionService (GAQL: conversion_action)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_google_languages",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: language_constant",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_labels",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "labels",
+      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_negative_keyword_lists",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "negative_keywords",
+      "api": "SharedSetService + SharedCriterionService + CampaignSharedSetService (NEGATIVE_KEYWORDS)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "mocked-api only",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_pmax_asset_group_assets",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_pmax_asset_group_images",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "optimize_budget_allocation",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: campaign_budget + campaign metrics, deterministic reallocation math",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "pause_ad",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "pause_ad_group",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ad_groups",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "pause_campaign",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "CampaignService.MutateCampaigns",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_ad",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_ad_group",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "ad_groups",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_app_ad_asset",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "app",
+      "api": "AdGroupAdService.MutateAdGroupAds (AppAdInfo asset fields) / AssetService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "App ad assets are fields on the ad itself: adding or removing one is a replace-style update of the ad. Verify exact semantics against the current API.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_asset_group_listing_filter",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_call_assets",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_callouts",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_campaign_label",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "labels",
+      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_campaign_proximity",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService (LOCATION, PROXIMITY, LANGUAGE) / GAQL: campaign_criterion",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_display_ad",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "display",
+      "api": "AdGroupAdService.MutateAdGroupAds (remove)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_display_ad_group",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "display",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_display_criteria",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "display",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_keywords",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "keywords",
+      "api": "AdGroupCriterionService.MutateAdGroupCriteria (keyword)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_negative_keywords",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "negative_keywords",
+      "api": "CampaignCriterionService / AdGroupCriterionService (negative keyword criteria)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_pmax_asset_group",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_pmax_asset_group_asset",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_pmax_asset_group_image",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_pmax_audience_signal",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "performance_max",
+      "api": "AssetGroupSignalService (audience signals) / GAQL: asset_group_signal",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Audience signals are hints for Performance Max, not hard targeting.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_pmax_search_themes",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_product_group",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "shopping",
+      "api": "AdGroupCriterionService (LISTING_GROUP) / CampaignService (shopping_setting)",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_sitelinks",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_structured_snippets",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "replace_demandgen_audiences",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "demand_gen",
+      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "research_keywords",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "keywords",
+      "api": "KeywordPlanIdeaService.GenerateKeywordIdeas / GenerateKeywordHistoricalMetrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "resolve_google_locations",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GeoTargetConstantService.SuggestGeoTargetConstants",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "resume_ad",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "resume_ad_group",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ad_groups",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "resume_campaign",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "CampaignService.MutateCampaigns",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "save_business_profile",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "analysis_and_helpers",
+      "api": "AssetService + CustomerAssetService (BUSINESS_NAME, LOGO)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-02): update supported Google Ads business assets only. No arbitrary profile storage.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "search_audiences",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: user_interest, user_list, custom_audience, combined_audience, detailed_demographic, life_event",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "select_google_campaign_type",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "Deterministic decision logic over documented campaign-type eligibility",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [],
+      "accountScope": "none",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "set_ad_group_device_bid_modifiers",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService / CampaignService / AdGroupBidModifierService / CampaignBidModifierService",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "set_call_asset_status",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "set_campaign_ad_schedule",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService (AD_SCHEDULE)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "set_campaign_device_bid_modifiers",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService / CampaignService / AdGroupBidModifierService / CampaignBidModifierService",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "suggest_ad_content",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "ads",
+      "api": "GAQL: ad_group_ad_asset performance, plus character-limit validation",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "No generative copy: returns the account's best-performing existing headlines/descriptions and validates limits. Generative suggestions would be invented content.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "unlink_merchant_center",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "shopping",
+      "api": "ProductLinkService.RemoveProductLink",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_ad_content",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_ad_descriptions",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_ad_group_demographics",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "AdGroupCriterionService (AGE_RANGE, GENDER, PARENTAL_STATUS, INCOME_RANGE)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_ad_group_settings",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ad_groups",
+      "api": "AdGroupService.MutateAdGroups",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_ad_headlines",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_bid_strategy",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService / CampaignService / AdGroupBidModifierService / CampaignBidModifierService",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_campaign",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "CampaignService.MutateCampaigns",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_campaign_dates",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignService.MutateCampaigns",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_campaign_frequency_caps",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignService (frequency caps) / GAQL: campaign.frequency_caps",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_conversion_action",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "conversions",
+      "api": "ConversionActionService (GAQL: conversion_action)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_demandgen_channel_controls",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "demand_gen",
+      "api": "AdGroupService.MutateAdGroups (demand_gen_ad_group_settings.channel_controls)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Field location varies by API version: verify before implementing.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_display_ad_creative",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "display",
+      "api": "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_display_campaign_schedule",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "display",
+      "api": "CampaignCriterionService (AD_SCHEDULE)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_display_demographics",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "display",
+      "api": "AdGroupCriterionService (AGE_RANGE, GENDER, PARENTAL_STATUS, INCOME_RANGE)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_display_frequency_caps",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "display",
+      "api": "CampaignService (frequency caps) / GAQL: campaign.frequency_caps",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_keyword",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "keywords",
+      "api": "AdGroupCriterionService.MutateAdGroupCriteria (keyword)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_location_targeting",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService (LOCATION, PROXIMITY, LANGUAGE) / GAQL: campaign_criterion",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_pmax_asset_group",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "performance_max",
+      "api": "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_pmax_audience_signal",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "performance_max",
+      "api": "AssetGroupSignalService (audience signals) / GAQL: asset_group_signal",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Audience signals are hints for Performance Max, not hard targeting.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_product_group",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "shopping",
+      "api": "AdGroupCriterionService (LISTING_GROUP) / CampaignService (shopping_setting)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "validate_and_prepare_assets",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "assets_extensions",
+      "api": "Fetch + validate asset URLs against Google Ads asset specs (type, dimensions, size, ratio)",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "SSRF-hardened fetch required (block private ranges, redirects, size caps).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "validate_video",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "video",
+      "api": "YouTube Data API v3 videos.list (existence, privacy status, embeddable, duration) plus Google Ads video asset requirements",
+      "risk": "read",
+      "feasibility": "limitation_candidate",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-02): integrate the YouTube Data API. Needs a YOUTUBE_API_KEY (public video metadata) and quota; Ads-side checks are limited to the documented asset requirements. Whether Google Ads exposes a pre-flight video validation call is unverified.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_meta_ad",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "ads",
+      "api": "POST /{act}/adcreatives + POST /{act}/ads",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_meta_ad_set",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "ad_sets",
+      "api": "POST /{act}/adsets",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_meta_catalog_ad",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "catalogs_products",
+      "api": "POST /{act}/adcreatives + POST /{act}/ads",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_meta_catalog_ad_set",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "catalogs_products",
+      "api": "POST /{act}/adsets",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_meta_ad_performance",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GET /{act}/insights (level=ad), deterministic ranking",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_meta_audiences",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "audiences_targeting",
+      "api": "GET /{act}/customaudiences (size, delivery status) + insights breakdowns (age, gender)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_meta_catalog_performance",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "catalogs_products",
+      "api": "GET /{act}/insights with product breakdowns, deterministic ranking",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_meta_wasted_spend",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GET /{act}/insights, deterministic thresholds",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "browse_meta_targeting",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "audiences_targeting",
+      "api": "GET /{act}/targetingbrowse | /{act}/targetingsearch | /search?type=adTargetingCategory",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "compare_meta_catalog_product_sets",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "catalogs_products",
+      "api": "GET /{act}/insights per product set, deterministic comparison",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_meta_carousel_campaign",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "creatives",
+      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_meta_catalog_campaign",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "catalogs_products",
+      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_meta_dco_ad",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "creatives",
+      "api": "POST /{act}/adcreatives (asset_feed_spec) + POST /{act}/ads",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Dynamic creative requires an ad set with dynamic creative enabled.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_meta_image_campaign",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "creatives",
+      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_meta_product_set",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "catalogs_products",
+      "api": "POST /{catalog_id}/product_sets",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "catalog_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_meta_video_campaign",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "creatives",
+      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "detect_meta_catalog_waste",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "catalogs_products",
+      "api": "GET /{act}/insights, deterministic thresholds",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "detect_meta_creative_fatigue",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "creatives",
+      "api": "GET /{act}/insights level=ad (frequency, CTR trend over time)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "diagnose_meta_catalog_funnel",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "catalogs_products",
+      "api": "GET /{act}/insights (view content, add to cart, purchase actions) + /{catalog}/diagnostics",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "discover_meta_assets",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "analysis_and_helpers",
+      "api": "Aggregates pages, Instagram accounts, pixels, catalogs, custom audiences via their list endpoints",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "duplicate_meta_campaign",
+      "platform": "meta_ads",
+      "action": "Create",
+      "domain": "campaigns",
+      "api": "POST /{campaign_id}/copies",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Large copies are asynchronous. Copies must be created PAUSED.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "explain_meta_anomaly",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GET /{act}/insights time series + breakdowns, deterministic period comparison",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_ad_creatives",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "creatives",
+      "api": "GET /{ad_id}/adcreatives or /{act}/adcreatives",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_adset_performance",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "ad_sets",
+      "api": "GET /{act}/insights (level=campaign|adset)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "notes": "Large ranges need async report runs; respect rate limits (BUC).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_app_adsets",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "app_promotion",
+      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_app_campaigns",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "app_promotion",
+      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_app_creatives",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "app_promotion",
+      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_app_summary",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "app_promotion",
+      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_audience_insights",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "audiences_targeting",
+      "api": "No dedicated public Audience Insights API confirmed. Candidates: /{act}/reachestimate, /{act}/delivery_estimate, /{act}/targetingsuggestions, insights breakdowns",
+      "risk": "read",
+      "feasibility": "limitation_candidate",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-02): implement only officially supported capabilities; return explicit unsupported errors for the rest and document the limitation. Which endpoints are supported must be verified against current Marketing API docs.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_campaign_details",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GET /{campaign_id}?fields=...",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_campaign_performance",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GET /{act}/insights (level=campaign|adset)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "notes": "Large ranges need async report runs; respect rate limits (BUC).",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_lead_form_submissions",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "pixels_leads",
+      "api": "GET /{form_id}/leads",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "leads_retrieval",
+        "pages_show_list",
+        "pages_read_engagement"
+      ],
+      "accountScope": "required",
+      "notes": "Returns personal data (names, emails, phones). Needs a Page access token. Never stored; excluded from audit; consider masking by default.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_pixel_stats",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "pixels_leads",
+      "api": "GET /{pixel_id}/stats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_meta_product_performance",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "catalogs_products",
+      "api": "GET /{act}/insights with breakdowns=product_id",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_ad_sets",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "ad_sets",
+      "api": "GET /{act}/adsets",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_ads",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "ads",
+      "api": "GET /{act}/ads",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_campaigns",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "GET /{act}/campaigns",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_catalogs",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "catalogs_products",
+      "api": "GET /{business_id}/owned_product_catalogs or /{act}/product_catalogs",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "catalog_management",
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_custom_audiences",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "audiences_targeting",
+      "api": "GET /{act}/customaudiences",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_instagram_accounts",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "assets",
+      "api": "GET /{act}/instagram_accounts",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read",
+        "instagram_basic"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_lead_forms",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "pixels_leads",
+      "api": "GET /{page_id}/leadgen_forms",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "leads_retrieval",
+        "pages_show_list"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_pages",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "assets",
+      "api": "GET /me/accounts or /{act}/promote_pages",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "pages_show_list",
+        "business_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_pixels",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "pixels_leads",
+      "api": "GET /{act}/adspixels",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_product_sets",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "catalogs_products",
+      "api": "GET /{catalog_id}/product_sets",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "catalog_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_products",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "catalogs_products",
+      "api": "GET /{catalog_id}/products",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "catalog_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_meta_promotable_apps",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "app_promotion",
+      "api": "GET /{act}/advertisable_applications",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "optimize_meta_budget",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GET /{act}/insights + campaign/ad set budgets, deterministic reallocation math",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "optimize_meta_placements",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "GET /{act}/insights breakdowns=publisher_platform,platform_position",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "pause_meta_campaign",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "POST /{campaign_id} status=PAUSED|ACTIVE",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "resume_meta_campaign",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "POST /{campaign_id} status=PAUSED|ACTIVE",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "search_meta_targeting",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "audiences_targeting",
+      "api": "GET /{act}/targetingbrowse | /{act}/targetingsearch | /search?type=adTargetingCategory",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "select_meta_campaign_type",
+      "platform": "meta_ads",
+      "action": "Read",
+      "domain": "campaigns",
+      "api": "Deterministic decision logic over documented objectives (ODAX)",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [],
+      "accountScope": "none",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_meta_ad",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "ads",
+      "api": "POST /{ad_id}",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Creative content is immutable once an ad is created: creative changes need a new creative.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_meta_ad_set",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "ad_sets",
+      "api": "POST /{adset_id}",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_meta_campaign",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "campaigns",
+      "api": "POST /{campaign_id}",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_meta_catalog_ad",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "catalogs_products",
+      "api": "POST /{ad_id}",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "notes": "Creative content is immutable once an ad is created: creative changes need a new creative.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_meta_catalog_ad_set",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "catalogs_products",
+      "api": "POST /{adset_id}",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_meta_catalog_campaign",
+      "platform": "meta_ads",
+      "action": "Update",
+      "domain": "catalogs_products",
+      "api": "POST /{campaign_id}",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "ads_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "validate_and_prepare_meta_assets",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "analysis_and_helpers",
+      "api": "Fetch + validate asset URLs against Meta creative specs (format, dimensions, ratio, size)",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "notes": "SSRF-hardened fetch required. Validation only: uploads belong to the creation tools.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "validate_catalog_readiness",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "catalogs_products",
+      "api": "GET /{catalog}/diagnostics + product feed field checks",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "catalog_management"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    }
+  ]
+}
