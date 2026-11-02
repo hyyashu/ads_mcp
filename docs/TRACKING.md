@@ -172,7 +172,7 @@ These names do not map cleanly onto an official API, or they conflict with the "
 | `remove_sitelinks` | Delete | destructive | assets_extensions | AssetService + CampaignAssetService / CustomerAssetService | api | pending | n/a |
 | `remove_structured_snippets` | Delete | destructive | assets_extensions | AssetService + CampaignAssetService / CustomerAssetService | api | pending | n/a |
 | `replace_demandgen_audiences` | Update | high_impact | demand_gen | AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC) | api | pending | n/a |
-| `research_keywords` | Analyze | read | keywords | KeywordPlanIdeaService.GenerateKeywordIdeas / GenerateKeywordHistoricalMetrics | api | pending | n/a |
+| `research_keywords` | Analyze | read | keywords | KeywordPlanIdeaService.GenerateKeywordIdeas / GenerateKeywordHistoricalMetrics (verified against docs 2026-11-02; forecasts, if added, are KeywordPlanIdeaService.GenerateKeywordForecastMetrics, v24+ shape) | api | pending | n/a |
 | `resolve_google_locations` | Read | read | targeting_bidding_settings | GeoTargetConstantService.SuggestGeoTargetConstants | api | pending | n/a |
 | `resume_ad` | Update | high_impact | ads | AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets) | api | pending | n/a |
 | `resume_ad_group` | Update | high_impact | ad_groups | AdGroupService.MutateAdGroups | api | implemented | mocked-api only |

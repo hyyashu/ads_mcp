@@ -12,7 +12,7 @@ permissions and tests; there are no stub or fake-success tools.
 
 **"Implemented" currently means tested against crafted API responses, not against a real account.** No ad-platform
 credentials or test accounts were available, and the official documentation sites (Google, Meta, the MCP spec) were
-unreachable from the build environment, so field names, endpoints and the MCP authorization details were written from
+partly unreachable from the build environment (the key pages were later checked: see `docs/VERIFICATION.md`), so field names, endpoints and the MCP authorization details were written from
 knowledge and are **not verified against current official documentation**. The matrix marks every tool
 `mocked-api only` until it is proven live (`inventory/live-verified.json`).
 
@@ -98,7 +98,7 @@ issued with `issueApiToken` (read/write scopes only).
 
 - 214 tools pending. See `docs/TRACKING.md`. Three need platform support verified before they can be built honestly: `get_benchmark_context` (competitive metrics availability), `validate_video` (YouTube Data API key and what Google Ads exposes), `get_meta_audience_insights` (only officially supported capabilities; explicit unsupported errors otherwise).
 - No live verification of any tool, OAuth flow or API mapping (see Status).
-- MCP authorization is implemented from the 2025 revisions as known; the current published spec was not reachable to confirm later changes.
+- MCP: the published spec is now revision 2026-07-28 (stateless, no `initialize`); the installed SDK (1.32.2) supports up to 2025-11-25, so the new transport revision is not implemented. The authorization requirements checked match (see `docs/VERIFICATION.md`).
 - Meta `debug_token` is called with POST (token kept out of the URL); confirm on the first live run.
 - Web UI is deliberately minimal (login, consent, approvals, connections). No self-serve signup: tenants are created with `tenant:create`.
 - The Meta platform client and all Meta tools are not started.

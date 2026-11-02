@@ -2262,7 +2262,7 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "keywords",
-      "api": "KeywordPlanIdeaService.GenerateKeywordIdeas / GenerateKeywordHistoricalMetrics",
+      "api": "KeywordPlanIdeaService.GenerateKeywordIdeas / GenerateKeywordHistoricalMetrics (verified against docs 2026-11-02; forecasts, if added, are KeywordPlanIdeaService.GenerateKeywordForecastMetrics, v24+ shape)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
