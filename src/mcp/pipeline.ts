@@ -106,17 +106,28 @@ export function createExecutor(deps: PipelineDeps): Executor {
   return async (row) => {
     const tool = deps.registry.get(row.tool);
     if (!tool || tool.kind !== "write") throw new ToolError("unsupported", `Tool no longer available: ${row.tool}`);
-    const args = tool.input.parse(row.args) as Record<string, unknown>;
-    const ctx = await buildContext(deps, tool, args, { tenantId: row.tenantId, userId: row.requestedBy ?? row.decidedBy ?? "" }, new AbortController().signal);
-    if (ctx.account?.id !== row.accountId) throw new ToolError("conflict", "The account for this request changed.");
-    const fresh = await tool.plan(args, ctx);
-    if (canonicalJson(fresh.snapshot ?? null) !== canonicalJson(row.planSnapshot ?? null)) {
-      throw new ToolError("conflict", "The ad account changed since this was requested. Nothing was applied; request the change again.");
+    let ctx: ToolContext | undefined;
+    // Platform clients count the changes they actually send. While that count is zero, any failure is a definite failure:
+    // nothing reached the ad platform, so it must not be recorded as "unknown outcome" (which blocks re-requesting).
+    const nothingSent = () => (ctx?.services as { mutationsSent?: () => number } | undefined)?.mutationsSent?.() === 0;
+    try {
+      const args = tool.input.parse(row.args) as Record<string, unknown>;
+      ctx = await buildContext(deps, tool, args, { tenantId: row.tenantId, userId: row.requestedBy ?? row.decidedBy ?? "" }, new AbortController().signal);
+      if (ctx.account?.id !== row.accountId) throw new ToolError("conflict", "The account for this request changed.");
+      const fresh = await tool.plan(args, ctx);
+      if (canonicalJson(fresh.snapshot ?? null) !== canonicalJson(row.planSnapshot ?? null)) {
+        throw new ToolError("conflict", "The ad account changed since this was requested. Nothing was applied; request the change again.");
+      }
+      const raw = await tool.execute(args, ctx, { idempotencyKey: row.idempotencyKey, snapshot: row.planSnapshot });
+      const out = (tool.output as z.ZodType).safeParse(raw);
+      if (!out.success) throw new ToolError("unknown_outcome", "The change was sent but the platform response could not be validated. Verify it in the ad platform.");
+      return out.data;
+    } catch (e) {
+      if (!nothingSent()) throw e;
+      if (!(e instanceof ToolError)) console.error(`[${row.tool}] executor error before any change was sent:`, e instanceof Error ? redact(e.stack ?? e.message) : e);
+      const err = e instanceof ToolError ? e : new ToolError("internal", "Unexpected server error. No change was sent to the ad platform.");
+      throw new ToolError(err.code, err.message, { ...err.opts, definite: true });
     }
-    const raw = await tool.execute(args, ctx, { idempotencyKey: row.idempotencyKey, snapshot: row.planSnapshot });
-    const out = (tool.output as z.ZodType).safeParse(raw);
-    if (!out.success) throw new ToolError("unknown_outcome", "The change was sent but the platform response could not be validated. Verify it in the ad platform.");
-    return out.data;
   };
 }
 

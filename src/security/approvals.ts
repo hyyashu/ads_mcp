@@ -144,7 +144,8 @@ export class ApprovalService {
       status = "executed";
     } catch (e) {
       const err = e instanceof ToolError ? e : new ToolError("internal", "Execution failed");
-      status = DEFINITE_FAILURE.has(err.code) ? "failed" : "unknown_outcome";
+      // `definite`: the executor proved no change was sent to the platform, so whatever the error, nothing happened.
+      status = DEFINITE_FAILURE.has(err.code) || err.opts.definite ? "failed" : "unknown_outcome";
       result = { error: { code: err.code, message: err.message } };
     }
     const [done] = await this.db

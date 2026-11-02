@@ -6,20 +6,24 @@ import { runTool, type PipelineDeps } from "../mcp/pipeline";
 import { seedTenant } from "./helpers";
 
 /** A tiny stateful stand-in for the Google Ads API: statuses live in memory, mutate changes them. */
-const state = { campaign: { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED", "15": "ENABLED" } as Record<string, string>, ad_group: { "21": "ENABLED" } as Record<string, string> };
+const state = { campaign: { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED", "15": "ENABLED", "16": "ENABLED", "17": "ENABLED" } as Record<string, string>, ad_group: { "21": "ENABLED" } as Record<string, string> };
 let mutateCalls: { path: string; body: any }[] = [];
 let ignoreMutations = false;
+let failReads = false;
+let mutateFails = false;
 const J = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status });
 
 const fake: FetchLike = async (url, init) => {
     const path = url.replace("https://googleads.googleapis.com/v99/", "");
     const body = JSON.parse(String(init?.body ?? "{}"));
     if (path.endsWith("googleAds:search")) {
+      if (failReads) return J({ error: { code: 503, status: "UNAVAILABLE", message: "try later" } }, 503);
       const m = /FROM (campaign|ad_group) WHERE \w+\.id = (\d+)/.exec(body.query);
       const status = m && state[m[1] as "campaign"][m[2]!];
       return J(status ? { results: [{ [m![1]!.replace(/_(\w)/g, (_, c) => c.toUpperCase())]: { id: m![2], name: `N${m![2]}`, status, resourceName: `customers/1234567890/${m![1] === "campaign" ? "campaigns" : "adGroups"}/${m![2]}` } }] } : {});
     }
     mutateCalls.push({ path, body });
+    if (mutateFails) return J({ error: { code: 500, status: "INTERNAL", message: "boom" } }, 500);
     const op = body.operations[0];
     const [, kind, id] = /customers\/\d+\/(campaigns|adGroups)\/(\d+)/.exec(op.update.resourceName)!;
     if (!ignoreMutations) state[kind === "campaigns" ? "campaign" : "ad_group"][id!] = op.update.status;
@@ -34,10 +38,12 @@ beforeAll(async () => {
   d = kit.deps;
 });
 beforeEach(() => {
-  state.campaign = { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED", "15": "ENABLED" };
+  state.campaign = { "11": "ENABLED", "12": "PAUSED", "13": "REMOVED", "14": "ENABLED", "15": "ENABLED", "16": "ENABLED", "17": "ENABLED" };
   state.ad_group = { "21": "ENABLED" };
   mutateCalls = [];
   ignoreMutations = false;
+  failReads = false;
+  mutateFails = false;
 });
 
 const request = (name: string, args: Record<string, unknown>) => runTool(d, d.registry.get(name)!, { account_id: accountId, ...args }, { tenantId, userId: owner, role: "owner", scopes: ["ads:read", "ads:write"] });
@@ -120,5 +126,34 @@ describe("pause/resume campaign and ad group", () => {
     const foreign = await runTool(d, d.registry.get("pause_campaign")!, { account_id: accountId, campaign_id: "11" }, { tenantId: other.tenant.id, userId: other.user.id, role: "owner", scopes: ["ads:write"] });
     expect(foreign.ok).toBe(false);
     expect(mutateCalls).toHaveLength(0);
+  });
+});
+
+describe("failures before and after a change is sent", () => {
+  it("a transient error while re-checking at approval time is a clean failure, and the change can be requested again", async () => {
+    const r = await request("pause_campaign", { campaign_id: "16" });
+    failReads = true; // Google is briefly unavailable when the approver clicks approve
+    const done = await approve(r.approval!.approval_id);
+    expect(done.status).toBe("failed");
+    expect(done.result).toMatchObject({ error: { code: "transient" } });
+    expect(mutateCalls).toHaveLength(0); // nothing reached Google
+    failReads = false;
+    const again = await request("pause_campaign", { campaign_id: "16" });
+    expect(again.approval?.status).toBe("pending_approval"); // not blocked by an unknown outcome
+    expect((await approve(again.approval!.approval_id)).status).toBe("executed");
+    expect(state.campaign["16"]).toBe("PAUSED");
+  });
+
+  it("a server error AFTER the change was sent stays an unknown outcome, and a blind retry is blocked", async () => {
+    const r = await request("pause_campaign", { campaign_id: "17" });
+    mutateFails = true;
+    const done = await approve(r.approval!.approval_id);
+    expect(done.status).toBe("unknown_outcome");
+    expect(mutateCalls).toHaveLength(1); // sent exactly once, never retried automatically
+    mutateFails = false;
+    const retry = await request("pause_campaign", { campaign_id: "17" });
+    expect(retry.ok).toBe(false);
+    expect(retry.error?.code).toBe("conflict");
+    expect(retry.error?.message).toContain("unconfirmed");
   });
 });

@@ -19,7 +19,7 @@ export class ToolError extends Error {
   constructor(
     public code: ErrorCode,
     message: string,
-    public opts: { retryable?: boolean; retryAfterSeconds?: number; details?: Record<string, unknown> } = {},
+    public opts: { retryable?: boolean; retryAfterSeconds?: number; details?: Record<string, unknown>; definite?: boolean } = {},
   ) {
     super(message);
     this.name = "ToolError";

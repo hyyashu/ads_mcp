@@ -73,6 +73,15 @@ describe("decisions", () => {
     expect(results.filter((r) => r === "ok")).toHaveLength(1);
   });
 
+  it("an error marked definite (nothing was sent) is a failure; the same error unmarked is an unknown outcome", async () => {
+    const a = await svc.request(base());
+    const failed = await svc.decide({ tenantId: a.row.tenantId, approvalId: a.row.id, decider: asAdmin(), decision: "approve", execute: async () => { throw new ToolError("transient", "down", { definite: true }); } });
+    expect(failed.status).toBe("failed");
+    const b = await svc.request({ ...base(), args: { campaign_id: "2" } });
+    const unknown = await svc.decide({ tenantId: b.row.tenantId, approvalId: b.row.id, decider: asAdmin(), decision: "approve", execute: async () => { throw new ToolError("transient", "down"); } });
+    expect(unknown.status).toBe("unknown_outcome");
+  });
+
   it("reject never executes", async () => {
     const { row } = await svc.request(base());
     let runs = 0;

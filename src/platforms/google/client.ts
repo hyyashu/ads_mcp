@@ -26,6 +26,12 @@ export class GoogleAdsClient {
     return this.o.customerId;
   }
 
+  private sent = 0;
+  /** How many changes this client has attempted to send (validate-only requests do not count). */
+  get mutationsSent(): number {
+    return this.sent;
+  }
+
   private async base() {
     return { accessToken: await this.o.getAccessToken(), loginCustomerId: this.o.loginCustomerId, signal: this.o.signal };
   }
@@ -56,6 +62,7 @@ export class GoogleAdsClient {
   async mutate(service: string, operations: Row[], opts: { validateOnly?: boolean; partialFailure?: boolean } = {}): Promise<{ results: Row[]; partialFailureError?: unknown }> {
     if (!/^[a-zA-Z]+$/.test(service)) throw new ToolError("internal", "invalid mutate service");
     if (operations.length === 0 || operations.length > 5000) throw new ToolError("invalid_argument", "a mutate needs between 1 and 5000 operations");
+    if (!opts.validateOnly) this.sent++; // counted before sending: a failure after this point may have changed something
     const res = await this.o.http.call<{ results?: Row[]; partialFailureError?: unknown }>({
       ...(await this.base()),
       path: `customers/${this.o.customerId}/${service}:mutate`,
@@ -71,6 +78,7 @@ export class GoogleAdsClient {
    */
   async mutateBatch(mutateOperations: Row[], opts: { validateOnly?: boolean } = {}): Promise<{ mutateOperationResponses: Row[] }> {
     if (mutateOperations.length === 0 || mutateOperations.length > 10_000) throw new ToolError("invalid_argument", "a batch needs between 1 and 10000 operations");
+    if (!opts.validateOnly) this.sent++;
     const res = await this.o.http.call<{ mutateOperationResponses?: Row[] }>({
       ...(await this.base()),
       path: `customers/${this.o.customerId}/googleAds:mutate`,

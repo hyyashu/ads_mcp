@@ -1,3 +1,5 @@
+import { ToolError } from "../../mcp/errors";
+
 /**
  * GAQL query builder. User-controlled values can only enter a query through the `lit` helpers, which validate or
  * escape them, so a value can never change the structure of a query (no GAQL injection). Field and resource names
@@ -6,7 +8,17 @@
 const FIELD = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
 const RESOURCE = /^[a-z][a-z0-9_]*$/;
 
-export class GaqlError extends Error {}
+/**
+ * A value that cannot go into a query. For `lit.*` values (which come from callers) that is the caller's mistake, so the default
+ * is invalid_argument. Query-structure errors (a bad field or resource name written in our own code) are bugs on our side and
+ * use code "internal".
+ */
+export class GaqlError extends ToolError {
+  constructor(message: string, code: "invalid_argument" | "internal" = "invalid_argument") {
+    super(code, message);
+    this.name = "GaqlError";
+  }
+}
 
 /** YYYY-MM-DD that is a real calendar date. Date.parse alone accepts impossible dates such as 2027-02-30. */
 export function isRealDate(value: string): boolean {
@@ -62,12 +74,12 @@ export class Gaql {
   private max?: number;
 
   select(...fields: string[]): this {
-    for (const f of fields) if (!FIELD.test(f)) throw new GaqlError(`invalid field name: ${f}`);
+    for (const f of fields) if (!FIELD.test(f)) throw new GaqlError(`invalid field name: ${f}`, "internal");
     this.fields.push(...fields);
     return this;
   }
   from(resource: string): this {
-    if (!RESOURCE.test(resource)) throw new GaqlError(`invalid resource name: ${resource}`);
+    if (!RESOURCE.test(resource)) throw new GaqlError(`invalid resource name: ${resource}`, "internal");
     this.resource = resource;
     return this;
   }
@@ -77,17 +89,17 @@ export class Gaql {
     return this;
   }
   orderBy(field: string, dir: "ASC" | "DESC" = "ASC"): this {
-    if (!FIELD.test(field)) throw new GaqlError(`invalid field name: ${field}`);
+    if (!FIELD.test(field)) throw new GaqlError(`invalid field name: ${field}`, "internal");
     this.order.push(`${field} ${dir}`);
     return this;
   }
   limit(n: number): this {
-    if (!Number.isSafeInteger(n) || n < 1 || n > 10_000) throw new GaqlError("limit must be 1 to 10000");
+    if (!Number.isSafeInteger(n) || n < 1 || n > 10_000) throw new GaqlError("limit must be 1 to 10000", "internal");
     this.max = n;
     return this;
   }
   toString(): string {
-    if (!this.resource || this.fields.length === 0) throw new GaqlError("a query needs fields and a resource");
+    if (!this.resource || this.fields.length === 0) throw new GaqlError("a query needs fields and a resource", "internal");
     return [`SELECT ${this.fields.join(", ")}`, `FROM ${this.resource}`, this.conds.length ? `WHERE ${this.conds.join(" AND ")}` : "", this.order.length ? `ORDER BY ${this.order.join(", ")}` : "", this.max ? `LIMIT ${this.max}` : ""].filter(Boolean).join(" ");
   }
 }

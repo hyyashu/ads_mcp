@@ -99,6 +99,9 @@ describe("GAQL builder", () => {
 
   it("rejects malformed field and resource names and out-of-range limits", () => {
     expect(() => new Gaql().select("campaign.id; DROP")).toThrow(GaqlError);
+    // Values from callers are invalid_argument; mistakes in our own query structure are internal.
+    expect(() => lit.id("abc")).toThrow(expect.objectContaining({ code: "invalid_argument" }));
+    expect(() => new Gaql().select("campaign.id; DROP")).toThrow(expect.objectContaining({ code: "internal" }));
     expect(() => new Gaql().select("campaign")).toThrow(GaqlError);
     expect(() => new Gaql().from("campaign WHERE 1=1")).toThrow(GaqlError);
     expect(() => new Gaql().orderBy("a b.c")).toThrow(GaqlError);
@@ -236,7 +239,11 @@ describe("get_campaign_performance", () => {
       expect((await run("get_campaign_performance", args)).error?.code, JSON.stringify(args)).toBe("invalid_argument");
     }
     const reversed = await run("get_campaign_performance", { start_date: "2026-02-01", end_date: "2026-01-01" });
-    expect(reversed.ok).toBe(false);
+    expect(reversed.error?.code).toBe("invalid_argument"); // the caller's mistake, not an internal error
+    expect(reversed.error?.message).toContain("start_date must not be after end_date");
+    for (const impossible of [{ start_date: "2026-02-30", end_date: "2026-03-05" }, { start_date: "2026-01-01", end_date: "2026-04-31" }]) {
+      expect((await run("get_campaign_performance", impossible)).error?.code, JSON.stringify(impossible)).toBe("invalid_argument");
+    }
     expect(seen).toHaveLength(0);
   });
 });
