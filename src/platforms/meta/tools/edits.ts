@@ -4,7 +4,7 @@ import { type Change, moneyChange, statusChange, textChange } from "../../../pol
 import { canonicalJson } from "../../../security/canonical";
 import { type MetaAdsClient, type MetaRow, currencyOffset, fromMinor, toMinor } from "../client";
 import { EDGE_CAP, accountId, metaId, metaWrite, s } from "./common";
-import { metaStateWrite } from "./write-kit";
+import { metaStateWrite, stateDef } from "./write-kit";
 
 /*
  * Meta edits through approval, checked against the Marketing API v27 reference on 2026-11-05:
@@ -79,8 +79,7 @@ async function readCampaign(m: MetaAdsClient, id: string) {
 }
 type CampaignState = Awaited<ReturnType<typeof readCampaign>>;
 
-const campaignInput = z
-  .object({
+export const campaignFields = {
     account_id: accountId,
     campaign_id: metaId,
     name: nameInput.optional(),
@@ -89,9 +88,17 @@ const campaignInput = z
     lifetime_budget: amount.optional().describe("Only for a campaign that already uses a lifetime campaign budget."),
     spend_cap: z.union([amount, z.literal("remove")]).optional().describe('New spend cap in the account currency, or "remove" to remove the cap.'),
     bid_strategy: z.enum(CAMPAIGN_STRATEGIES).optional().describe("Only LOWEST_COST_WITHOUT_CAP, and only on a campaign budget; other switches need per-ad-set bids."),
-  })
-  .refine((v) => !(v.daily_budget !== undefined && v.lifetime_budget !== undefined), "give daily_budget or lifetime_budget, not both")
-  .refine((v) => [v.name, v.status, v.daily_budget, v.lifetime_budget, v.spend_cap, v.bid_strategy].some((x) => x !== undefined), "give at least one field to change");
+};
+type Fields = Record<string, unknown>;
+const oneBudget = (v: Fields) => !(v.daily_budget !== undefined && v.lifetime_budget !== undefined);
+const someField = (keys: string[]) => (v: Fields) => keys.some((k) => v[k] !== undefined);
+/** Builds an edit input from a subset of the fields above, with the shared checks. */
+export const editInput = <T extends z.ZodRawShape>(shape: T) =>
+  z
+    .object(shape)
+    .refine(oneBudget, "give daily_budget or lifetime_budget, not both")
+    .refine(someField(Object.keys(shape).filter((k) => !k.endsWith("_id"))), "give at least one field to change");
+const campaignInput = editInput(campaignFields);
 type CampaignIn = z.infer<typeof campaignInput>;
 
 function campaignPlan(a: CampaignIn, st: CampaignState) {
@@ -138,7 +145,7 @@ function campaignPlan(a: CampaignIn, st: CampaignState) {
 
 const summarize = (label: string, name: string | null, id: string, changes: Change[]) => `Meta ${label} "${name ?? id}" (${id}): ${changes.map((c) => `${c.field} ${c.before ?? "none"} -> ${c.after ?? "none"}`).join("; ")}`;
 
-export const updateMetaCampaign = metaStateWrite({
+export const campaignEditDef = stateDef({
   name: "update_meta_campaign",
   title: "Update Meta campaign",
   risk: "high_impact",
@@ -168,6 +175,7 @@ export const updateMetaCampaign = metaStateWrite({
     return { campaign_id: a.campaign_id, name: after.name, status: after.status, daily_budget: fromMinor(after.daily_budget, after.currency), lifetime_budget: fromMinor(after.lifetime_budget, after.currency), spend_cap: fromMinor(after.spend_cap, after.currency), bid_strategy: after.bid_strategy };
   },
 });
+export const updateMetaCampaign = metaStateWrite(campaignEditDef);
 
 // --------------------------------------------------------------------------------------------------- update_meta_ad_set
 const ADSET_STRATEGIES = ["LOWEST_COST_WITHOUT_CAP", "LOWEST_COST_WITH_BID_CAP", "COST_CAP"] as const;
@@ -205,8 +213,7 @@ const isoTime = z
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?([+-]\d{2}:?\d{2}|Z)$/, "an ISO 8601 date-time with a time zone, e.g. 2026-12-31T23:59:00-05:00")
   .refine((v) => epoch(v) !== null, "not a real date-time");
 
-const adSetInput = z
-  .object({
+export const adSetFields = {
     account_id: accountId,
     ad_set_id: metaId,
     name: nameInput.optional(),
@@ -216,9 +223,8 @@ const adSetInput = z
     bid_amount: amount.optional().describe("Bid cap or cost cap, in the account currency. Only with LOWEST_COST_WITH_BID_CAP or COST_CAP."),
     bid_strategy: z.enum(ADSET_STRATEGIES).optional().describe("Not on ad sets under a campaign budget (set it on the campaign). Cap strategies need a bid_amount."),
     end_time: isoTime.optional().describe("New end, in the future and after the start. A later end needs a second approver; an earlier one does not."),
-  })
-  .refine((v) => !(v.daily_budget !== undefined && v.lifetime_budget !== undefined), "give daily_budget or lifetime_budget, not both")
-  .refine((v) => [v.name, v.status, v.daily_budget, v.lifetime_budget, v.bid_amount, v.bid_strategy, v.end_time].some((x) => x !== undefined), "give at least one field to change");
+};
+const adSetInput = editInput(adSetFields);
 type AdSetIn = z.infer<typeof adSetInput>;
 
 function adSetPlan(a: AdSetIn, st: AdSetState, now: number) {
@@ -265,7 +271,7 @@ function adSetPlan(a: AdSetIn, st: AdSetState, now: number) {
   return { params, changes, summary: summarize("ad set", st.name, a.ad_set_id, changes) };
 }
 
-export const updateMetaAdSet = metaStateWrite({
+export const adSetEditDef = stateDef({
   name: "update_meta_ad_set",
   title: "Update Meta ad set",
   risk: "high_impact",
@@ -296,6 +302,7 @@ export const updateMetaAdSet = metaStateWrite({
     return { ad_set_id: a.ad_set_id, name: after.name, status: after.status, daily_budget: fromMinor(after.daily_budget, after.currency), lifetime_budget: fromMinor(after.lifetime_budget, after.currency), bid_amount: fromMinor(after.bid_amount, after.currency), bid_strategy: after.bid_strategy, end_time: after.end_time === null ? null : new Date(after.end_time * 1000).toISOString() };
   },
 });
+export const updateMetaAdSet = metaStateWrite(adSetEditDef);
 
 // ------------------------------------------------------------------------------------------------------- update_meta_ad
 async function readAd(m: MetaAdsClient, id: string) {
@@ -303,13 +310,14 @@ async function readAd(m: MetaAdsClient, id: string) {
   return r ? { exists: true as const, name: s(r, "name"), status: s(r, "status") } : { exists: false as const };
 }
 
-export const updateMetaAd = metaStateWrite({
+export const adFields = { account_id: accountId, ad_id: metaId, name: nameInput.optional(), status: statusInput.optional() };
+export const adEditDef = stateDef({
   name: "update_meta_ad",
   title: "Update Meta ad",
   risk: "high_impact",
   description:
     "Renames one Meta ad or changes its status (ACTIVE or PAUSED) after human approval. Activating needs a second approver; pausing and renaming do not. The creative (image, video, text, link) cannot be edited in place: Meta requires a new creative and a new ad, which the creation tools handle. Deleted or archived ads are refused. Confirmed by re-reading the ad; never retried automatically.",
-  input: z.object({ account_id: accountId, ad_id: metaId, name: nameInput.optional(), status: statusInput.optional() }).refine((v) => v.name !== undefined || v.status !== undefined, "give name and/or status"),
+  input: editInput(adFields),
   output: z.object({ ad_id: z.string(), name: z.string().nullable(), status: z.string().nullable() }),
   read: (a, m) => readAd(m, a.ad_id),
   build: (a, st) => {
@@ -326,6 +334,7 @@ export const updateMetaAd = metaStateWrite({
   landed: (a, _b, after) => after.exists && (a.name === undefined || after.name === a.name) && (a.status === undefined || after.status === a.status),
   result: (a, after) => ({ ad_id: a.ad_id, name: after.exists ? after.name : null, status: after.exists ? after.status : null }),
 });
+export const updateMetaAd = metaStateWrite(adEditDef);
 
 // ----------------------------------------------------------------------------------------------- duplicate_meta_campaign
 /** Most ads a synchronous deep copy may include (Campaign copies reference). */
