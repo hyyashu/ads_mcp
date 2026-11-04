@@ -37,8 +37,9 @@ describe("implementation plan (inventory/mapping.ts)", () => {
 
   it("flags tools that cannot be assumed feasible instead of hiding them", () => {
     const flagged = inv.map((t) => ({ n: t.name, f: mapTool(t).feasibility })).filter((x) => x.f === "limitation_candidate" || x.f === "needs_decision").map((x) => x.n);
-    // Business-profile tools are decided (read/update supported Google Ads assets). The rest depend on platform support that must be verified.
-    expect(flagged.sort()).toEqual(["get_benchmark_context", "get_meta_audience_insights", "validate_video"]);
+    // Business-profile tools are decided (read/update supported Google Ads assets). get_meta_audience_insights is resolved: it
+    // implements the documented capability only (delivery breakdowns). The rest depend on platform support that must be verified.
+    expect(flagged.sort()).toEqual(["get_benchmark_context", "validate_video"]);
   });
 
   it("creation of campaigns, resuming spend and budget/bid changes are high impact", () => {

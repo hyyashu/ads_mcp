@@ -91,6 +91,11 @@ export class MetaTokenProvider {
     }
     const { accessToken } = this.o.cipher.decrypt<{ accessToken: string }>(conn.enc, credentialAad(tenantId, connectionId));
     // appsecret_proof ties each call to our app secret, so a leaked token alone is not enough to call the API.
-    return { accessToken, appSecretProof: createHmac("sha256", this.o.appSecret).update(accessToken).digest("hex") };
+    return { accessToken, appSecretProof: this.proofFor(accessToken) };
+  }
+
+  /** appsecret_proof for any token this app holds (the user token, or a Page token derived from it). */
+  proofFor(token: string): string {
+    return createHmac("sha256", this.o.appSecret).update(token).digest("hex");
   }
 }

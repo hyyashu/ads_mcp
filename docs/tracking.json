@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 180,
+    "implemented": 200,
     "external_limitation": 1,
-    "pending": 51
+    "pending": 31
   },
   "rows": [
     {
@@ -2985,17 +2985,17 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "audiences_targeting",
-      "api": "GET /{act}/customaudiences (size, delivery status) + insights breakdowns (age, gender)",
+      "api": "GET /{act}/insights with audience breakdowns, fixed-rule flags (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_meta_catalog_performance",
@@ -3019,34 +3019,34 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "analysis_and_helpers",
-      "api": "GET /{act}/insights, deterministic thresholds",
+      "api": "GET /{act}/insights (level=campaign|adset|ad), fixed rule spend >= min_spend and conversions = 0 (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "browse_meta_targeting",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "audiences_targeting",
-      "api": "GET /{act}/targetingbrowse | /{act}/targetingsearch | /search?type=adTargetingCategory",
+      "api": "GET /{act}/targetingbrowse | /{act}/targetingsearch (Detailed Targeting, v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "compare_meta_catalog_product_sets",
@@ -3194,17 +3194,17 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "creatives",
-      "api": "GET /{act}/insights level=ad (frequency, CTR trend over time)",
+      "api": "GET /{act}/insights level=ad, two equal time_range windows, fixed-rule frequency/CTR/CPM signals (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "diagnose_meta_catalog_funnel",
@@ -3228,17 +3228,18 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "analysis_and_helpers",
-      "api": "Aggregates pages, Instagram accounts, pixels, catalogs, custom audiences via their list endpoints",
+      "api": "GET /{act}/adimages + GET /{act}/advideos (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "The image and video library, for reuse in creatives (batch 4). Pages, Instagram accounts, pixels and audiences have their own list tools.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "duplicate_meta_campaign",
@@ -3263,34 +3264,34 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "analysis_and_helpers",
-      "api": "GET /{act}/insights time series + breakdowns, deterministic period comparison",
+      "api": "GET /{act}/insights for two time_range periods at campaign|adset|ad level; additive delta decomposition (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_ad_creatives",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "creatives",
-      "api": "GET /{ad_id}/adcreatives or /{act}/adcreatives",
+      "api": "GET /{ad_id}/adcreatives (ad ownership checked) or /{act}/adcreatives (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_adset_performance",
@@ -3383,18 +3384,18 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "audiences_targeting",
-      "api": "No dedicated public Audience Insights API confirmed. Candidates: /{act}/reachestimate, /{act}/delivery_estimate, /{act}/targetingsuggestions, insights breakdowns",
+      "api": "GET /{act}/insights or /{campaign_id}/insights with breakdowns age, gender, age+gender, country, region, publisher_platform, publisher_platform+platform_position, device_platform (v27.0)",
       "risk": "read",
-      "feasibility": "limitation_candidate",
+      "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "notes": "DECISION (owner, 2026-11-02): implement only officially supported capabilities; return explicit unsupported errors for the rest and document the limitation. Which endpoints are supported must be verified against current Marketing API docs.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "DECISION (owner, 2026-11-02) applied: only the officially supported capability (delivery breakdowns of the account's own ads). Meta has no public audience-research API; region returns no off-Meta conversions.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_campaign_details",
@@ -3436,37 +3437,39 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "pixels_leads",
-      "api": "GET /{form_id}/leads",
+      "api": "GET /{form_id}/leads (fields created_time,id,ad_id,form_id,field_data; filtering time_created) with a Page access token; Page on /{act}/promote_pages, form on /{page_id}/leadgen_forms (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
+        "ads_read",
         "leads_retrieval",
         "pages_show_list",
         "pages_read_engagement"
       ],
       "accountScope": "required",
-      "notes": "Returns personal data (names, emails, phones). Needs a Page access token. Never stored; excluded from audit; consider masking by default.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Personal data: only requested fields returned, at most 200 leads per call, never stored or logged.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_pixel_stats",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "pixels_leads",
-      "api": "GET /{pixel_id}/stats",
+      "api": "GET /{pixel_id}/stats aggregation=event_total_counts (pixel must be on /{act}/adspixels) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Meta serves pixel stats for up to seven days back. The AdsPixelStatsResult shape is not spelled out in the reference; it is parsed defensively.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_product_performance",
@@ -3559,88 +3562,92 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "audiences_targeting",
-      "api": "GET /{act}/customaudiences",
+      "api": "GET /{act}/customaudiences (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_instagram_accounts",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "assets",
-      "api": "GET /{act}/instagram_accounts",
+      "api": "GET /{act}/instagram_accounts (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read",
-        "instagram_basic"
+        "instagram_basic",
+        "pages_read_engagement"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_lead_forms",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "pixels_leads",
-      "api": "GET /{page_id}/leadgen_forms",
+      "api": "GET /{page_id}/leadgen_forms with a Page access token; Page must be on /{act}/promote_pages (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
+        "ads_read",
         "leads_retrieval",
-        "pages_show_list"
+        "pages_show_list",
+        "pages_read_engagement"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_pages",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "assets",
-      "api": "GET /me/accounts or /{act}/promote_pages",
+      "api": "GET /{act}/promote_pages (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
-        "pages_show_list",
-        "business_management"
+        "ads_read",
+        "pages_show_list"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Creating ads for a Page later also needs pages_manage_ads (promote_pages reference).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_pixels",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "pixels_leads",
-      "api": "GET /{act}/adspixels",
+      "api": "GET /{act}/adspixels (last_fired_time, is_unavailable, data_use_setting) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_product_sets",
@@ -3698,34 +3705,34 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "analysis_and_helpers",
-      "api": "GET /{act}/insights + campaign/ad set budgets, deterministic reallocation math",
+      "api": "GET /{act}/insights + GET /{act}/campaigns|adsets budgets; share-of-spend vs share-of-conversions rules, no amounts (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "optimize_meta_placements",
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "analysis_and_helpers",
-      "api": "GET /{act}/insights breakdowns=publisher_platform,platform_position",
+      "api": "GET /{act}/insights breakdowns=publisher_platform,platform_position, fixed-rule flags (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "pause_meta_campaign",
@@ -3766,32 +3773,35 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "audiences_targeting",
-      "api": "GET /{act}/targetingbrowse | /{act}/targetingsearch | /search?type=adTargetingCategory",
+      "api": "GET /{act}/targetingbrowse | /{act}/targetingsearch (Detailed Targeting, v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "select_meta_campaign_type",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "campaigns",
-      "api": "Deterministic decision logic over documented objectives (ODAX)",
+      "api": "Static ODAX objective table (Outcome-Driven Ad Experiences) + GET /{act}/campaigns, /adsets, /adspixels for the combinations the account already uses (v27.0)",
       "risk": "read",
-      "feasibility": "internal",
-      "platformPermissions": [],
-      "accountScope": "none",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "notes": "Meta's docs publish no objective -> optimization_goal table, so none is invented: the account's own accepted combinations are listed.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_meta_ad",
@@ -3902,18 +3912,18 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "analysis_and_helpers",
-      "api": "Fetch + validate asset URLs against Meta creative specs (format, dimensions, ratio, size)",
+      "api": "Checks against Meta Media Requirements (Instagram Ads API reference); images via the SSRF-safe fetcher or GET /{act}/adimages, videos via GET /{act}/advideos (v27.0)",
       "risk": "read",
       "feasibility": "internal",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "notes": "SSRF-hardened fetch required. Validation only: uploads belong to the creation tools.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Validation only: nothing is uploaded. Facebook-only placements have no documented hard limits beyond 600px width; video duration must be supplied (not a documented advideos field).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "validate_catalog_readiness",
