@@ -5,6 +5,7 @@ import type { MetaGraphHttp } from "../meta/http";
 import type { MetaServices } from "../meta/services";
 import { ToolError } from "../../mcp/errors";
 import { GoogleAdsClient } from "./client";
+import { type ImageFetcher, fetchImageSafely } from "./media";
 import type { GoogleAdsHttp } from "./http";
 
 /** What a Google tool handler receives as `ctx.services`. */
@@ -12,12 +13,15 @@ export interface GoogleServices {
   ads: GoogleAdsClient;
   /** Changes attempted so far through this account's client. Zero means nothing has reached Google Ads. */
   mutationsSent(): number;
+  /** Downloads an image for an image asset (SSRF-safe in production; injectable for tests). */
+  fetchImage: ImageFetcher;
 }
 
 export interface ServiceFactoryDeps {
   db: Db;
   google?: { tokens: GoogleTokenProvider; http: GoogleAdsHttp };
   meta?: { tokens: MetaTokenProvider; http: MetaGraphHttp };
+  fetchImage?: ImageFetcher;
 }
 
 /** Builds platform clients for one authorized account (the platform adapter seam: one branch per platform). Handlers never see tokens: they only get these clients. */
@@ -33,7 +37,7 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         getAccessToken: () => tokens.getAccessToken(o.tenantId, o.account.connectionId),
         signal: o.signal, // cancellation and deadlines reach the upstream requests
       });
-      return { ads, mutationsSent: () => ads.mutationsSent } satisfies GoogleServices;
+      return { ads, mutationsSent: () => ads.mutationsSent, fetchImage: d.fetchImage ?? fetchImageSafely } satisfies GoogleServices;
     }
     if (o.account.platform === "meta_ads") {
       if (!d.meta) throw new ToolError("unsupported", "Meta Ads is not configured on this server.");

@@ -75,11 +75,11 @@ export interface SafeFetchOptions {
 }
 
 /**
- * GET a small JSON document from an untrusted URL. Defences: https only, public DNS names only, every resolved
- * address checked at connect time (so DNS rebinding cannot swap in a private address), no redirects, a hard size
- * and time limit, and JSON content type required.
+ * GET a bounded document from an untrusted URL. Defences: https only, public DNS names only, every resolved address
+ * checked at connect time (so DNS rebinding cannot swap in a private address), no redirects, a hard size and time limit,
+ * and an allowed content type.
  */
-export async function safeFetchJson(raw: string, opts: SafeFetchOptions = {}): Promise<unknown> {
+export async function safeFetchBytes(raw: string, opts: SafeFetchOptions & { accept: string; contentTypes: string[]; userAgent?: string }): Promise<{ bytes: Buffer; contentType: string }> {
   const url = assertSafeHttpsUrl(raw);
   const maxBytes = opts.maxBytes ?? 64 * 1024;
   const resolve = opts.resolve ?? (async (h: string) => (await dnsLookup(h, { all: true })).map((a) => a.address));
@@ -88,7 +88,7 @@ export async function safeFetchJson(raw: string, opts: SafeFetchOptions = {}): P
       url,
       {
         method: "GET",
-        headers: { accept: "application/json", "user-agent": "ads-mcp-client-metadata-fetcher" },
+        headers: { accept: opts.accept, "user-agent": opts.userAgent ?? "ads-mcp-fetcher" },
         timeout: opts.timeoutMs ?? 5000,
         // Validate the address actually used for the connection.
         lookup: safeLookup(resolve) as never,
@@ -98,9 +98,10 @@ export async function safeFetchJson(raw: string, opts: SafeFetchOptions = {}): P
           res.resume();
           return reject(new UnsafeUrlError(`unexpected status ${res.statusCode} (redirects are not followed)`));
         }
-        if (!String(res.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+        const type = String(res.headers["content-type"] ?? "").toLowerCase().split(";")[0]!.trim();
+        if (!opts.contentTypes.includes(type)) {
           res.resume();
-          return reject(new UnsafeUrlError("content type must be application/json"));
+          return reject(new UnsafeUrlError(`content type must be one of ${opts.contentTypes.join(", ")}`));
         }
         const chunks: Buffer[] = [];
         let size = 0;
@@ -112,17 +113,21 @@ export async function safeFetchJson(raw: string, opts: SafeFetchOptions = {}): P
           }
           chunks.push(c);
         });
-        res.on("end", () => {
-          try {
-            resolve_(JSON.parse(Buffer.concat(chunks).toString("utf8")));
-          } catch {
-            reject(new UnsafeUrlError("invalid JSON"));
-          }
-        });
+        res.on("end", () => resolve_({ bytes: Buffer.concat(chunks), contentType: type }));
       },
     );
     req.on("timeout", () => req.destroy(new UnsafeUrlError("timed out")));
     req.on("error", reject);
     req.end();
   });
+}
+
+/** GET a small JSON document from an untrusted URL (see safeFetchBytes for the defences). */
+export async function safeFetchJson(raw: string, opts: SafeFetchOptions = {}): Promise<unknown> {
+  const { bytes } = await safeFetchBytes(raw, { ...opts, accept: "application/json", contentTypes: ["application/json"], userAgent: "ads-mcp-client-metadata-fetcher" });
+  try {
+    return JSON.parse(bytes.toString("utf8"));
+  } catch {
+    throw new UnsafeUrlError("invalid JSON");
+  }
 }
