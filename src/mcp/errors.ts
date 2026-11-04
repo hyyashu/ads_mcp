@@ -11,6 +11,8 @@ export const ERROR_CODES = [
   "conflict", // e.g. state changed since the request was planned
   "unsupported", // the official API cannot do this
   "unknown_outcome", // a mutation was sent but its result is not confirmed
+  "deadline_exceeded", // the call ran past its time limit; for reads, safe to retry
+  "cancelled", // the client cancelled the call
   "internal",
 ] as const;
 export type ErrorCode = (typeof ERROR_CODES)[number];
@@ -25,7 +27,7 @@ export class ToolError extends Error {
     this.name = "ToolError";
   }
   get retryable() {
-    return this.opts.retryable ?? (this.code === "transient" || this.code === "quota_exceeded");
+    return this.opts.retryable ?? (this.code === "transient" || this.code === "quota_exceeded" || this.code === "deadline_exceeded");
   }
 }
 

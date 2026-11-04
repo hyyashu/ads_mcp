@@ -1,4 +1,6 @@
+import { randomUUID } from "node:crypto";
 import { type IncomingMessage, type Server, type ServerResponse, createServer } from "node:http";
+import { logger } from "../obs/logger";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import type { Authenticator } from "../auth/context";
 import type { AppConfig } from "../config";
@@ -41,6 +43,10 @@ export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts:
   const challenge = (scope = "ads:read") => `Bearer realm="ads-mcp", resource_metadata="${opts.config.issuer}/.well-known/oauth-protected-resource", scope="${scope}"`;
 
   return createServer(async (req, res) => {
+    // Correlation id: accept a well-formed inbound one (from a proxy), otherwise mint one. Returned on every response.
+    const inbound = req.headers["x-request-id"];
+    const requestId = typeof inbound === "string" && /^[A-Za-z0-9._-]{8,64}$/.test(inbound) ? inbound : randomUUID();
+    res.setHeader("x-request-id", requestId);
     try {
       const url = new URL(req.url ?? "/", "http://localhost");
       if (url.pathname === "/healthz") return json(res, 200, { ok: true });
@@ -69,7 +75,7 @@ export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts:
       }
       for (const [k, v] of Object.entries(cors)) res.setHeader(k, v);
       const body = await readBody(req, maxBody);
-      const server = createMcpServer(deps, auth);
+      const server = createMcpServer(deps, auth, requestId);
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
       res.on("close", () => {
         void transport.close();
@@ -80,7 +86,7 @@ export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts:
     } catch (e) {
       if (e instanceof ToolError) return json(res, 400, { error: e.message });
       if (e instanceof SyntaxError) return json(res, 400, { error: "invalid JSON" });
-      console.error("[http] unhandled:", e instanceof Error ? e.message : e);
+      logger.error("http.unhandled", { requestId, error: e });
       if (!res.headersSent) json(res, 500, { error: "internal error" });
     }
   });

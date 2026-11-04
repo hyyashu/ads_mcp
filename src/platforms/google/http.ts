@@ -15,6 +15,8 @@ export interface GoogleHttpOptions {
   fetch?: FetchLike;
   timeoutMs?: number;
   sleep?: (ms: number) => Promise<void>;
+  /** Injectable for tests. Full jitter: each retry waits a random time up to the exponential cap. */
+  random?: () => number;
 }
 
 export interface GoogleCall {
@@ -64,11 +66,17 @@ export function mapGoogleError(status: number, body: GoogleErrorBody, mutation: 
 export class GoogleAdsHttp {
   private f: FetchLike;
   private sleep: (ms: number) => Promise<void>;
+  private random: () => number;
+  /** Full-jitter backoff: random in [0, 250ms * 2^(attempt-1)], so many clients retrying at once do not move in lockstep. */
+  private backoff(attempt: number) {
+    return Math.floor(this.random() * 250 * 2 ** (attempt - 1));
+  }
 
   constructor(private o: GoogleHttpOptions) {
     if (!/^v\d+$/.test(o.apiVersion)) throw new Error("GOOGLE_ADS_API_VERSION must look like v23 and be set explicitly");
     this.f = o.fetch ?? fetch;
     this.sleep = o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
+    this.random = o.random ?? Math.random;
   }
 
   get apiVersion() {
@@ -91,10 +99,12 @@ export class GoogleAdsHttp {
           signal: c.signal ?? AbortSignal.timeout(this.o.timeoutMs ?? 30_000),
         });
       } catch {
+        // Cancelled or past the deadline: a read stops here (no retry); a mutation's outcome is still unknown below.
+        if (c.idempotent && c.signal?.aborted) throw new ToolError("deadline_exceeded", "The Google Ads request was cancelled or ran past its time limit.");
         // No response at all: for a mutation we cannot know whether it was applied.
         if (!c.idempotent) throw new ToolError("unknown_outcome", "The connection failed while applying a change. It may or may not have been applied.");
         if (i < attempts) {
-          await this.sleep(250 * 2 ** (i - 1));
+          await this.sleep(this.backoff(i));
           continue;
         }
         throw new ToolError("transient", "Could not reach the Google Ads API.", { retryable: true });
@@ -109,7 +119,7 @@ export class GoogleAdsHttp {
       if (res.ok) return json as T;
       const err = mapGoogleError(res.status, (Array.isArray(json) ? json[0] : json) as GoogleErrorBody ?? {}, !c.idempotent);
       if (err.retryable && c.idempotent && i < attempts && err.code === "transient") {
-        await this.sleep(250 * 2 ** (i - 1));
+        await this.sleep(this.backoff(i));
         continue;
       }
       throw err;

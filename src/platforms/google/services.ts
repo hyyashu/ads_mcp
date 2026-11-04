@@ -18,7 +18,7 @@ export interface ServiceFactoryDeps {
 
 /** Builds platform clients for one authorized account. Handlers never see tokens: they only get these clients. */
 export function createServicesFactory(d: ServiceFactoryDeps) {
-  return async (o: { tenantId: string; account: { platform: string; externalId: string; loginCustomerId: string | null; connectionId: string } }): Promise<unknown> => {
+  return async (o: { tenantId: string; account: { platform: string; externalId: string; loginCustomerId: string | null; connectionId: string }; signal?: AbortSignal }): Promise<unknown> => {
     if (o.account.platform === "google_ads") {
       if (!d.google) throw new ToolError("unsupported", "Google Ads is not configured on this server.");
       const { tokens, http } = d.google;
@@ -27,6 +27,7 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         customerId: o.account.externalId.replace(/-/g, ""),
         loginCustomerId: o.account.loginCustomerId?.replace(/-/g, "") ?? null,
         getAccessToken: () => tokens.getAccessToken(o.tenantId, o.account.connectionId),
+        signal: o.signal, // cancellation and deadlines reach the upstream requests
       });
       return { ads, mutationsSent: () => ads.mutationsSent } satisfies GoogleServices;
     }

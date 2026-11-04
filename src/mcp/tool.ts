@@ -47,6 +47,8 @@ interface Base<I extends z.ZodObject, O extends z.ZodType, S> {
   output: O;
   permissions: Permissions;
   accountScope?: "required" | "none";
+  /** Deadline for one call in ms. Defaults: 30s for reads and planning, 60s for executing an approved change. */
+  timeoutMs?: number;
   _services?: S;
 }
 

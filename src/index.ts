@@ -18,6 +18,8 @@ import { CredentialCipher, keyringFromEnv } from "./security/crypto";
 import { RateLimiter, type Limiter } from "./security/rate-limit";
 import { DbRateLimiter } from "./security/rate-limit-db";
 import { WebRoutes } from "./web/routes";
+import { logger } from "./obs/logger";
+import { pruneExecutions } from "./obs/executions";
 
 function main() {
   const config = loadConfig();
@@ -31,10 +33,10 @@ function main() {
   const limitations = JSON.parse(readFileSync(fileURLToPath(new URL("../inventory/limitations.json", import.meta.url)), "utf8")) as Record<string, Limitation>;
   const rec = reconcile(inventory, registry, limitations);
   if (rec.errors.length) throw new Error(`Registry reconciliation failed:\n  ${rec.errors.join("\n  ")}`);
-  console.log(`[ads-mcp] tools: ${rec.counts.implemented} implemented, ${rec.counts.external_limitation} documented limitations, ${rec.counts.pending} pending (not exposed)`);
+  logger.info("startup.tools", { implemented: rec.counts.implemented, limitations: rec.counts.external_limitation, pending: rec.counts.pending });
 
   const db = createDb({ pgliteDir: process.env.PGLITE_DIR ?? ".data/pglite" });
-  if (config.rateLimitStore === "memory" && process.env.NODE_ENV === "production") console.warn("[ads-mcp] in-memory rate limiting is per instance: use RATE_LIMIT_STORE=db with more than one instance");
+  if (config.rateLimitStore === "memory" && process.env.NODE_ENV === "production") logger.warn("startup.memory_rate_limits", { message: "in-memory rate limiting is per instance: use RATE_LIMIT_STORE=db with more than one instance" });
   const limiter = (ns: string, burst: number, perSec: number): Limiter =>
     config.rateLimitStore === "db" ? new DbRateLimiter(db, { namespace: ns, capacity: burst, refillPerSecond: perSec }) : new RateLimiter(burst, perSec);
   const num = (k: string, d: number) => Number(process.env[k] ?? d);
@@ -69,7 +71,9 @@ function main() {
   });
 
   const server = createHttpServer(deps, new CompositeAuthenticator(oauth, new ApiTokenAuthenticator(db)), { config }, web);
-  server.listen(config.port, () => console.log(`[ads-mcp] ${config.resource} (issuer ${config.issuer})`));
+  server.listen(config.port, () => logger.info("startup.listening", { resource: config.resource, issuer: config.issuer }));
+  // Execution records are short-lived observability data: keep 30 days.
+  setInterval(() => void pruneExecutions(db, 30).catch((e) => logger.warn("prune.failed", { error: e })), 24 * 3600_000).unref();
   // Crash recovery: stuck mutations become "unknown", then are reconciled against live platform state. Never retried.
   const verifier = createVerifier(deps);
   setInterval(() => void approvals.recoverStuck().then(() => approvals.reconcileUnknown(verifier)).catch(() => {}), 60_000).unref();

@@ -13,6 +13,7 @@ import { type PipelineDeps, createExecutor } from "../mcp/pipeline";
 import { audit } from "../security/audit";
 import type { ApprovalService } from "../security/approvals";
 import type { Limiter } from "../security/rate-limit";
+import { logger } from "../obs/logger";
 import { SECURITY_HEADERS, esc, flash, hidden, page } from "./html";
 
 export interface WebDeps {
@@ -164,7 +165,7 @@ export class WebRoutes {
     if (e instanceof OAuthError) this.json(res, e.status, { error: e.error, error_description: e.message }, { ...PUBLIC_CORS, ...extra });
     else if (e instanceof ToolError) this.json(res, 400, { error: "invalid_request", error_description: e.message }, { ...PUBLIC_CORS, ...extra });
     else {
-      console.error("[oauth] unhandled:", e instanceof Error ? e.message : e);
+      logger.error("oauth.unhandled", { error: e });
       this.json(res, 500, { error: "server_error" }, { ...PUBLIC_CORS, ...extra });
     }
     return true;

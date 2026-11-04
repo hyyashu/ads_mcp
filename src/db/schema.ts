@@ -255,3 +255,26 @@ export const rateLimitBucket = pgTable("rate_limit_bucket", {
   tokens: doublePrecision("tokens").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 });
+
+/**
+ * Per-call execution metadata for latency, error rates and support lookups by request id. No arguments, no results, no
+ * ad text. Retained 30 days (pruneExecutions).
+ */
+export const toolExecution = pgTable(
+  "tool_execution",
+  {
+    id: id(),
+    tenantId: text("tenant_id").notNull().references(() => tenant.id, { onDelete: "cascade" }),
+    userId: text("user_id").notNull(),
+    tool: text("tool").notNull(),
+    platform: text("platform").notNull(),
+    accountId: text("account_id"),
+    requestId: text("request_id"),
+    operation: text("operation").notNull(), // read | analyze | create | update | delete
+    outcome: text("outcome").notNull(), // ok | approval_pending | error
+    errorCode: text("error_code"),
+    durationMs: integer("duration_ms").notNull(),
+    createdAt: created(),
+  },
+  (t) => [index("tool_exec_tenant_time_idx").on(t.tenantId, t.createdAt), index("tool_exec_request_idx").on(t.requestId)],
+);

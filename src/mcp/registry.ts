@@ -22,6 +22,7 @@ export function validateTool(tool: AnyTool, inv: InventoryTool | undefined): str
   if (tool.kind === "write" && typeof tool.execute !== "function") at("write tools need execute()");
   if (tool.kind === "write" && typeof tool.verify !== "function") at("write tools need verify() so unknown outcomes can be reconciled before any retry");
   if (tool.kind === "read" && typeof tool.handler !== "function") at("read tools need handler()");
+  if (tool.timeoutMs !== undefined && !(Number.isInteger(tool.timeoutMs) && tool.timeoutMs >= 100 && tool.timeoutMs <= 300_000)) at("timeoutMs must be an integer from 100 to 300000");
 
   if (tool.input instanceof z.ZodObject) {
     const shape = tool.input.shape as Record<string, unknown>;
@@ -63,6 +64,11 @@ export class ToolRegistry {
 
   get(name: string) {
     return this.tools.get(name);
+  }
+  /** Operation category, taken from the inventory so it cannot drift from it: read | analyze | create | update | delete. */
+  operationOf(name: string): "read" | "analyze" | "create" | "update" | "delete" {
+    const t = this.inventory.find((x) => x.name === name);
+    return (t?.action_type.toLowerCase() ?? "read") as "read" | "analyze" | "create" | "update" | "delete";
   }
   list(): AnyTool[] {
     return [...this.tools.values()];

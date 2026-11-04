@@ -32,6 +32,11 @@ export class GoogleAdsClient {
     return this.sent;
   }
 
+  /** A cancelled or timed-out call must not start a new mutation: stop before sending, which is a definite "nothing changed". */
+  private assertNotAborted() {
+    if (this.o.signal?.aborted) throw new ToolError("deadline_exceeded", "Stopped before sending the change: the call was cancelled or ran past its time limit. Nothing was changed.");
+  }
+
   private async base() {
     return { accessToken: await this.o.getAccessToken(), loginCustomerId: this.o.loginCustomerId, signal: this.o.signal };
   }
@@ -64,6 +69,7 @@ export class GoogleAdsClient {
     if (operations.length === 0 || operations.length > 5000) throw new ToolError("invalid_argument", "a mutate needs between 1 and 5000 operations");
     // Credentials first: a token failure happens before anything is sent, so it must not count as a sent change.
     const base = await this.base();
+    this.assertNotAborted();
     if (!opts.validateOnly) this.sent++; // counted right before sending: a failure after this point may have changed something
     const res = await this.o.http.call<{ results?: Row[]; partialFailureError?: unknown }>({
       ...base,
@@ -81,6 +87,7 @@ export class GoogleAdsClient {
   async mutateBatch(mutateOperations: Row[], opts: { validateOnly?: boolean } = {}): Promise<{ mutateOperationResponses: Row[] }> {
     if (mutateOperations.length === 0 || mutateOperations.length > 10_000) throw new ToolError("invalid_argument", "a batch needs between 1 and 10000 operations");
     const base = await this.base();
+    this.assertNotAborted();
     if (!opts.validateOnly) this.sent++;
     const res = await this.o.http.call<{ mutateOperationResponses?: Row[] }>({
       ...base,
