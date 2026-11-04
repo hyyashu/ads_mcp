@@ -103,6 +103,8 @@ export function mapMetaError(status: number, body: MetaErrorBody, mutation: bool
   if (code === 10 || (code >= 200 && code <= 299) || status === 403) return new ToolError("platform_permission_denied", `Meta denied access: ${detail}`, trace);
   // 100/33: "Object with ID ... does not exist, cannot be loaded due to missing permissions, or does not support this operation".
   if ((code === 100 && e.error_subcode === 33) || code === 803 || status === 404) return new ToolError("not_found", detail, trace);
+  // 10803 (product_sets POST): "Product set with the same filters already exists". Kept recognizable for the caller.
+  if (code === 10803) return new ToolError("invalid_argument", detail, { details: { ...trace.details, meta_code: 10803 } });
   if (code === 1 || code === 2 || e.is_transient || status >= 500) {
     return mutation
       ? new ToolError("unknown_outcome", "Meta returned a temporary error while applying a change. It may or may not have been applied.", trace)

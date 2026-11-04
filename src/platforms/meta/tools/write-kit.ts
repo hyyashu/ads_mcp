@@ -62,3 +62,6 @@ export function metaStateWrite<I extends z.ZodObject, O extends z.ZodType, S>(d:
     },
   });
 }
+
+/** Identity helper that gives a definition its contextual types, so it can be shared (e.g. by catalog variants of a tool). */
+export const stateDef = <I extends z.ZodObject, O extends z.ZodType, S>(d: MetaStateWriteDef<I, O, S>): MetaStateWriteDef<I, O, S> => d;

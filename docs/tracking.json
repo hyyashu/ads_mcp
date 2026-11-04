@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 224,
+    "implemented": 231,
     "external_limitation": 1,
-    "pending": 7
+    "pending": 0
   },
   "rows": [
     {
@@ -2936,34 +2936,40 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "catalogs_products",
-      "api": "POST /{act}/adcreatives + POST /{act}/ads",
-      "risk": "write",
+      "api": "POST /{act}/adcreatives (template_data for the ad set's product set) + POST /{act}/ads, PAUSED (v27.0)",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "business_management",
+        "catalog_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_meta_catalog_ad_set",
       "platform": "meta_ads",
       "action": "Create",
       "domain": "catalogs_products",
-      "api": "POST /{act}/adsets",
+      "api": "POST /{act}/adsets under an owned OUTCOME_SALES catalog campaign; product set must be in the campaign's catalog, PAUSED (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "business_management",
+        "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "The campaign's catalog is read from its catalog ad sets (campaign promoted_object is not a documented readable field).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_meta_ad_performance",
@@ -3095,18 +3101,21 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "catalogs_products",
-      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "api": "POST /{act}/campaigns (OUTCOME_SALES, promoted_object product_catalog_id) -> /{act}/adsets (promoted_object product_set_id) -> /{act}/adcreatives (object_story_spec.template_data + product_set_id) -> /{act}/ads, all PAUSED (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "business_management",
+        "catalog_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Goal pairs: OFFSITE_CONVERSIONS/IMPRESSIONS with PURCHASE (catalog needs a connected event source) or LINK_CLICKS/LINK_CLICKS. Commerce and home_listings catalogs only (home listings need HOUSING). Not atomic: ids created so far are reported; nothing is deleted.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_meta_dco_ad",
@@ -3151,17 +3160,19 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "catalogs_products",
-      "api": "POST /{catalog_id}/product_sets",
+      "api": "POST /{catalog_id}/product_sets (name, one documented filter rule or {}); catalog must be one of the ad account's business catalogs (v27.0)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
+        "business_management",
         "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Write risk (a product set does not spend). Meta error 10803 (same filter exists) is refused naming the existing set; one filter rule per set (combined rules are not used).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_meta_video_campaign",
@@ -3889,52 +3900,53 @@
       "platform": "meta_ads",
       "action": "Update",
       "domain": "catalogs_products",
-      "api": "POST /{ad_id}",
-      "risk": "write",
+      "api": "POST /{ad_id} (name, status); update_meta_ad rules plus a catalog check (v27.0)",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
       "notes": "Creative content is immutable once an ad is created: creative changes need a new creative.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_meta_catalog_ad_set",
       "platform": "meta_ads",
       "action": "Update",
       "domain": "catalogs_products",
-      "api": "POST /{adset_id}",
+      "api": "POST /{adset_id} (name, status, budget, end_time); update_meta_ad_set rules plus a catalog check (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "The product set cannot change: promoted_object is immutable after creation (Ad Set, Promoted Object reference).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_meta_catalog_campaign",
       "platform": "meta_ads",
       "action": "Update",
       "domain": "catalogs_products",
-      "api": "POST /{campaign_id}",
+      "api": "POST /{campaign_id} (name, status, budget, spend_cap); update_meta_campaign rules plus a catalog check (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "validate_and_prepare_meta_assets",
