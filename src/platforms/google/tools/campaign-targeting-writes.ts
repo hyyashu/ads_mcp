@@ -34,7 +34,7 @@ async function readCriteria(ads: GoogleAdsClient, campaignId: string, type: stri
 export const updateLocationTargeting = stateWrite({
   name: "update_location_targeting",
   title: "Update location targeting",
-  risk: "high_impact",
+  risk: "write",
   description:
     "Adds or removes targeted and excluded locations on a campaign (Google location ids from resolve_google_locations), and optionally sets whether ads reach people IN the locations (PRESENCE) or also people interested in them (PRESENCE_OR_INTEREST). Needs a second approver when it widens reach. Removing every targeted location would target all countries, so that is refused. Applied atomically and confirmed by re-reading.",
   input: z
@@ -123,8 +123,8 @@ const proxKey = (a: z.infer<typeof proximityInput>) => `${a.latitude !== undefin
 export const addCampaignProximity = stateWrite({
   name: "add_campaign_proximity",
   title: "Add radius targeting",
-  risk: "high_impact",
-  description: "Targets a radius around a point (latitude/longitude) or an address on a campaign, after approval from a second person because it widens reach. Radius in kilometers or miles. An identical radius is refused. Confirmed by re-reading.",
+  risk: "write",
+  description: "Targets a radius around a point (latitude/longitude) or an address on a campaign, after approval; it widens reach, so a second approver is needed. Radius in kilometers or miles. An identical radius is refused. Confirmed by re-reading.",
   input: proximityInput,
   output: z.object({ campaign_id: z.string(), criterion_id: z.string().nullable() }),
   read: proximityState,
@@ -224,8 +224,8 @@ const modifierEffect = (before: number | null, after: number): Effect => (after 
 export const setCampaignDeviceBidModifiers = stateWrite({
   name: "set_campaign_device_bid_modifiers",
   title: "Set campaign device bid adjustments",
-  risk: "write",
-  description: "Sets device bid adjustments on a campaign: 1.0 = no change, 1.2 = +20%, 0.5 = -50%, 0 = do not show on that device (max 10). Raising an adjustment needs a second approver. Confirmed by re-reading.",
+  risk: "high_impact",
+  description: "Sets device bid adjustments on a campaign: 1.0 = no change, 1.2 = +20%, 0.5 = -50%, 0 = do not show on that device (max 10). Raising an adjustment needs a second approver; lowering one does not. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, modifiers: deviceInput }),
   output: z.object({ campaign_id: z.string(), modifiers: z.record(z.string(), z.number().nullable()) }),
   read: async (a, ads) => {
@@ -254,7 +254,7 @@ export const setCampaignDeviceBidModifiers = stateWrite({
 export const setAdGroupDeviceBidModifiers = stateWrite({
   name: "set_ad_group_device_bid_modifiers",
   title: "Set ad group device bid adjustments",
-  risk: "write",
+  risk: "high_impact",
   description: "Sets device bid adjustments on an ad group: 1.0 = no change, 1.2 = +20%, 0 = do not show on that device (max 10). Ad group adjustments override the campaign's. Raising an adjustment needs a second approver. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: idSchema, modifiers: deviceInput }),
   output: z.object({ ad_group_id: z.string(), modifiers: z.record(z.string(), z.number().nullable()) }),
@@ -370,8 +370,8 @@ const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(isRealDate, "not a re
 export const updateDisplayCampaignSchedule = stateWrite({
   name: "update_display_campaign_schedule",
   title: "Update Display campaign dates",
-  risk: "high_impact",
-  description: "Changes a Display campaign's start and/or end date (whole days in the account's time zone), or removes the end date, after approval from a second person. For other campaign types use update_campaign_dates. Confirmed by re-reading.",
+  risk: "write",
+  description: "Changes a Display campaign's start and/or end date (whole days in the account's time zone), or removes the end date, after approval. Starting earlier, ending later or removing the end needs a second approver. For other campaign types use update_campaign_dates. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, start_date: day.optional(), end_date: day.optional(), clear_end_date: z.boolean().default(false) }).refine((v) => v.start_date || v.end_date || v.clear_end_date, "give start_date, end_date or clear_end_date").refine((v) => !(v.end_date && v.clear_end_date), "end_date and clear_end_date conflict"),
   output: z.object({ campaign_id: z.string(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() }),
   read: async (a, ads) => {
