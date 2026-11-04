@@ -243,7 +243,13 @@ export class WebRoutes {
         }
       })();
       const canWrite = s.role !== "member";
-      const scopeText = check.scopes.map((x) => (x === "ads:read" ? "Read your connected ad accounts" : "Propose changes (every change still needs your approval)")).filter((_, i) => canWrite || check.scopes[i] === "ads:read");
+      // Owners and admins choose: read only, or read and propose changes (pre-selected). Members only ever get read.
+      const offerChoice = canWrite && check.scopes.includes("ads:write");
+      const access = offerChoice
+        ? `<fieldset class="card"><legend>Access</legend>
+<label><input type="radio" name="access" value="write" checked> <strong>Read and propose changes</strong> <span class="muted">Every change waits for your approval at Approvals.</span></label>
+<label><input type="radio" name="access" value="read"> <strong>Read only</strong> <span class="muted">View accounts, campaigns and reports. No changes.</span></label></fieldset>`
+        : `<ul><li>Read your connected ad accounts</li></ul>`;
       this.html(
         res,
         200,
@@ -251,9 +257,9 @@ export class WebRoutes {
           "Authorize access",
           `<div class="card"><p><strong>${esc(check.client.name)}</strong> wants to connect to your ads workspace.</p>
 <p class="muted">It will be sent back to <code>${esc(host)}</code>. Only continue if you started this from that app.</p>
-<ul>${scopeText.map((t) => `<li>${esc(t)}</li>`).join("")}</ul>
 <p class="muted">It can never approve changes. Approvals happen only here, in your browser.</p>
 <form method="post" action="/authorize">
+${access}
 ${["client_id", "redirect_uri", "response_type", "code_challenge", "code_challenge_method", "state", "scope", "resource"].map((k) => (params.get(k) !== null ? hidden(k, params.get(k)!) : "")).join("")}
 ${hidden("csrf", csrfToken(s, "consent"))}
 <div class="row"><button class="primary" name="decision" value="allow">Allow</button><button name="decision" value="deny">Deny</button></div></form></div>`,
@@ -292,7 +298,10 @@ ${hidden("csrf", csrfToken(s, "consent"))}
         return true;
       }
       try {
-        const { code } = await this.d.oauth.issueCode({ client: check.client, redirectUri: check.redirectUri, codeChallenge: check.codeChallenge, scopes: check.scopes, user: { id: s.userId, tenantId: s.tenantId, role: s.role } });
+        // "read" narrows the grant to ads:read. Anything else keeps what was requested; issueCode still caps it by role,
+        // so a forged access=write cannot give a member, or a client that did not ask for it, write access.
+        const granted = form.get("access") === "read" ? ["ads:read"] : check.scopes;
+        const { code } = await this.d.oauth.issueCode({ client: check.client, redirectUri: check.redirectUri, codeChallenge: check.codeChallenge, scopes: granted, user: { id: s.userId, tenantId: s.tenantId, role: s.role } });
         await audit(this.d.db, { tenantId: s.tenantId, userId: s.userId, event: "oauth.consent", refId: check.client.clientId, outcome: "granted" });
         const target = new URL(check.redirectUri);
         target.searchParams.set("code", code);
