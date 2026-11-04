@@ -27,6 +27,10 @@ export const PAGES_SHOW_LIST = "pages_show_list";
 export const PAGES_READ_ENGAGEMENT = "pages_read_engagement";
 export const INSTAGRAM_BASIC = "instagram_basic";
 export const LEADS_RETRIEVAL = "leads_retrieval";
+/** Business edges (owned_product_catalogs, client_product_catalogs) and the ad account's business field. */
+export const BUSINESS_MANAGEMENT = "business_management";
+/** Product catalog nodes and their product_sets, products and external_event_sources edges. */
+export const CATALOG_MANAGEMENT = "catalog_management";
 /** Builds a read tool's permission block with the extra permissions and a note naming them for the Meta app. */
 export const needs = (...extra: string[]) => ({ platformPermissions: [ADS_READ, ...extra], notes: `The Meta app needs ${[ADS_READ, ...extra].join(", ")}.` });
 
