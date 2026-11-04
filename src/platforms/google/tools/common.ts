@@ -29,9 +29,7 @@ export function dateClause(v: { date_range: string; start_date?: string; end_dat
 
 export const nullable = <T>(v: T | undefined): T | null => (v === undefined ? null : v);
 
-/** Division that returns null instead of NaN/Infinity, so a metric is never reported as a number it is not. */
-export const ratio = (a: number, b: number): number | null => (b > 0 ? a / b : null);
-export const round = (n: number | null, digits = 4): number | null => (n === null ? null : Math.round(n * 10 ** digits) / 10 ** digits);
+export { ratio, round } from "../../core/report-math";
 
 const google = platformTools<GoogleServices>("google_ads", {
   read: { platformPermissions: [ADS_SCOPE], notes: "The Google Cloud project that issued the OAuth credentials needs Google Ads API access (Explorer, Basic or Standard). Developer tokens were sunset on 2026-09-09." },
