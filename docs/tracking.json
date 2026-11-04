@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 169,
+    "implemented": 173,
     "external_limitation": 1,
     "pending": 57
   },
@@ -3916,6 +3916,74 @@
       "verification": "n/a",
       "tests": "none",
       "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_keyword_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "keywords",
+      "api": "GAQL: keyword_view with ad_group_criterion quality_info and position_estimates (v26 field reference)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_segment_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "analysis_and_helpers",
+      "api": "GAQL: campaign (device, hour, day_of_week segments), geographic_view (country, region, city), age_range_view, gender_view (v26 field reference)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_negative_keywords_from_list",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "negative_keywords",
+      "api": "SharedCriterionService remove (sharedCriteria/{shared_set_id}~{criterion_id})",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "detach_negative_keyword_list_from_campaign",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "negative_keywords",
+      "api": "CampaignSharedSetService remove (campaignSharedSets/{campaign_id}~{shared_set_id})",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     }
   ]
 }

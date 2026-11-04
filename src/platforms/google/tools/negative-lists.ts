@@ -14,26 +14,26 @@ const listName = z.string().trim().min(1).refine((s) => Buffer.byteLength(s) <= 
 
 interface ListInfo { id: string; name: string; memberCount: number | null; referenceCount: number | null }
 
-async function activeLists(ads: GoogleAdsClient): Promise<ListInfo[]> {
+export async function activeLists(ads: GoogleAdsClient): Promise<ListInfo[]> {
   const q = new Gaql().select("shared_set.id", "shared_set.name", "shared_set.member_count", "shared_set.reference_count").from("shared_set").where("shared_set.type = 'NEGATIVE_KEYWORDS'").where("shared_set.status = 'ENABLED'").orderBy("shared_set.id").limit(2000);
   const rows = await ads.query(q, { maxRows: 2000 });
   return rows.map((r) => ({ id: String(pick(r, "shared_set.id") ?? ""), name: str(r, "shared_set.name") ?? "", memberCount: pick(r, "shared_set.member_count") === undefined ? null : num(pick(r, "shared_set.member_count")), referenceCount: pick(r, "shared_set.reference_count") === undefined ? null : num(pick(r, "shared_set.reference_count")) }));
 }
 
-async function requireList(ads: GoogleAdsClient, setId: string): Promise<ListInfo> {
+export async function requireList(ads: GoogleAdsClient, setId: string): Promise<ListInfo> {
   const l = (await activeLists(ads)).find((x) => x.id === setId);
   if (!l) throw new ToolError("not_found", `No active negative keyword list ${setId} in this account.`);
   return l;
 }
 
 interface Member { id: string; text: string; matchType: string }
-async function members(ads: GoogleAdsClient, setId: string, max = 5000): Promise<Member[]> {
+export async function members(ads: GoogleAdsClient, setId: string, max = 5000): Promise<Member[]> {
   const q = new Gaql().select("shared_criterion.criterion_id", "shared_criterion.keyword.text", "shared_criterion.keyword.match_type").from("shared_criterion").where(`shared_set.id = ${lit.id(setId)}`).where("shared_criterion.type = 'KEYWORD'").orderBy("shared_criterion.criterion_id").limit(max);
   const rows = await ads.query(q, { maxRows: max });
   return rows.map((r) => ({ id: String(pick(r, "shared_criterion.criterion_id") ?? ""), text: str(r, "shared_criterion.keyword.text") ?? "", matchType: str(r, "shared_criterion.keyword.match_type") ?? "" }));
 }
 
-async function attachedCampaigns(ads: GoogleAdsClient, setId: string) {
+export async function attachedCampaigns(ads: GoogleAdsClient, setId: string) {
   const q = new Gaql().select("campaign.id", "campaign.name").from("campaign_shared_set").where(`shared_set.id = ${lit.id(setId)}`).where("campaign_shared_set.status = 'ENABLED'").orderBy("campaign.id").limit(500);
   return (await ads.query(q, { maxRows: 500 })).map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name") }));
 }
