@@ -24,6 +24,18 @@ export const roleScopes = (role: Role): string[] => (role === "member" ? ["ads:r
 export const TTL = { code: 120_000, access: 3600_000, refresh: 30 * 24 * 3600_000, clientMetadata: 3600_000 } as const;
 const BASE64URL = /^[A-Za-z0-9_-]{43,128}$/;
 
+/**
+ * True when a Client ID Metadata Document allows public-client auth ("none"), which is all this server supports
+ * (and all it advertises, so the client picks it). ChatGPT's document prefers private_key_jwt but lists "none" in
+ * token_endpoint_auth_methods_supported. Documents that only allow confidential methods are refused.
+ */
+function supportsPublicAuth(doc: Record<string, unknown>): boolean {
+  const method = doc.token_endpoint_auth_method;
+  if (method === undefined || method === "none") return true;
+  const supported = doc.token_endpoint_auth_methods_supported;
+  return Array.isArray(supported) && supported.includes("none");
+}
+
 export class OAuthError extends Error {
   constructor(
     public error: "invalid_request" | "invalid_client" | "invalid_grant" | "unauthorized_client" | "unsupported_grant_type" | "invalid_scope" | "invalid_client_metadata" | "invalid_redirect_uri" | "server_error",
@@ -196,7 +208,7 @@ export class OAuthServer {
       doc.client_id !== clientId || // the document must name itself exactly
       !Array.isArray(uris) || uris.length === 0 || uris.length > 10 ||
       !uris.every((u) => typeof u === "string" && validateRedirectUri(u) === null) ||
-      (doc.token_endpoint_auth_method !== undefined && doc.token_endpoint_auth_method !== "none") ||
+      !supportsPublicAuth(doc) ||
       "client_secret" in doc
     ) {
       return null;
