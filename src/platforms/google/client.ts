@@ -61,6 +61,17 @@ export class GoogleAdsClient {
   }
 
   /**
+   * Calls a read-only RPC that is not a GAQL search, e.g. "geoTargetConstants:suggest" or
+   * "customers/{id}:generateKeywordIdeas" (pass `{customer}` to have the account id filled in). Retried like reads.
+   * Never use it for anything that changes an account: those go through mutate().
+   */
+  async rpc<T = Row>(path: string, body: Row): Promise<T> {
+    const p = path.replace("{customer}", this.o.customerId);
+    if (!/^(customers\/\d+[:/])?[A-Za-z/0-9]*:?[A-Za-z]+$/.test(p) || /:mutate$/i.test(p)) throw new ToolError("internal", "invalid read-only rpc path");
+    return this.o.http.call<T>({ ...(await this.base()), path: p, body, idempotent: true });
+  }
+
+  /**
    * Sends mutate operations to one resource service, e.g. mutate("campaigns", [{ update: {...}, updateMask: "status" }]).
    * With validateOnly the API checks the request and changes nothing, so it is safe to retry.
    */

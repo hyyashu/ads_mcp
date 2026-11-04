@@ -91,9 +91,12 @@ export function checkBody(schema: string, body: unknown, at = ""): string[] {
 
 /** The request schema for a REST path such as customers/1/campaigns:mutate or customers/1/googleAds:search. */
 export function requestSchemaFor(path: string): string | null {
-  const m = /\/([A-Za-z]+):([A-Za-z]+)$/.exec(path);
+  const m = /(?:^|\/)([A-Za-z]+|\d+):([A-Za-z]+)$/.exec(path);
   if (!m) return null;
   const [, service, method] = m;
+  const M = method![0]!.toUpperCase() + method!.slice(1);
+  // customers/{id}:generateKeywordIdeas and similar: the request is named after the method alone.
+  if (/^\d+$/.test(service!)) return index.schemas[`Services__${M}Request`] ? `Services__${M}Request` : null;
   const pascal = service![0]!.toUpperCase() + service!.slice(1);
   if (service === "googleAds") return method === "mutate" ? "Services__MutateGoogleAdsRequest" : method === "searchStream" ? "Services__SearchGoogleAdsStreamRequest" : "Services__SearchGoogleAdsRequest";
   const name = `Services__${method![0]!.toUpperCase()}${method!.slice(1)}${pascal}Request`;

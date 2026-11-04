@@ -25,11 +25,13 @@ describe("Google Ads v26 schema checker", () => {
   it("checks which fields may be used with the FROM resource", () => {
     expect(checkGaql("SELECT ad_group.id, campaign.name, metrics.clicks FROM ad_group")).toEqual([]); // campaign is attributed to ad_group
     expect(checkGaql("SELECT campaign.id, ad_group.name FROM campaign")).toEqual(["ad_group.name cannot be used with FROM campaign"]);
-    expect(checkGaql("SELECT asset.id FROM asset")).toEqual(["no GAQL rules recorded for asset: run scripts/fetch-google-gaql-rules.py v26 asset"]);
+    expect(checkGaql("SELECT hotel_group_view.resource_name FROM hotel_group_view")).toEqual(["no GAQL rules recorded for hotel_group_view: run scripts/fetch-google-gaql-rules.py v26 hotel_group_view"]);
   });
 
   it("checks mutate bodies recursively", () => {
     expect(requestSchemaFor("customers/1/campaigns:mutate")).toBe("Services__MutateCampaignsRequest");
+    expect(requestSchemaFor("geoTargetConstants:suggest")).toBe("Services__SuggestGeoTargetConstantsRequest");
+    expect(requestSchemaFor("customers/1:generateKeywordIdeas")).toBe("Services__GenerateKeywordIdeasRequest");
     expect(checkBody("Services__MutateCampaignsRequest", { operations: [{ update: { resourceName: "x", status: "PAUSED" }, updateMask: "status" }] })).toEqual([]);
     expect(checkBody("Services__MutateCampaignsRequest", { operations: [{ update: { resourceName: "x", status: "STOPPED" }, updateMask: "status" }] })).toEqual(["operations.update.status: 'STOPPED' is not a valid value"]);
     expect(checkBody("Services__MutateCampaignsRequest", { operations: [{ update: { budget: 5 } }] })).toEqual(["operations.update.budget: not a field of Resources__Campaign"]);
