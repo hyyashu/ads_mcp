@@ -5951,6 +5951,69 @@
 },
 "from_metrics_segments": []
 },
+"change_event": {
+"attributed": [
+"ad_group",
+"asset",
+"campaign",
+"customer"
+],
+"fields": {
+"change_event.ad_group": {
+"filterable": true,
+"selectable": true
+},
+"change_event.asset": {
+"filterable": true,
+"selectable": true
+},
+"change_event.campaign": {
+"filterable": true,
+"selectable": true
+},
+"change_event.change_date_time": {
+"filterable": true,
+"selectable": true
+},
+"change_event.change_resource_name": {
+"filterable": false,
+"selectable": true
+},
+"change_event.change_resource_type": {
+"filterable": true,
+"selectable": true
+},
+"change_event.changed_fields": {
+"filterable": false,
+"selectable": true
+},
+"change_event.client_type": {
+"filterable": true,
+"selectable": true
+},
+"change_event.new_resource": {
+"filterable": false,
+"selectable": true
+},
+"change_event.old_resource": {
+"filterable": false,
+"selectable": true
+},
+"change_event.resource_change_operation": {
+"filterable": true,
+"selectable": true
+},
+"change_event.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"change_event.user_email": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": []
+},
 "combined_audience": {
 "attributed": [
 "customer"
@@ -6140,6 +6203,36 @@
 "selectable": true
 },
 "conversion_goal_campaign_config.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": []
+},
+"currency_constant": {
+"attributed": [],
+"fields": {
+"currency_constant.billable_unit_micros": {
+"filterable": true,
+"selectable": true
+},
+"currency_constant.code": {
+"filterable": true,
+"selectable": true
+},
+"currency_constant.demand_gen_info.minimum_budget_per_day_micros": {
+"filterable": true,
+"selectable": true
+},
+"currency_constant.name": {
+"filterable": true,
+"selectable": true
+},
+"currency_constant.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"currency_constant.symbol": {
 "filterable": true,
 "selectable": true
 }
@@ -7865,6 +7958,285 @@
 },
 "product_link_invitation.type": {
 "filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": []
+},
+"recommendation": {
+"attributed": [
+"ad_group",
+"campaign",
+"campaign_budget",
+"customer"
+],
+"fields": {
+"recommendation.ad_group": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.call_asset_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.callout_asset_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.campaign": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.campaign_budget": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.campaign_budget_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.campaign_specific_app_goal_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.campaigns": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.custom_audience_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.dismissed": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.display_expansion_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.dynamic_image_extension_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.enhanced_cpc_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.forecasting_campaign_budget_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.forecasting_set_target_cpa_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.forecasting_set_target_roas_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.impact": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.improve_demand_gen_ad_strength_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.improve_google_tag_coverage_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.improve_performance_max_ad_strength_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.keyword_match_type_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.keyword_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.lead_form_asset_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.lower_target_roas_performance_bid_too_low_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.lower_target_roas_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.marginal_roi_campaign_budget_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.maximize_clicks_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.maximize_conversion_value_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.maximize_conversions_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.migrate_dynamic_search_ads_campaign_to_performance_max_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.move_unused_budget_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.optimize_ad_rotation_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.optimize_for_new_customers_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.performance_max_final_url_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.performance_max_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.raise_budget_performance_too_low_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.raise_target_cpa_bid_too_low_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.raise_target_cpa_performance_bid_too_low_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.raise_target_cpa_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.refresh_customer_match_list_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.responsive_search_ad_asset_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.responsive_search_ad_improve_ad_strength_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.responsive_search_ad_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.search_partners_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.set_target_cpa_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.set_target_roas_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_age_group_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_color_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_gender_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_gtin_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_more_identifiers_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_products_to_campaign_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_add_size_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_fix_disapproved_products_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_fix_merchant_center_account_suspension_warning_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_fix_suspended_merchant_center_account_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_migrate_regular_shopping_campaign_offers_to_performance_max_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.shopping_target_all_offers_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.sitelink_asset_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.target_cpa_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.target_roas_opt_in_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.text_ad_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.type": {
+"filterable": true,
+"selectable": true
+},
+"recommendation.upgrade_local_campaign_to_performance_max_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.upgrade_smart_shopping_campaign_to_performance_max_recommendation": {
+"filterable": false,
+"selectable": true
+},
+"recommendation.use_broad_match_keyword_recommendation": {
+"filterable": false,
 "selectable": true
 }
 },
