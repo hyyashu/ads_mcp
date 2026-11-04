@@ -6,7 +6,7 @@ import { googleTools } from "../platforms/google";
 const inv = loadInventory();
 
 describe("implementation plan (inventory/mapping.ts)", () => {
-  it("maps every one of the 227 tools to an API surface", () => {
+  it("maps every inventory tool to an API surface", () => {
     const unmapped = inv.filter((t) => mapTool(t).api.startsWith("UNMAPPED")).map((t) => t.name);
     expect(unmapped).toEqual([]);
   });

@@ -131,7 +131,7 @@ describe("batch 1 registration", () => {
     expect(names).toEqual(expect.arrayContaining(["list_campaigns", "get_campaign_performance", "pause_campaign", "update_campaign"]));
     const rec = reconcile(inv, reg, {});
     expect(rec.errors).toEqual([]);
-    expect(rec.counts).toEqual({ implemented: names.length, external_limitation: 0, pending: 227 - names.length });
+    expect(rec.counts).toEqual({ implemented: names.length, external_limitation: 0, pending: inv.length - names.length });
     // Every tool that modifies data must be a write tool (approval-gated); no read tool may be in the inventory's modifying set.
     for (const t of reg.list()) expect(inv.find((i) => i.name === t.name)!.modifies_data).toBe(t.kind === "write");
   });
