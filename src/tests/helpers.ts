@@ -41,7 +41,7 @@ export async function addUser(db: Db, tenantId: string, label: string, role: "ow
   return user!;
 }
 
-/** Units default to known values so ordinary tests issue no backfill query; pass `units: null` to leave them unknown. */
+/** Units default to known values; pass `units: null` for an account whose platform did not report them. */
 export async function seedAccount(
   db: Db,
   tenantId: string,

@@ -1,9 +1,7 @@
 import type { z } from "zod";
 import { resolveAccount } from "../auth/accounts";
-import { and, eq } from "drizzle-orm";
 import type { AuthContext } from "../auth/context";
 import type { Db } from "../db";
-import { connectedAccount } from "../db/schema";
 import { recordExecution, type ExecutionOutcome } from "../obs/executions";
 import { logger } from "../obs/logger";
 import { audit, recordUsage } from "../security/audit";
@@ -68,31 +66,7 @@ async function buildContext(deps: PipelineDeps, tool: AnyTool, args: Record<stri
   const lim = await deps.accountLimiter.take(`${auth.tenantId}:${account.id}`);
   if (!lim.ok) throw new ToolError("quota_exceeded", "Too many requests for this ad account. Slow down and retry.", { retryAfterSeconds: lim.retryAfterSeconds });
   const services = await deps.createServices({ tenantId: auth.tenantId, account, signal });
-  if (account.currencyCode === null || account.timeZone === null) await backfillUnits(deps.db, auth.tenantId, account, services);
   return { tenantId: auth.tenantId, userId: auth.userId, account, services, signal };
-}
-
-/**
- * Accounts connected before reporting units were stored (or whose platform did not report them at connect time)
- * get them read once from the platform. Best effort: a failure here never fails the call, the units stay null.
- */
-async function backfillUnits(db: Db, tenantId: string, account: ResolvedAccount, services: unknown): Promise<void> {
-  const describe = (services as { describeAccount?: () => Promise<{ currencyCode: string | null; timeZone: string | null }> } | null)?.describeAccount;
-  if (typeof describe !== "function") return;
-  try {
-    const u = await describe();
-    const currencyCode = account.currencyCode ?? u.currencyCode;
-    const timeZone = account.timeZone ?? u.timeZone;
-    if (currencyCode === account.currencyCode && timeZone === account.timeZone) return;
-    account.currencyCode = currencyCode;
-    account.timeZone = timeZone;
-    await db
-      .update(connectedAccount)
-      .set({ currencyCode, timeZone })
-      .where(and(eq(connectedAccount.id, account.id), eq(connectedAccount.tenantId, tenantId)));
-  } catch (e) {
-    logger.warn("account.units_backfill_failed", { accountId: account.id, code: toToolError(e).code });
-  }
 }
 
 /** The units block of the response envelope, for account-scoped tools. */

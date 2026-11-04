@@ -19,7 +19,7 @@ export interface ResolvedAccount {
   externalId: string;
   loginCustomerId: string | null;
   access: "read" | "write";
-  /** Reporting units as the platform reports them. Null when not yet known (backfilled on first use). */
+  /** Reporting units as the platform reported them at connect time. Null when the platform did not report them. */
   currencyCode: string | null;
   timeZone: string | null;
 }

@@ -272,8 +272,7 @@ Each milestone is one reviewable branch with tests.
    - `connected_account.currency_code` / `time_zone` (migration 0005), filled at connect time from Google
      `customer[_client].currency_code` / `time_zone` and Meta `currency` / `timezone_name`; refreshed on reconnect
      without erasing a value the platform omitted.
-   - Accounts connected earlier are backfilled once on first use (`SELECT customer.currency_code, customer.time_zone FROM customer`);
-     a failed backfill never fails the call and leaves the units null.
+   - No backfill: no accounts existed before this milestone. Units the platform did not report stay null.
    - Every account-scoped response carries `meta.account = {id, currency_code, time_zone}`; tenant-level tools carry none.
    - Output convention, documented in `platforms/google/gaql.ts`: absent counter metric = 0 (proto3 omits defaults;
      inferred, not verified per metric), absent attribute = null, ratio with zero denominator = null.
