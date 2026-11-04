@@ -327,6 +327,17 @@ Each milestone is one reviewable branch with tests.
    - Not built: async report jobs. No inventory tool can start or poll one, and storing report results would be the
      first stored copy of platform data; add it with a tool that needs it, with a short result TTL.
 7. **M7 Remaining Google batches**, then Meta writes.
+   - Google done: 166 of 167 tools implemented; `create_youtube_campaign` is a documented external limitation (Google: "Video
+     campaigns cannot be created or mutated using the Google Ads API"; Demand Gen is the route for YouTube video ads).
+   - Verification: Google's v26 REST discovery document and field reference pages are recorded in
+     `inventory/google-ads-v26-schema.json` and `-gaql.json`; the Google test harness checks every request (fields, FROM
+     compatibility, metrics and segments, selectable/filterable, enum literals, mutate bodies) and every fake response row
+     against them. This caught real mistakes (asset field types, Demand Gen channel controls) before any live call.
+   - New shared pieces: `write-kit.ts` (read live state, build one atomic GoogleAdsService.Mutate or one service RPC,
+     confirm by re-reading, verify for reconciliation), `media.ts` (SSRF-safe image download, header parsing, Google's
+     published image specs, SHA-256 pinned in the approved snapshot), `youtube.ts` (YouTube Data API, key in a header).
+   - Not live-tested: no Google tool has run against a real account yet (M8).
+   - Meta: 3 of 60 implemented; the remaining 57 are next.
 8. **M8 Live verification** on test accounts (Google Test/Basic, Meta test ad account).
 9. **M9 Hardening**: KMS-wrapped keys, row-level security, DCR optional.
 

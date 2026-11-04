@@ -16,7 +16,7 @@ import { schemaChecked } from "./schema-guard";
  * approver, one connected Google account, the real tool registry and approval service, and `run` / `approveAs` helpers.
  * Each test file supplies only `fetch`, its stand-in for googleads.googleapis.com.
  */
-export async function googleHarness(label: string, fetch: FetchLike, o: { images?: (url: string) => Promise<Buffer> } = {}) {
+export async function googleHarness(label: string, fetch: FetchLike, o: { images?: (url: string) => Promise<Buffer>; youtube?: import("../../platforms/google/youtube").YouTubeClient; pages?: (url: string) => Promise<string> } = {}) {
   const db: Db = await testDb();
   const t = await seedTenant(db, label, "owner");
   const tenantId = t.tenant.id;
@@ -31,7 +31,7 @@ export async function googleHarness(label: string, fetch: FetchLike, o: { images
     approvals,
     tenantLimiter: new RateLimiter(10_000, 10_000),
     accountLimiter: new RateLimiter(10_000, 10_000),
-    createServices: createServicesFactory({ db, fetchImage: o.images ?? (async () => { throw new Error("no test image fetcher"); }), google: { tokens: { getAccessToken: async () => "tok" } as unknown as GoogleTokenProvider, http } }),
+    createServices: createServicesFactory({ db, youtube: o.youtube, fetchPage: o.pages ?? (async () => { throw new Error("no test page fetcher"); }), fetchImage: o.images ?? (async () => { throw new Error("no test image fetcher"); }), google: { tokens: { getAccessToken: async () => "tok" } as unknown as GoogleTokenProvider, http } }),
   };
   return {
     db,

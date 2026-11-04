@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 39,
-    "external_limitation": 0,
-    "pending": 188
+    "implemented": 169,
+    "external_limitation": 1,
+    "pending": 57
   },
   "rows": [
     {
@@ -18,10 +18,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_app_ad_asset",
@@ -36,10 +36,10 @@
       ],
       "accountScope": "required",
       "notes": "App ad assets are fields on the ad itself: adding or removing one is a replace-style update of the ad. Verify exact semantics against the current API.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_asset_group_listing_filter",
@@ -53,10 +53,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_business_name_asset",
@@ -70,10 +70,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_call_asset",
@@ -87,10 +87,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_callout_extensions",
@@ -104,10 +104,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_campaign_label",
@@ -121,10 +121,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_campaign_proximity",
@@ -138,10 +138,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_demandgen_ad",
@@ -156,10 +156,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_demandgen_ad_group",
@@ -173,10 +173,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_display_ad",
@@ -191,10 +191,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_display_ad_group",
@@ -208,10 +208,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_display_audiences",
@@ -225,10 +225,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_display_keywords",
@@ -242,10 +242,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_display_placements",
@@ -259,10 +259,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_display_topics",
@@ -276,10 +276,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_keywords",
@@ -294,7 +294,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -311,7 +311,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -328,7 +328,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -344,10 +344,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_pmax_asset_group",
@@ -361,10 +361,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_pmax_asset_group_asset",
@@ -378,10 +378,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_pmax_asset_group_image",
@@ -395,10 +395,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_pmax_audience_signal",
@@ -413,10 +413,10 @@
       ],
       "accountScope": "required",
       "notes": "Audience signals are hints for Performance Max, not hard targeting.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_pmax_campaign_logo",
@@ -430,10 +430,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_pmax_search_themes",
@@ -447,10 +447,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_product_group",
@@ -464,10 +464,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_search_ad_group",
@@ -481,10 +481,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_search_campaign_image",
@@ -498,10 +498,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_shopping_ad_group",
@@ -515,10 +515,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_shopping_product_ad",
@@ -533,10 +533,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_sitelinks",
@@ -550,10 +550,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_structured_snippets",
@@ -567,10 +567,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_pmax_search_categories",
@@ -584,10 +584,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_pmax_search_terms",
@@ -601,10 +601,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_search_terms",
@@ -619,7 +619,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -636,7 +636,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -653,7 +653,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -669,10 +669,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "bulk_update_ad_status",
@@ -688,7 +688,7 @@
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -704,10 +704,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "bulk_update_keyword_status",
@@ -722,7 +722,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -740,7 +740,7 @@
       "accountScope": "required",
       "notes": "Responsive search ads only. Counts 3-15 headlines, 2-4 descriptions confirmed in docs; limits validated by Google via validate_only.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -757,10 +757,10 @@
       ],
       "accountScope": "required",
       "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_conversion_action",
@@ -774,10 +774,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_demandgen_campaign",
@@ -792,10 +792,10 @@
       ],
       "accountScope": "required",
       "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_label",
@@ -809,10 +809,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_negative_keyword_list",
@@ -827,7 +827,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -844,10 +844,10 @@
       ],
       "accountScope": "required",
       "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_search_campaign",
@@ -862,10 +862,10 @@
       ],
       "accountScope": "required",
       "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_shopping_campaign",
@@ -880,10 +880,10 @@
       ],
       "accountScope": "required",
       "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_youtube_campaign",
@@ -898,7 +898,7 @@
       ],
       "accountScope": "required",
       "notes": "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans.",
-      "status": "pending",
+      "status": "external_limitation",
       "verification": "n/a",
       "tests": "none",
       "inputSchema": "needs_api_mapping"
@@ -915,10 +915,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "explain_performance_anomaly",
@@ -932,10 +932,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_creative",
@@ -950,7 +950,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -966,10 +966,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_group_demographics",
@@ -983,10 +983,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_group_device_bid_modifiers",
@@ -1000,10 +1000,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ad_group_settings",
@@ -1018,7 +1018,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1035,7 +1035,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1052,7 +1052,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1068,10 +1068,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_benchmark_context",
@@ -1086,10 +1086,10 @@
       ],
       "accountScope": "required",
       "notes": "DECISION (owner, 2026-11-02): use account history and officially available competitive metrics only; never invent industry benchmarks. Which competitive metrics the API exposes for each campaign type must be verified against current docs; anything unavailable returns an explicit unsupported result.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_business_profile",
@@ -1104,10 +1104,10 @@
       ],
       "accountScope": "required",
       "notes": "DECISION (owner, 2026-11-02): read supported business assets and account information from Google Ads. Nothing is stored by this server.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_campaign_dates",
@@ -1122,7 +1122,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1139,10 +1139,10 @@
       ],
       "accountScope": "required",
       "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_campaign_labels",
@@ -1156,10 +1156,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_campaign_performance",
@@ -1174,7 +1174,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1190,10 +1190,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_campaign_targeting",
@@ -1207,10 +1207,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_campaign_tracking",
@@ -1225,7 +1225,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1241,10 +1241,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_demandgen_audiences",
@@ -1258,10 +1258,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_demandgen_channel_controls",
@@ -1275,10 +1275,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_ad_group_settings",
@@ -1292,10 +1292,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_audiences",
@@ -1309,10 +1309,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_demographics",
@@ -1326,10 +1326,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_frequency_caps",
@@ -1344,10 +1344,10 @@
       ],
       "accountScope": "required",
       "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_keywords",
@@ -1361,10 +1361,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_placements",
@@ -1378,10 +1378,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_display_topics",
@@ -1395,10 +1395,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_merchant_center_links",
@@ -1412,10 +1412,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_negative_keyword_list",
@@ -1430,7 +1430,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1446,10 +1446,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_pmax_asset_groups",
@@ -1463,10 +1463,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_pmax_asset_performance",
@@ -1480,10 +1480,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_pmax_audience_signals",
@@ -1498,10 +1498,10 @@
       ],
       "accountScope": "required",
       "notes": "Audience signals are hints for Performance Max, not hard targeting.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_pmax_conversion_goals",
@@ -1515,10 +1515,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_pmax_search_themes",
@@ -1532,10 +1532,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_product_groups",
@@ -1549,10 +1549,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_reach_frequency",
@@ -1567,10 +1567,10 @@
       ],
       "accountScope": "required",
       "notes": "Reach metrics exist only for some campaign types and date ranges. ReachPlanService is forecasting, not reporting.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_shopping_settings",
@@ -1584,10 +1584,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_usage_status",
@@ -1600,7 +1600,7 @@
       "platformPermissions": [],
       "accountScope": "none",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1617,10 +1617,10 @@
       ],
       "accountScope": "required",
       "notes": "MCP has no binary upload channel: assets must be supplied as HTTPS URLs the server fetches and validates.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "infer_business_profile",
@@ -1635,10 +1635,10 @@
       ],
       "accountScope": "required",
       "notes": "No LLM inference: extracts only what the account already contains.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "link_merchant_center",
@@ -1653,10 +1653,10 @@
       ],
       "accountScope": "required",
       "notes": "The Merchant Center side may need to accept the link: the call can succeed while the link stays pending.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_call_assets",
@@ -1670,10 +1670,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_campaign_extensions",
@@ -1687,10 +1687,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_campaigns",
@@ -1705,7 +1705,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1722,7 +1722,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1738,10 +1738,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_labels",
@@ -1756,7 +1756,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1773,7 +1773,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1789,10 +1789,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_pmax_asset_group_images",
@@ -1806,10 +1806,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "optimize_budget_allocation",
@@ -1823,10 +1823,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "pause_ad",
@@ -1842,7 +1842,7 @@
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1859,7 +1859,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1876,7 +1876,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1894,7 +1894,7 @@
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -1910,10 +1910,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_app_ad_asset",
@@ -1928,10 +1928,10 @@
       ],
       "accountScope": "required",
       "notes": "App ad assets are fields on the ad itself: adding or removing one is a replace-style update of the ad. Verify exact semantics against the current API.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_asset_group_listing_filter",
@@ -1945,10 +1945,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_call_assets",
@@ -1962,10 +1962,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_callouts",
@@ -1979,10 +1979,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_campaign_label",
@@ -1996,10 +1996,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_campaign_proximity",
@@ -2013,10 +2013,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_display_ad",
@@ -2030,10 +2030,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_display_ad_group",
@@ -2047,10 +2047,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_display_criteria",
@@ -2064,10 +2064,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_keywords",
@@ -2082,7 +2082,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2099,7 +2099,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2115,10 +2115,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_pmax_asset_group_asset",
@@ -2132,10 +2132,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_pmax_asset_group_image",
@@ -2149,10 +2149,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_pmax_audience_signal",
@@ -2167,10 +2167,10 @@
       ],
       "accountScope": "required",
       "notes": "Audience signals are hints for Performance Max, not hard targeting.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_pmax_search_themes",
@@ -2184,10 +2184,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_product_group",
@@ -2201,10 +2201,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_sitelinks",
@@ -2218,10 +2218,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_structured_snippets",
@@ -2235,10 +2235,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "replace_demandgen_audiences",
@@ -2252,10 +2252,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "research_keywords",
@@ -2269,10 +2269,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "resolve_google_locations",
@@ -2286,10 +2286,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "resume_ad",
@@ -2305,7 +2305,7 @@
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2322,7 +2322,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2339,7 +2339,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2356,10 +2356,10 @@
       ],
       "accountScope": "required",
       "notes": "DECISION (owner, 2026-11-02): update supported Google Ads business assets only. No arbitrary profile storage.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "search_audiences",
@@ -2373,10 +2373,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "select_google_campaign_type",
@@ -2388,10 +2388,10 @@
       "feasibility": "internal",
       "platformPermissions": [],
       "accountScope": "none",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "set_ad_group_device_bid_modifiers",
@@ -2405,10 +2405,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "set_call_asset_status",
@@ -2422,10 +2422,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "set_campaign_ad_schedule",
@@ -2439,10 +2439,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "set_campaign_device_bid_modifiers",
@@ -2456,10 +2456,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "suggest_ad_content",
@@ -2474,10 +2474,10 @@
       ],
       "accountScope": "required",
       "notes": "No generative copy: returns the account's best-performing existing headlines/descriptions and validates limits. Generative suggestions would be invented content.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "unlink_merchant_center",
@@ -2491,10 +2491,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_ad_content",
@@ -2510,7 +2510,7 @@
       "accountScope": "required",
       "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2528,7 +2528,7 @@
       "accountScope": "required",
       "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2544,10 +2544,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_ad_group_settings",
@@ -2562,7 +2562,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2580,7 +2580,7 @@
       "accountScope": "required",
       "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2596,10 +2596,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_campaign",
@@ -2614,7 +2614,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2631,7 +2631,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2648,10 +2648,10 @@
       ],
       "accountScope": "required",
       "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_conversion_action",
@@ -2665,10 +2665,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_demandgen_channel_controls",
@@ -2683,10 +2683,10 @@
       ],
       "accountScope": "required",
       "notes": "Field location varies by API version: verify before implementing.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_display_ad_creative",
@@ -2701,10 +2701,10 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_display_campaign_schedule",
@@ -2718,10 +2718,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_display_demographics",
@@ -2735,10 +2735,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_display_frequency_caps",
@@ -2753,10 +2753,10 @@
       ],
       "accountScope": "required",
       "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_keyword",
@@ -2771,7 +2771,7 @@
       ],
       "accountScope": "required",
       "status": "implemented",
-      "verification": "mocked-api only",
+      "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
     },
@@ -2787,10 +2787,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_pmax_asset_group",
@@ -2804,10 +2804,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_pmax_audience_signal",
@@ -2822,10 +2822,10 @@
       ],
       "accountScope": "required",
       "notes": "Audience signals are hints for Performance Max, not hard targeting.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_product_group",
@@ -2839,10 +2839,10 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "validate_and_prepare_assets",
@@ -2857,10 +2857,10 @@
       ],
       "accountScope": "required",
       "notes": "SSRF-hardened fetch required (block private ranges, redirects, size caps).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "validate_video",
@@ -2875,10 +2875,10 @@
       ],
       "accountScope": "required",
       "notes": "DECISION (owner, 2026-11-02): integrate the YouTube Data API. Needs a YOUTUBE_API_KEY (public video metadata) and quota; Ads-side checks are limited to the documented asset requirements. Whether Google Ads exposes a pre-flight video validation call is unverified.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_meta_ad",
@@ -3516,10 +3516,10 @@
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_catalogs",
@@ -3724,10 +3724,10 @@
         "ads_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "resume_meta_campaign",
@@ -3741,10 +3741,10 @@
         "ads_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "search_meta_targeting",

@@ -6,6 +6,7 @@ import { PlatformOAuth } from "./auth/platform-oauth";
 import { GoogleTokenProvider, MetaTokenProvider } from "./auth/token-providers";
 import { GoogleAdsHttp } from "./platforms/google/http";
 import { MetaGraphHttp } from "./platforms/meta/http";
+import { YouTubeClient } from "./platforms/google/youtube";
 import { JobQueue } from "./jobs/queue";
 import { registerSystemJobs } from "./jobs/system";
 import { createServicesFactory } from "./platforms/google/services";
@@ -61,6 +62,7 @@ function main() {
       google: config.google
         ? { tokens: googleTokens!, http: new GoogleAdsHttp({ apiVersion: config.google.apiVersion }) }
         : undefined,
+      youtube: config.youtubeApiKey ? new YouTubeClient({ apiKey: config.youtubeApiKey }) : undefined,
       meta: config.meta ? { tokens: new MetaTokenProvider({ db, cipher, appSecret: config.meta.appSecret }), http: new MetaGraphHttp({ apiVersion: config.meta.apiVersion }) } : undefined,
     }),
   };

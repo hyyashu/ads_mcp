@@ -1460,6 +1460,100 @@
 "segments.year"
 ]
 },
+"ad_group_ad_asset_view": {
+"attributed": [
+"ad_group",
+"ad_group_ad",
+"asset",
+"campaign",
+"customer"
+],
+"fields": {
+"ad_group_ad_asset_view.ad_group_ad": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.asset": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.enabled": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.field_type": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.performance_label": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.pinned_field": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.policy_summary": {
+"filterable": false,
+"selectable": true
+},
+"ad_group_ad_asset_view.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_asset_view.source": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [
+"metrics.all_conversions",
+"metrics.all_conversions_from_interactions_rate",
+"metrics.all_conversions_value",
+"metrics.all_conversions_value_per_cost",
+"metrics.average_cost",
+"metrics.average_cpc",
+"metrics.average_cpe",
+"metrics.average_cpm",
+"metrics.biddable_app_install_conversions",
+"metrics.biddable_app_post_install_conversions",
+"metrics.clicks",
+"metrics.conversions",
+"metrics.conversions_from_interactions_rate",
+"metrics.conversions_value",
+"metrics.conversions_value_per_cost",
+"metrics.cost_micros",
+"metrics.cost_per_all_conversions",
+"metrics.cost_per_conversion",
+"metrics.cross_device_conversions",
+"metrics.ctr",
+"metrics.engagement_rate",
+"metrics.engagements",
+"metrics.impressions",
+"metrics.interaction_event_types",
+"metrics.interaction_rate",
+"metrics.interactions",
+"metrics.trueview_average_cpv",
+"metrics.value_per_all_conversions",
+"metrics.value_per_conversion",
+"metrics.video_trueview_view_rate",
+"metrics.video_trueview_views",
+"metrics.view_through_conversions",
+"segments.ad_format_type",
+"segments.ad_network_type",
+"segments.ad_sub_network_type",
+"segments.conversion_action",
+"segments.conversion_action_name",
+"segments.date",
+"segments.day_of_week",
+"segments.device",
+"segments.month",
+"segments.quarter",
+"segments.slot",
+"segments.week",
+"segments.year"
+]
+},
 "ad_group_asset": {
 "attributed": [
 "asset",
