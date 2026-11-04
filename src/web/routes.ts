@@ -1,3 +1,4 @@
+import { readText } from "../mcp/http";
 import { AutomationRulesSchema, autoApprovedToday, loadRules, saveRules } from "../policy/automation";
 import type { ChangeSet } from "../policy/change-set";
 import type { IncomingMessage, ServerResponse } from "node:http";
@@ -33,16 +34,6 @@ const PUBLIC_CORS = { "access-control-allow-origin": "*", "access-control-allow-
 const CORS_PATHS = new Set(["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp", "/.well-known/oauth-authorization-server", "/register", "/token", "/revoke"]);
 const PLATFORM_BY_SLUG: Record<string, PlatformKey> = { google: "google_ads", meta: "meta_ads" };
 
-async function readText(req: IncomingMessage, max: number): Promise<string> {
-  const chunks: Buffer[] = [];
-  let size = 0;
-  for await (const c of req) {
-    size += (c as Buffer).length;
-    if (size > max) throw new ToolError("invalid_argument", "Request body too large.");
-    chunks.push(c as Buffer);
-  }
-  return Buffer.concat(chunks).toString("utf8");
-}
 
 export class WebRoutes {
   constructor(private d: WebDeps) {}
@@ -91,6 +82,31 @@ export class WebRoutes {
 
   private async session(req: IncomingMessage): Promise<WebSession | null> {
     return getSession(this.d.db, req.headers.cookie);
+  }
+
+  /**
+   * The checks every state-changing form POST needs: a signed-in session, a same-origin request and a valid CSRF token for
+   * `purpose`. Writes the refusal itself (401, or a redirect to sign-in when `loginRedirect` is set; 403) and returns null.
+   */
+  private async formPost(req: IncomingMessage, res: ServerResponse, purpose: string, loginRedirect?: string): Promise<{ s: WebSession; form: URLSearchParams } | null> {
+    const s = await this.session(req);
+    if (!s) {
+      if (loginRedirect) this.toLogin(res, new URL(loginRedirect, "http://x"));
+      else this.html(res, 401, page("Sign in required", flash("Your session expired.", true)));
+      return null;
+    }
+    const form = await this.readForm(req);
+    if (!this.sameOrigin(req) || !verifyCsrf(s, purpose, form.get("csrf") ?? undefined)) {
+      this.html(res, 403, page("Refused", flash("Invalid or cross-site request.", true)));
+      return null;
+    }
+    return { s, form };
+  }
+
+  /** The platform connection service, or a clear error when the server has no Google or Meta OAuth configured. */
+  private get platform() {
+    if (!this.d.platform) throw new ToolError("unsupported", "Connections are not configured on this server.");
+    return this.d.platform;
   }
 
   private async readForm(req: IncomingMessage) {
@@ -369,16 +385,9 @@ ${hidden("csrf", csrfToken(s, "consent"))}
   }
 
   private async decide(req: IncomingMessage, res: ServerResponse, id: string) {
-    const s = await this.session(req);
-    if (!s) {
-      this.html(res, 401, page("Sign in required", flash("Your session expired.", true)));
-      return true;
-    }
-    const form = await this.readForm(req);
-    if (!this.sameOrigin(req) || !verifyCsrf(s, `approval:${id}`, form.get("csrf") ?? undefined)) {
-      this.html(res, 403, page("Refused", flash("Invalid or cross-site request.", true)));
-      return true;
-    }
+    const post = await this.formPost(req, res, `approval:${id}`);
+    if (!post) return true;
+    const { s, form } = post;
     const decision = form.get("decision");
     if (decision !== "approve" && decision !== "reject") {
       this.html(res, 400, page("Refused", flash("Unknown decision.", true)));
@@ -421,16 +430,9 @@ ${owner ? `<button class="primary">Save</button>` : `<p class="muted">Only an ow
   }
 
   private async saveAutomation(req: IncomingMessage, res: ServerResponse) {
-    const s = await this.session(req);
-    if (!s) {
-      this.html(res, 401, page("Sign in required", flash("Your session expired.", true)));
-      return true;
-    }
-    const form = await this.readForm(req);
-    if (!this.sameOrigin(req) || !verifyCsrf(s, "automation", form.get("csrf") ?? undefined)) {
-      this.html(res, 403, page("Refused", flash("Invalid or cross-site request.", true)));
-      return true;
-    }
+    const post = await this.formPost(req, res, "automation");
+    if (!post) return true;
+    const { s, form } = post;
     if (s.role !== "owner") {
       this.html(res, 403, page("Refused", flash("Only an owner can change automation rules.", true)));
       return true;
@@ -489,17 +491,12 @@ ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${h
   }
 
   private async connectStart(req: IncomingMessage, res: ServerResponse, platform: PlatformKey) {
-    const s = await this.session(req);
-    if (!s) return this.toLogin(res, new URL("/connections", "http://x"));
-    const form = await this.readForm(req);
-    if (!this.sameOrigin(req) || !verifyCsrf(s, "connect", form.get("csrf") ?? undefined)) {
-      this.html(res, 403, page("Refused", flash("Invalid or cross-site request.", true)));
-      return true;
-    }
+    const post = await this.formPost(req, res, "connect", "/connections");
+    if (!post) return true;
+    const { s, form } = post;
     try {
-      if (!this.d.platform) throw new ToolError("unsupported", "Connections are not configured on this server.");
       const access = form.get("access") === "write" ? "write" : "read";
-      this.redirect(res, await this.d.platform.start(platform, { tenantId: s.tenantId, userId: s.userId, role: s.role }, access));
+      this.redirect(res, await this.platform.start(platform, { tenantId: s.tenantId, userId: s.userId, role: s.role }, access));
     } catch (e) {
       this.redirect(res, `/connections?msg=${encodeURIComponent(e instanceof ToolError ? e.message : "Could not start the connection.")}`);
     }
@@ -510,8 +507,7 @@ ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${h
     const s = await this.session(req);
     if (!s) return this.toLogin(res, url);
     try {
-      if (!this.d.platform) throw new ToolError("unsupported", "Connections are not configured on this server.");
-      const r = await this.d.platform.finish(platform, { tenantId: s.tenantId, userId: s.userId, role: s.role }, url.searchParams);
+      const r = await this.platform.finish(platform, { tenantId: s.tenantId, userId: s.userId, role: s.role }, url.searchParams);
       this.redirect(res, `/connections?msg=${encodeURIComponent(`Connected ${r.accounts} account(s) with ${r.access} access.${r.skipped ? ` ${r.skipped} skipped.` : ""}`)}`);
     } catch (e) {
       this.redirect(res, `/connections?msg=${encodeURIComponent(e instanceof ToolError ? e.message : "The connection could not be completed.")}`);
@@ -520,19 +516,11 @@ ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${h
   }
 
   private async disconnect(req: IncomingMessage, res: ServerResponse, id: string) {
-    const s = await this.session(req);
-    if (!s) {
-      this.html(res, 401, page("Sign in required", flash("Your session expired.", true)));
-      return true;
-    }
-    const form = await this.readForm(req);
-    if (!this.sameOrigin(req) || !verifyCsrf(s, `disconnect:${id}`, form.get("csrf") ?? undefined)) {
-      this.html(res, 403, page("Refused", flash("Invalid or cross-site request.", true)));
-      return true;
-    }
+    const post = await this.formPost(req, res, `disconnect:${id}`);
+    if (!post) return true;
+    const { s } = post;
     try {
-      if (!this.d.platform) throw new ToolError("unsupported", "Connections are not configured on this server.");
-      const r = await this.d.platform.disconnect({ tenantId: s.tenantId, userId: s.userId, role: s.role }, id);
+      const r = await this.platform.disconnect({ tenantId: s.tenantId, userId: s.userId, role: s.role }, id);
       this.redirect(res, `/connections?msg=${encodeURIComponent(r.revokedAtPlatform ? "Disconnected and revoked at the platform." : "Disconnected. The platform could not confirm revocation: remove this app in your account settings too.")}`);
     } catch (e) {
       this.redirect(res, `/connections?msg=${encodeURIComponent(e instanceof ToolError ? e.message : "Could not disconnect.")}`);

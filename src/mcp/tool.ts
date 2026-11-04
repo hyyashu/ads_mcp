@@ -65,12 +65,10 @@ export interface WriteTool<I extends z.ZodObject = z.ZodObject, O extends z.ZodT
   kind: "write";
   risk: Exclude<Risk, "read">;
   /**
-   * Runs at request time, READ-ONLY: validates the arguments against live platform state and returns
-   * the plain-language summary an approver will see, plus a snapshot used to detect drift before executing.
-   */
-  /**
-   * Read-only. `changes` (M3) lists each field that would change, read live; when given, the approval's risk follows the
-   * direction of the change (see policy/risk.ts) and the change set is stored with the approval and shown to approvers.
+   * Runs at request time, READ-ONLY: validates the arguments against live platform state and returns the plain-language
+   * summary an approver will see, a snapshot used to detect drift before executing, and optionally `changes` (each field
+   * that would change, read live). With `changes`, the approval's risk follows the direction of the change
+   * (policy/risk.ts) and the change set is stored with the approval and shown to approvers.
    */
   plan(args: z.infer<I>, ctx: ToolContext<S>): Promise<{ summary: string; snapshot?: unknown; changes?: Change[] }>;
   /**

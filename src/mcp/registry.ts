@@ -66,9 +66,11 @@ export class ToolRegistry {
     return this.tools.get(name);
   }
   /** Operation category, taken from the inventory so it cannot drift from it: read | analyze | create | update | delete. */
+  private operations?: Map<string, "read" | "analyze" | "create" | "update" | "delete">;
+  /** The inventory's action type for a tool (looked up from a map built once, not a scan per call). */
   operationOf(name: string): "read" | "analyze" | "create" | "update" | "delete" {
-    const t = this.inventory.find((x) => x.name === name);
-    return (t?.action_type.toLowerCase() ?? "read") as "read" | "analyze" | "create" | "update" | "delete";
+    this.operations ??= new Map(this.inventory.map((t) => [t.name, t.action_type.toLowerCase() as "read" | "analyze" | "create" | "update" | "delete"]));
+    return this.operations.get(name) ?? "read";
   }
   list(): AnyTool[] {
     return [...this.tools.values()];

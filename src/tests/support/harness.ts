@@ -5,7 +5,7 @@ import { createExecutor, runTool, type PipelineDeps } from "../../mcp/pipeline";
 import { ToolRegistry } from "../../mcp/registry";
 import { googleTools } from "../../platforms/google";
 import { GoogleAdsHttp } from "../../platforms/google/http";
-import { createServicesFactory } from "../../platforms/google/services";
+import { createServicesFactory } from "../../platforms/services";
 import { ApprovalService } from "../../security/approvals";
 import { RateLimiter } from "../../security/rate-limit";
 import { addUser, seedAccount, seedTenant, testDb } from "../helpers";

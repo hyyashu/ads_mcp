@@ -4,6 +4,7 @@ import type { Db } from "../db";
 import { appUser, oauthAccessToken, oauthAuthCode, oauthClient, oauthRefreshToken } from "../db/schema";
 import { sha256 } from "../security/canonical";
 import type { AuthContext, Authenticator, Role } from "./context";
+import { bearerToken } from "./context";
 import { assertSafeHttpsUrl, safeFetchJson } from "./ssrf";
 
 /**
@@ -395,11 +396,9 @@ export class CompositeAuthenticator implements Authenticator {
     private pat: Authenticator,
   ) {}
   async authenticate(headers: Record<string, string | string[] | undefined>): Promise<AuthContext | null> {
-    const raw = headers.authorization;
-    const h = Array.isArray(raw) ? raw[0] : raw;
-    const m = h?.match(/^Bearer\s+(\S+)$/i);
-    if (!m) return null;
-    if (m[1]!.startsWith("mcpat_")) return this.oauth.validateAccessToken(m[1]!);
+    const tok = bearerToken(headers);
+    if (!tok) return null;
+    if (tok.startsWith("mcpat_")) return this.oauth.validateAccessToken(tok);
     return this.pat.authenticate(headers);
   }
 }

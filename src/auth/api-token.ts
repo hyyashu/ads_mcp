@@ -4,6 +4,7 @@ import type { Db } from "../db";
 import { apiToken, appUser } from "../db/schema";
 import { sha256 } from "../security/canonical";
 import type { AuthContext, Authenticator, Role } from "./context";
+import { bearerToken } from "./context";
 
 const PREFIX = "adsmcp_";
 
@@ -36,10 +37,8 @@ export class ApiTokenAuthenticator implements Authenticator {
   ) {}
 
   async authenticate(headers: Record<string, string | string[] | undefined>): Promise<AuthContext | null> {
-    const raw = headers.authorization;
-    const h = Array.isArray(raw) ? raw[0] : raw;
-    const m = h?.match(/^Bearer\s+(\S+)$/i);
-    if (!m || !m[1]!.startsWith(PREFIX)) return null;
+    const tok = bearerToken(headers);
+    if (!tok || !tok.startsWith(PREFIX)) return null;
 
     const [row] = await this.db
       .select({
@@ -53,7 +52,7 @@ export class ApiTokenAuthenticator implements Authenticator {
       })
       .from(apiToken)
       .innerJoin(appUser, eq(appUser.id, apiToken.userId))
-      .where(and(eq(apiToken.tokenHash, sha256(m[1]!)), isNull(apiToken.revokedAt)));
+      .where(and(eq(apiToken.tokenHash, sha256(tok)), isNull(apiToken.revokedAt)));
     if (!row) return null;
     if (row.expiresAt && row.expiresAt <= this.now()) return null;
     // "Last used" only needs minute precision: skip the write on most requests instead of one write per call.
