@@ -4,7 +4,7 @@ import { EXPECTED, loadInventory, validateInventory } from "../inventory";
 describe("tool inventory", () => {
   const inv = loadInventory();
 
-  it("contains exactly the 231 expected tools (171 Google, 60 Meta) with unique names", () => {
+  it("contains exactly the 232 expected tools (172 Google, 60 Meta) with unique names", () => {
     expect(inv).toHaveLength(EXPECTED.total);
     expect(inv.filter((t) => t.platform === "google_ads")).toHaveLength(EXPECTED.google_ads);
     expect(inv.filter((t) => t.platform === "meta_ads")).toHaveLength(EXPECTED.meta_ads);
@@ -24,6 +24,6 @@ describe("tool inventory", () => {
     expect(validateInventory(dup).join("\n")).toMatch(/duplicate tool name/);
     const lie = inv.map((t, i) => (i === 0 ? { ...t, modifies_data: !t.modifies_data } : t));
     expect(validateInventory(lie).join("\n")).toMatch(/contradicts action_type/);
-    expect(validateInventory(inv.slice(1)).join("\n")).toMatch(/expected 231/);
+    expect(validateInventory(inv.slice(1)).join("\n")).toMatch(/expected 232/);
   });
 });

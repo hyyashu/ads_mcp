@@ -57,6 +57,7 @@ const googleDomain: [RegExp, string][] = [
 const googleApi: Rule[] = [
   // --- explicit special cases first
   [/^get_usage_status$/, { api: "Server usage metering (usage_counter) plus API quota state", feasibility: "internal", accountScope: "none", platformPermissions: [] }],
+  [/^list_accounts$/, { api: "This server's connected_account table (no platform call)", feasibility: "internal", accountScope: "none", platformPermissions: [] }],
   [/^help_user_upload$/, { api: "Server-side guidance: asset specs and the HTTPS-URL upload path", feasibility: "internal", notes: "MCP has no binary upload channel: assets must be supplied as HTTPS URLs the server fetches and validates." }],
   [/^select_google_campaign_type$/, { api: "Deterministic decision logic over documented campaign-type eligibility", feasibility: "internal", accountScope: "none", platformPermissions: [] }],
   [/^get_benchmark_context$/, { api: "GAQL: the account's own history (prior periods) plus Google's official competitive metrics where exposed (impression share, lost impression share)", feasibility: "limitation_candidate", notes: "DECISION (owner, 2026-11-02): use account history and officially available competitive metrics only; never invent industry benchmarks. Which competitive metrics the API exposes for each campaign type must be verified against current docs; anything unavailable returns an explicit unsupported result." }],

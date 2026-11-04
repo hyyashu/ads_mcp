@@ -19,7 +19,7 @@ export type InventoryTool = z.infer<typeof InventoryTool>;
 
 const Inventory = z.object({ schema_version: z.literal(1), tools: z.array(InventoryTool) });
 
-export const EXPECTED = { google_ads: 171, meta_ads: 60, total: 231 } as const;
+export const EXPECTED = { google_ads: 172, meta_ads: 60, total: 232 } as const;
 
 export function loadInventory(path = fileURLToPath(new URL("../inventory/tool-registry.json", import.meta.url))): InventoryTool[] {
   return Inventory.parse(JSON.parse(readFileSync(path, "utf8"))).tools;

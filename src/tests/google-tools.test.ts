@@ -67,7 +67,7 @@ function deps(): PipelineDeps {
 const run = async (name: string, args: Record<string, unknown>, acct = accountId) => {
   seen.length = 0;
   const d = deps();
-  return runTool(d, d.registry.get(name)!, name === "get_usage_status" ? args : { account_id: acct, ...args }, { tenantId, userId, role: "owner", scopes: ["ads:read", "ads:write"] });
+  return runTool(d, d.registry.get(name)!, name === "get_usage_status" || name === "list_accounts" ? args : { account_id: acct, ...args }, { tenantId, userId, role: "owner", scopes: ["ads:read", "ads:write"] });
 };
 const lastQuery = () => seen.at(-1)!.body.query!;
 
@@ -348,6 +348,23 @@ describe("get_usage_status", () => {
     expect(d.top_tools[0]).toMatchObject({ tool: "fixture_tool_a", calls: 5000, errors: 7 });
     expect(d.connections.active).toBeGreaterThanOrEqual(1);
     expect(seen).toHaveLength(0); // never calls Google
+  });
+});
+
+// ------------------------------------------------------------------------------------ list_accounts ----
+describe("list_accounts", () => {
+  it("lists this workspace's connected accounts with the account_id the other tools take, and none from other workspaces", async () => {
+    const before = seen.length;
+    const env = await run("list_accounts", {});
+    expect(env.ok).toBe(true);
+    expect(seen.length).toBe(before); // never calls Google
+    const accounts = (env.data as any).accounts as { account_id: string; platform: string; access: string; status: string }[];
+    expect(accounts.map((a) => a.account_id)).toContain(accountId);
+    expect(accounts.map((a) => a.account_id)).not.toContain(otherAccountId);
+    expect(accounts.find((a) => a.account_id === accountId)).toMatchObject({ platform: "google_ads", status: "active" });
+    // The id it returns is the one the account tools accept.
+    responder = () => ({ results: [] });
+    expect((await run("list_campaigns", {}, accounts.find((a) => a.account_id === accountId)!.account_id)).ok).toBe(true);
   });
 });
 
