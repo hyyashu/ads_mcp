@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
-import type { ReadTool, WriteTool } from "../../../mcp/tool";
+import { asText, platformTools } from "../../core/tool-defs";
 import type { GoogleAdsClient } from "../client";
 import { DURING, Gaql, isRealDate, lit, pick } from "../gaql";
 import type { GoogleServices } from "../services";
@@ -33,42 +33,17 @@ export const nullable = <T>(v: T | undefined): T | null => (v === undefined ? nu
 export const ratio = (a: number, b: number): number | null => (b > 0 ? a / b : null);
 export const round = (n: number | null, digits = 4): number | null => (n === null ? null : Math.round(n * 10 ** digits) / 10 ** digits);
 
-type ReadDef<I extends z.ZodObject, O extends z.ZodType> = Omit<ReadTool<I, O, GoogleServices>, "kind" | "platform" | "permissions"> & { permissions?: Partial<ReadTool["permissions"]> };
-
+const google = platformTools<GoogleServices>("google_ads", {
+  read: { platformPermissions: [ADS_SCOPE], notes: "The Google Cloud project that issued the OAuth credentials needs Google Ads API access (Explorer, Basic or Standard). Developer tokens were sunset on 2026-09-09." },
+  write: { platformPermissions: [ADS_SCOPE], notes: "Requires write access to the account for the connected Google user, and Google Ads API access on the Cloud project." },
+});
 /** Declares a Google Ads read tool with the standard scope and platform permission documentation. */
-export function googleRead<I extends z.ZodObject, O extends z.ZodType>(def: ReadDef<I, O>): ReadTool<I, O, GoogleServices> {
-  return {
-    ...def,
-    kind: "read",
-    platform: "google_ads",
-    permissions: {
-      scope: "ads:read",
-      platformPermissions: [ADS_SCOPE],
-      notes: "The Google Cloud project that issued the OAuth credentials needs Google Ads API access (Explorer, Basic or Standard). Developer tokens were sunset on 2026-09-09.",
-      ...def.permissions,
-    },
-  };
-}
+export const googleRead = google.read;
+/** Declares a Google Ads write tool. Writes never run directly: the pipeline queues an approval first. */
+export const googleWrite = google.write;
 
 export const Money = z.number().describe("In the account's currency (micros converted to units).");
 
-
-type WriteDef<I extends z.ZodObject, O extends z.ZodType> = Omit<WriteTool<I, O, GoogleServices>, "kind" | "platform" | "permissions"> & { permissions?: Partial<WriteTool["permissions"]> };
-
-/** Declares a Google Ads write tool. Writes never run directly: the pipeline queues an approval first. */
-export function googleWrite<I extends z.ZodObject, O extends z.ZodType>(def: WriteDef<I, O>): WriteTool<I, O, GoogleServices> {
-  return {
-    ...def,
-    kind: "write",
-    platform: "google_ads",
-    permissions: {
-      scope: "ads:write",
-      platformPermissions: [ADS_SCOPE],
-      notes: "Requires write access to the account for the connected Google user, and Google Ads API access on the Cloud project.",
-      ...def.permissions,
-    },
-  };
-}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Helpers shared by the tool files. Keep one definition of each: copies drift apart (this has already caused bugs).
@@ -78,10 +53,8 @@ export function googleWrite<I extends z.ZodObject, O extends z.ZodType>(def: Wri
 export const idSchema = z.string().regex(/^\d{1,20}$/, "numeric id");
 
 /** A field from a GAQL row as a string, or null when absent. */
-export const str = (row: Record<string, unknown>, field: string): string | null => {
-  const v = pick(row, field);
-  return v === undefined || v === null ? null : String(v);
-};
+/** A GAQL field (snake_case path, read from Google's camelCase JSON) as text, or null when absent. */
+export const str = (row: Record<string, unknown>, field: string): string | null => asText(pick(row, field));
 
 /** Currency units to micros, rounded to the nearest micro. */
 export const toMicros = (units: number): number => Math.round(units * 1_000_000);
