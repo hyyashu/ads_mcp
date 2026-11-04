@@ -8,7 +8,7 @@ import { GoogleAdsHttp } from "../../platforms/google/http";
 import { createServicesFactory } from "../../platforms/services";
 import { ApprovalService } from "../../security/approvals";
 import { RateLimiter } from "../../security/rate-limit";
-import { addUser, seedAccount, seedTenant, testDb } from "../helpers";
+import { addUser, seedAccount, seedTenant, testDb } from "./helpers";
 import { schemaChecked } from "./schema-guard";
 
 /**
