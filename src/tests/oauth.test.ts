@@ -283,6 +283,9 @@ describe("authorization code flow with PKCE", () => {
     expect(got.html).toContain("&lt;script&gt;");
     expect(got.page.headers.get("x-frame-options")).toBe("DENY");
     expect(got.page.headers.get("content-security-policy")).toContain("frame-ancestors 'none'");
+    // "no-referrer" makes browsers send `Origin: null` on same-origin form POSTs, so every form fails the
+    // origin check. "same-origin" keeps the real Origin and still sends no referrer to other sites.
+    expect(got.page.headers.get("referrer-policy")).toBe("same-origin");
   });
 });
 
