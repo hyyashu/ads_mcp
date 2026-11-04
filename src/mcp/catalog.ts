@@ -52,5 +52,5 @@ export function catalogInstructions(caps: Capabilities, auth: Pick<AuthContext, 
   }
   const parts = [...caps.entries()].sort().map(([p, c]) => `${LABEL[p]} (${c.write ? "read and write" : "read only"})`);
   const readOnlyToken = !auth.scopes.includes("ads:write") ? " This connection was authorized read-only, so no tools that change accounts are listed." : "";
-  return `Connected: ${parts.join(", ")}. Call list_accounts first: every account tool needs its account_id (this server's id, not the platform's). Tools for platforms that are not connected are not listed.${readOnlyToken} ${base}`;
+  return `Connected: ${parts.join(", ")}. Account tools take account_id: the platform's own id (a Google Ads customer id like 488-059-4061, or a Meta act_ id) or the account_id from list_accounts, which lists the connected accounts. Tools for platforms that are not connected are not listed.${readOnlyToken} ${base}`;
 }

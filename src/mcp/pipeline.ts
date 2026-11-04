@@ -121,6 +121,9 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
     const ctx = await raceAbort(buildContext(deps, tool, args, auth, dl.signal), dl.signal, dl.timedOut);
     accountId = ctx.account?.id ?? null;
     resolved = ctx.account;
+    // account_id may name the account by the platform's id; from here on it is always this server's id, so approvals,
+    // de-duplication and re-checks at execution see one canonical value.
+    if (ctx.account && "account_id" in args) args.account_id = ctx.account.id;
 
     if (tool.kind === "read") {
       const raw = await raceAbort(Promise.resolve(tool.handler(args, ctx)), dl.signal, dl.timedOut);

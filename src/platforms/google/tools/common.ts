@@ -7,7 +7,7 @@ import type { GoogleServices } from "../services";
 
 export const ADS_SCOPE = "https://www.googleapis.com/auth/adwords";
 
-export const accountId = z.string().min(1).describe("Connected Google Ads account id, as listed in your connections.");
+export const accountId = z.string().min(1).describe("Google Ads account: the customer id (e.g. 488-059-4061) or the account_id from list_accounts.");
 export const campaignIds = z.array(z.string().regex(/^\d{1,20}$/, "numeric campaign id")).max(50).describe("Limit to these campaign ids (up to 50).");
 
 /** Either a named period (evaluated in the account's own time zone by Google) or an explicit start/end date. */
