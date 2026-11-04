@@ -1,17 +1,8 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AuthContext } from "../auth/context";
 import { catalogInstructions, tenantCapabilities, visibleTools } from "./catalog";
-import { envelope } from "./envelope";
 import { type PipelineDeps, runTool } from "./pipeline";
 import { type AnyTool, riskOf } from "./tool";
-
-/** Output envelopes are built once per tool and reused: the server is rebuilt per request, its schemas need not be. */
-const envelopes = new WeakMap<AnyTool, ReturnType<typeof envelope>>();
-const envelopeFor = (t: AnyTool) => {
-  let e = envelopes.get(t);
-  if (!e) envelopes.set(t, (e = envelope(t.output)));
-  return e;
-};
 
 export const SERVER_INFO = { name: "ads-mcp", version: "0.1.0" } as const;
 
@@ -32,7 +23,9 @@ export async function createMcpServer(deps: PipelineDeps, auth: AuthContext, req
         title: tool.title,
         description: tool.description,
         inputSchema: tool.input,
-        outputSchema: envelopeFor(tool),
+        // No outputSchema: with every tool's result envelope listed, tools/list for a fully connected workspace was
+        // ~1.1 MB (83% output schemas) and ChatGPT failed "action discovery". Results are still validated by the
+        // pipeline and returned as structuredContent; the schemas only cost clients context.
         annotations: {
           readOnlyHint: tool.kind === "read",
           destructiveHint: risk === "destructive",
