@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 174,
+    "implemented": 180,
     "external_limitation": 1,
-    "pending": 57
+    "pending": 51
   },
   "rows": [
     {
@@ -2968,17 +2968,17 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "analysis_and_helpers",
-      "api": "GET /{act}/insights (level=ad), deterministic ranking",
+      "api": "GET /{act}/insights or /{campaign_id}/insights (level=ad, use_unified_attribution_setting=true), deterministic ranking and fixed-rule flags (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_meta_audiences",
@@ -3297,18 +3297,18 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "ad_sets",
-      "api": "GET /{act}/insights (level=campaign|adset)",
+      "api": "GET /{act}/insights or /{campaign_id}/insights (level=campaign|adset, use_unified_attribution_setting=true) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "notes": "Large ranges need async report runs; respect rate limits (BUC).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Synchronous reads, capped at 2,000 rows with a truncated flag. Async report runs for very large ranges are not used yet.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_app_adsets",
@@ -3401,35 +3401,35 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "campaigns",
-      "api": "GET /{campaign_id}?fields=...",
+      "api": "GET /{campaign_id} (ownership checked) + GET /{campaign_id}/adsets and /ads (effective_status counts) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_campaign_performance",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "campaigns",
-      "api": "GET /{act}/insights (level=campaign|adset)",
+      "api": "GET /{act}/insights or /{campaign_id}/insights (level=campaign|adset, use_unified_attribution_setting=true) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "notes": "Large ranges need async report runs; respect rate limits (BUC).",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Synchronous reads, capped at 2,000 rows with a truncated flag. Async report runs for very large ranges are not used yet.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_lead_form_submissions",
@@ -3490,34 +3490,34 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "ad_sets",
-      "api": "GET /{act}/adsets",
+      "api": "GET /{act}/adsets, or GET /{campaign_id}/adsets after an ownership check (v27.0; never requests meta_moment_maker_spec)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_ads",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "ads",
-      "api": "GET /{act}/ads",
+      "api": "GET /{act}/ads, or GET /{campaign_id}/ads | /{adset_id}/ads after an ownership check (fields incl. creative{id,name}, issues_info; v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_campaigns",

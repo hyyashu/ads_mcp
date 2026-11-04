@@ -20,12 +20,8 @@ export class GaqlError extends ToolError {
   }
 }
 
-/** YYYY-MM-DD that is a real calendar date. Date.parse alone accepts impossible dates such as 2027-02-30. */
-export function isRealDate(value: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const t = Date.parse(`${value}T00:00:00Z`);
-  return !Number.isNaN(t) && new Date(t).toISOString().startsWith(value);
-}
+import { isRealDate } from "../core/report-math";
+export { isRealDate };
 
 export const lit = {
   /** Quoted string literal. Control characters are rejected, quotes and backslashes escaped. */

@@ -5,7 +5,8 @@ import { logger } from "../../obs/logger";
 
 /**
  * Low-level Meta Graph / Marketing API transport. Verified against Meta's documentation on 2026-11-04:
- * - Versions: v26.0 (introduced 2026-07-29) is the latest; v25.0 remains available (Graph API changelog).
+ * - Versions: v27.0 (released 2026-11-04) is the latest; v26.0 (2026-07-29) is still supported (Graph API changelog,
+ *   checked 2026-11-05). v27 no longer returns ad sets' meta_moment_maker_spec on reads, so it is never requested.
  * - Error body: {error: {message, type, code, error_subcode, error_user_title, error_user_msg, fbtrace_id}} (Graph API
  *   error handling guide). Throttling codes: 4 (app), 17 (user), 32 (pages), 613 (custom), 80000-80014 (business use
  *   case / ad account) (Graph API and Marketing API rate limiting).
@@ -17,7 +18,7 @@ import { logger } from "../../obs/logger";
  * approval key, drift checks and verify() like Google, and are never retried automatically.
  */
 export interface MetaHttpOptions {
-  /** e.g. "v26.0". No default: the operator must set it from Meta's changelog. */
+  /** e.g. "v27.0". No default: the operator must set it from Meta's changelog. */
   apiVersion: string;
   fetch?: FetchLike;
   timeoutMs?: number;
@@ -115,7 +116,7 @@ export class MetaGraphHttp {
   private retry: RetryOptions;
 
   constructor(private o: MetaHttpOptions) {
-    if (!/^v\d+\.\d+$/.test(o.apiVersion)) throw new Error("META_API_VERSION must look like v26.0 and be set explicitly");
+    if (!/^v\d+\.\d+$/.test(o.apiVersion)) throw new Error("META_API_VERSION must look like v27.0 and be set explicitly");
     this.retry = { fetch: o.fetch ?? fetch, sleep: o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), random: o.random ?? Math.random, timeoutMs: o.timeoutMs };
   }
 
