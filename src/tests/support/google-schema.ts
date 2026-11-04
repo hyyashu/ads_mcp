@@ -9,6 +9,10 @@ import { join } from "node:path";
 type Prop = { ref?: string; type?: string; enum?: string[]; array?: boolean };
 const index = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google-ads-v26-schema.json"), "utf8")) as { version: string; schemas: Record<string, Record<string, Prop>> };
 export const SCHEMA_VERSION = index.version;
+/** Selection rules per FROM resource, from the v26 field reference pages (scripts/fetch-google-gaql-rules.py). */
+const rules = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google-ads-v26-gaql.json"), "utf8")) as {
+  resources: Record<string, { attributed: string[]; fields: Record<string, { selectable: boolean | null; filterable: boolean | null }> }>;
+};
 
 const camel = (s: string) => s.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
@@ -43,6 +47,21 @@ export function checkGaql(query: string): string[] {
     const p = resolveField(m[1]!);
     if (!p?.enum) continue;
     for (const lit of m[3]!.matchAll(/'([^']*)'/g)) if (!p.enum.includes(lit[1]!)) problems.push(`${m[1]}: '${lit[1]}' is not a valid value`);
+  }
+  // Which fields may appear with this FROM resource, and whether they may be selected / filtered.
+  const r = from ? rules.resources[from] : undefined;
+  if (from && resolveField(from) && !r) problems.push(`no GAQL rules recorded for ${from}: run scripts/fetch-google-gaql-rules.py v26 ${from}`);
+  if (r) {
+    const allowed = new Set([from!, ...r.attributed, "metrics", "segments"]);
+    const select = /SELECT\s+(.*?)\s+FROM\s/is.exec(noStrings)?.[1] ?? "";
+    const where = /\bWHERE\s+(.*?)(?:\s+ORDER BY\s|\s+LIMIT\s|$)/is.exec(noStrings)?.[1] ?? "";
+    const fieldsIn = (part: string) => [...part.matchAll(/\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\b/g)].map((m) => m[1]!);
+    for (const f of [...fieldsIn(select), ...fieldsIn(where)]) {
+      const owner = f.split(".")[0]!;
+      if (!allowed.has(owner)) problems.push(`${f} cannot be used with FROM ${from}`);
+    }
+    for (const f of fieldsIn(select)) if (r.fields[f]?.selectable === false) problems.push(`${f} is not selectable`);
+    for (const f of fieldsIn(where)) if (r.fields[f]?.filterable === false) problems.push(`${f} is not filterable`);
   }
   for (const w of noStrings.match(/\b[A-Z_]{2,}\b/g) ?? []) if (!RESERVED.has(w) && !/^LAST_|^THIS_|^TODAY|^YESTERDAY/.test(w)) problems.push(`unexpected keyword: ${w}`);
   return problems;

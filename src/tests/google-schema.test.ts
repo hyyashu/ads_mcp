@@ -22,6 +22,12 @@ describe("Google Ads v26 schema checker", () => {
     expect(checkGaql("SELECT campaign.id FROM campaign WHERE campaign.name LIKE '%a.b%'")).toEqual([]);
   });
 
+  it("checks which fields may be used with the FROM resource", () => {
+    expect(checkGaql("SELECT ad_group.id, campaign.name, metrics.clicks FROM ad_group")).toEqual([]); // campaign is attributed to ad_group
+    expect(checkGaql("SELECT campaign.id, ad_group.name FROM campaign")).toEqual(["ad_group.name cannot be used with FROM campaign"]);
+    expect(checkGaql("SELECT asset.id FROM asset")).toEqual(["no GAQL rules recorded for asset: run scripts/fetch-google-gaql-rules.py v26 asset"]);
+  });
+
   it("checks mutate bodies recursively", () => {
     expect(requestSchemaFor("customers/1/campaigns:mutate")).toBe("Services__MutateCampaignsRequest");
     expect(checkBody("Services__MutateCampaignsRequest", { operations: [{ update: { resourceName: "x", status: "PAUSED" }, updateMask: "status" }] })).toEqual([]);
