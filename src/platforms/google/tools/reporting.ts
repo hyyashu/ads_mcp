@@ -2,8 +2,8 @@ import { z } from "zod";
 import type { InternalServices, ReadTool } from "../../../mcp/tool";
 import { Gaql, fromMicros, lit, num, pick } from "../gaql";
 import { ADS_SCOPE, Money, accountId, campaignIds, dateClause, dateFields, datesMsg, datesOk, googleRead, nullable, ratio, round, str } from "./common";
-import { and, eq, gte, sql } from "drizzle-orm";
-import { platformConnection, usageCounter } from "../../../db/schema";
+import { and, eq, gte, ne, sql } from "drizzle-orm";
+import { connectedAccount, platformConnection, usageCounter } from "../../../db/schema";
 
 /** Upper bound for the extra totals query (the client's hard row cap). */
 const TOTALS_CAP = 10_000;
@@ -324,5 +324,65 @@ export const getUsageStatus: ReadTool<typeof usageInput, typeof usageOutput, Int
   },
 };
 
-export const reportingTools = [listCampaigns, getCampaignPerformance, listConversionActions, listLabels, listNegativeKeywordLists, getCampaignTracking, getAdPolicyViolations, analyzeWastedSpend, getUsageStatus];
+// ---------------------------------------------------------------------------------------------------------------
+const listAccountsInput = z.object({});
+const listAccountsOutput = z.object({
+  accounts: z.array(
+    z.object({
+      account_id: z.string().describe("Pass this as account_id to the other tools. It is this server's id, not the platform's."),
+      platform: z.string(),
+      name: z.string().describe("Account name as the ad platform reports it (untrusted text)."),
+      external_id: z.string().describe("The platform's own id: Google Ads customer id (digits) or Meta act_ id."),
+      access: z.enum(["read", "write"]),
+      status: z.string().describe("Connection status: active, or needs_reauth (reconnect on the Connections page)."),
+      currency_code: z.string().nullable(),
+      time_zone: z.string().nullable(),
+    }),
+  ),
+});
+
+export const listAccounts: ReadTool<typeof listAccountsInput, typeof listAccountsOutput, InternalServices> = {
+  kind: "read",
+  name: "list_accounts",
+  platform: "google_ads",
+  title: "List connected accounts",
+  description:
+    "Lists the ad accounts connected to this workspace (Google Ads and Meta Ads) with the account_id every other tool needs, plus name, platform id, access (read or write) and connection status. Call this first.",
+  accountScope: "none",
+  input: listAccountsInput,
+  output: listAccountsOutput,
+  permissions: { scope: "ads:read", platformPermissions: [], notes: "Internal: reads this workspace's connected accounts. Calls no ad platform." },
+  handler: async (_a, ctx) => {
+    const { db } = ctx.services;
+    const rows = await db
+      .select({
+        id: connectedAccount.id,
+        platform: connectedAccount.platform,
+        name: connectedAccount.displayName,
+        externalId: connectedAccount.externalId,
+        access: connectedAccount.access,
+        status: platformConnection.status,
+        currencyCode: connectedAccount.currencyCode,
+        timeZone: connectedAccount.timeZone,
+      })
+      .from(connectedAccount)
+      .innerJoin(platformConnection, eq(platformConnection.id, connectedAccount.connectionId))
+      .where(and(eq(connectedAccount.tenantId, ctx.tenantId), ne(platformConnection.status, "revoked")));
+    rows.sort((x, y) => x.platform.localeCompare(y.platform) || x.name.localeCompare(y.name) || x.externalId.localeCompare(y.externalId));
+    return {
+      accounts: rows.map((r) => ({
+        account_id: r.id,
+        platform: r.platform,
+        name: r.name,
+        external_id: r.externalId,
+        access: r.access === "write" ? ("write" as const) : ("read" as const),
+        status: r.status,
+        currency_code: r.currencyCode,
+        time_zone: r.timeZone,
+      })),
+    };
+  },
+};
+
+export const reportingTools = [listCampaigns, getCampaignPerformance, listConversionActions, listLabels, listNegativeKeywordLists, getCampaignTracking, getAdPolicyViolations, analyzeWastedSpend, getUsageStatus, listAccounts];
 void ADS_SCOPE;

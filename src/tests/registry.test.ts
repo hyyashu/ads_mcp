@@ -66,8 +66,8 @@ describe("reconciliation against the inventory", () => {
     const reg = new ToolRegistry(inv).registerAll(allTools());
     const rec = reconcile(inv, reg, {});
     expect(rec.errors).toEqual([]);
-    expect(rec.rows).toHaveLength(231);
-    expect(rec.counts.implemented + rec.counts.external_limitation + rec.counts.pending).toBe(231);
+    expect(rec.rows).toHaveLength(232);
+    expect(rec.counts.implemented + rec.counts.external_limitation + rec.counts.pending).toBe(232);
     // Nothing is exposed that does not have a real handler.
     expect(reg.list().every((t) => typeof (t.kind === "read" ? t.handler : t.execute) === "function")).toBe(true);
   });

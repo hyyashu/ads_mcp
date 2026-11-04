@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 173,
+    "implemented": 174,
     "external_limitation": 1,
     "pending": 57
   },
@@ -1595,6 +1595,21 @@
       "action": "Read",
       "domain": "analysis_and_helpers",
       "api": "Server usage metering (usage_counter) plus API quota state",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [],
+      "accountScope": "none",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_accounts",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "This server's connected_account table (no platform call)",
       "risk": "read",
       "feasibility": "internal",
       "platformPermissions": [],
