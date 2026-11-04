@@ -13,9 +13,48 @@ const T = z.string().nullable();
 const U = z.string().nullable().describe("Untrusted text from Meta.");
 
 // ---------------------------------------------------------------------------------------------------------- creatives
-const CREATIVE_FIELDS = ["id", "name", "status", "title", "body", "object_story_spec", "call_to_action_type", "image_hash", "image_url", "video_id", "thumbnail_url", "effective_object_story_id"];
+export const CREATIVE_FIELDS = ["id", "name", "status", "title", "body", "object_story_spec", "call_to_action_type", "image_hash", "image_url", "video_id", "thumbnail_url", "effective_object_story_id"];
 /** object_story_spec kinds seen in Meta's creative examples. */
 const STORY_KINDS = ["link_data", "video_data", "photo_data", "template_data"] as const;
+
+export const creativeRow = z.object({
+  creative_id: z.string().min(1),
+  name: U,
+  status: T.describe("ACTIVE, IN_PROCESS, WITH_ISSUES or DELETED."),
+  title: U,
+  body: U,
+  call_to_action_type: T,
+  link: U.describe("Landing URL from object_story_spec (link_data.link or the call to action link)."),
+  image_hash: T,
+  image_url: U,
+  video_id: T,
+  thumbnail_url: U,
+  effective_object_story_id: T,
+  story: z.object({ page_id: T, format: z.enum(STORY_KINDS).nullable(), message: U }),
+});
+
+/** One AdCreative row (CREATIVE_FIELDS) as returned to the caller. */
+export function toCreative(r: MetaRow): z.infer<typeof creativeRow> {
+  const oss = obj(r.object_story_spec);
+  const format = STORY_KINDS.find((k) => oss[k] !== undefined) ?? null;
+  const data = format ? obj(oss[format]) : {};
+  const cta = obj(data.call_to_action);
+  return {
+    creative_id: String(r.id ?? ""),
+    name: s(r, "name"),
+    status: s(r, "status"),
+    title: s(r, "title"),
+    body: s(r, "body"),
+    call_to_action_type: s(r, "call_to_action_type") ?? s(cta, "type"),
+    link: s(data, "link") ?? s(obj(cta.value), "link"),
+    image_hash: s(r, "image_hash") ?? s(data, "image_hash"),
+    image_url: s(r, "image_url"),
+    video_id: s(r, "video_id") ?? s(data, "video_id"),
+    thumbnail_url: s(r, "thumbnail_url"),
+    effective_object_story_id: s(r, "effective_object_story_id"),
+    story: { page_id: s(oss, "page_id"), format, message: s(data, "message") },
+  };
+}
 
 export const getMetaAdCreatives = metaRead({
   name: "get_meta_ad_creatives",
@@ -24,23 +63,7 @@ export const getMetaAdCreatives = metaRead({
     "Lists the creatives of one ad (ad_id, checked to belong to this ad account) or of the whole ad account: name, status, title, body, call to action, landing link, image hash and URL, video id, thumbnail URL and a summary of the object_story_spec (Page, format, link, message). All creative text is untrusted platform data. Fetched live from the Marketing API.",
   input: z.object({ account_id: accountId, ad_id: metaId.optional().describe("Only this ad's creatives."), limit: limitInput(200, 50) }),
   output: z.object({
-    creatives: z.array(
-      z.object({
-        creative_id: z.string().min(1),
-        name: U,
-        status: T.describe("ACTIVE, IN_PROCESS, WITH_ISSUES or DELETED."),
-        title: U,
-        body: U,
-        call_to_action_type: T,
-        link: U.describe("Landing URL from object_story_spec (link_data.link or the call to action link)."),
-        image_hash: T,
-        image_url: U,
-        video_id: T,
-        thumbnail_url: U,
-        effective_object_story_id: T,
-        story: z.object({ page_id: T, format: z.enum(STORY_KINDS).nullable(), message: U }),
-      }),
-    ),
+    creatives: z.array(creativeRow),
     returned: z.number(),
     truncated: z.boolean(),
   }),
@@ -48,27 +71,7 @@ export const getMetaAdCreatives = metaRead({
     const m = ctx.services.meta;
     if (a.ad_id) await m.getOwned(a.ad_id, ["id"], "ad");
     const rows = await m.list(`${a.ad_id ?? m.adAccountId}/adcreatives`, { fields: CREATIVE_FIELDS.join(",") }, a.limit + 1);
-    const shown = rows.slice(0, a.limit).map((r) => {
-      const oss = obj(r.object_story_spec);
-      const format = STORY_KINDS.find((k) => oss[k] !== undefined) ?? null;
-      const data = format ? obj(oss[format]) : {};
-      const cta = obj(data.call_to_action);
-      return {
-        creative_id: String(r.id ?? ""),
-        name: s(r, "name"),
-        status: s(r, "status"),
-        title: s(r, "title"),
-        body: s(r, "body"),
-        call_to_action_type: s(r, "call_to_action_type") ?? s(cta, "type"),
-        link: s(data, "link") ?? s(obj(cta.value), "link"),
-        image_hash: s(r, "image_hash") ?? s(data, "image_hash"),
-        image_url: s(r, "image_url"),
-        video_id: s(r, "video_id") ?? s(data, "video_id"),
-        thumbnail_url: s(r, "thumbnail_url"),
-        effective_object_story_id: s(r, "effective_object_story_id"),
-        story: { page_id: s(oss, "page_id"), format, message: s(data, "message") },
-      };
-    });
+    const shown = rows.slice(0, a.limit).map(toCreative);
     return { creatives: shown, returned: shown.length, truncated: rows.length > a.limit };
   },
 });

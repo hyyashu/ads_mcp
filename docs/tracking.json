@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 210,
+    "implemented": 224,
     "external_limitation": 1,
-    "pending": 21
+    "pending": 7
   },
   "rows": [
     {
@@ -3004,17 +3004,19 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "catalogs_products",
-      "api": "GET /{act}/insights with product breakdowns, deterministic ranking",
+      "api": "GET /{act}/insights level=adset (use_unified_attribution_setting=true), restricted to ad sets whose promoted_object.product_set_id is in /{catalog}/product_sets; fixed-rule flags (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
-        "ads_read"
+        "ads_read",
+        "business_management",
+        "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_meta_wasted_spend",
@@ -3055,17 +3057,19 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "catalogs_products",
-      "api": "GET /{act}/insights per product set, deterministic comparison",
+      "api": "GET /{act}/insights level=adset (use_unified_attribution_setting=true), restricted to ad sets whose promoted_object.product_set_id is in /{catalog}/product_sets, summed per product set (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
-        "ads_read"
+        "ads_read",
+        "business_management",
+        "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_meta_carousel_campaign",
@@ -3183,17 +3187,20 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "catalogs_products",
-      "api": "GET /{act}/insights, deterministic thresholds",
+      "api": "GET /{act}/insights level=adset (use_unified_attribution_setting=true), restricted to ad sets whose promoted_object.product_set_id is in /{catalog}/product_sets (+ breakdowns=product_id) and /{catalog}/products error_type=PRODUCT_NOT_APPROVED | filter availability eq out of stock; fixed rules (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
-        "ads_read"
+        "ads_read",
+        "business_management",
+        "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "The format of product_id breakdown values is not documented; they are matched to an item's id or retailer_id and the rest counted as unmatched.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "detect_meta_creative_fatigue",
@@ -3217,17 +3224,20 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "catalogs_products",
-      "api": "GET /{act}/insights (view content, add to cart, purchase actions) + /{catalog}/diagnostics",
+      "api": "GET /{act}/insights (level=account, or the catalog's ad sets) actions offsite_conversion.fb_pixel_view_content | add_to_cart | initiate_checkout | purchase (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
-        "ads_read"
+        "ads_read",
+        "business_management",
+        "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Pixel (website) events only; app events and on-Meta checkouts are not included.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "discover_meta_assets",
@@ -3322,68 +3332,72 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "app_promotion",
-      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "api": "GET /{act}/adsets filtered to promoted_object.application_id (app checked on /{act}/advertisable_applications), + /{act}/campaigns, /{act}/ads creative{...}, /{act}/insights level=adset; installs = mobile_app_install, in-app events = app_custom_event.* (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "App ad sets are found by promoted_object.application_id, not by objective. Application fields other than id and name are not read (not confirmed for advertisable_applications).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_app_campaigns",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "app_promotion",
-      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "api": "GET /{act}/adsets filtered to promoted_object.application_id (app checked on /{act}/advertisable_applications), + /{act}/campaigns, /{act}/ads creative{...}, /{act}/insights level=adset; installs = mobile_app_install, in-app events = app_custom_event.* (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "App ad sets are found by promoted_object.application_id, not by objective. Application fields other than id and name are not read (not confirmed for advertisable_applications).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_app_creatives",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "app_promotion",
-      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "api": "GET /{act}/adsets filtered to promoted_object.application_id (app checked on /{act}/advertisable_applications), + /{act}/campaigns, /{act}/ads creative{...}, /{act}/insights level=adset; installs = mobile_app_install, in-app events = app_custom_event.* (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "App ad sets are found by promoted_object.application_id, not by objective. Application fields other than id and name are not read (not confirmed for advertisable_applications).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_app_summary",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "app_promotion",
-      "api": "Campaign/ad set/creative reads filtered to app-promotion objectives, plus insights",
+      "api": "GET /{act}/adsets filtered to promoted_object.application_id (app checked on /{act}/advertisable_applications), + /{act}/campaigns, /{act}/ads creative{...}, /{act}/insights level=adset; installs = mobile_app_install, in-app events = app_custom_event.* (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "App ad sets are found by promoted_object.application_id, not by objective. Application fields other than id and name are not read (not confirmed for advertisable_applications).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_meta_audience_insights",
@@ -3489,10 +3503,10 @@
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_ad_sets",
@@ -3550,18 +3564,20 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "catalogs_products",
-      "api": "GET /{business_id}/owned_product_catalogs or /{act}/product_catalogs",
+      "api": "GET /{act}?fields=business -> /{business_id}/owned_product_catalogs + /client_product_catalogs (catalog must be one of them) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
-        "catalog_management",
-        "ads_read"
+        "ads_read",
+        "business_management",
+        "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "The ad account has no documented catalog edge; catalogs are reached through its business. An account without a business has none.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_custom_audiences",
@@ -3660,51 +3676,56 @@
       "platform": "meta_ads",
       "action": "Read",
       "domain": "catalogs_products",
-      "api": "GET /{catalog_id}/product_sets",
+      "api": "GET /{catalog_id}/product_sets (fields id,name,filter,product_count), catalog ownership checked (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
+        "ads_read",
+        "business_management",
         "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_products",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "catalogs_products",
-      "api": "GET /{catalog_id}/products",
+      "api": "GET /{catalog_id}/products (optional error_type) or /{product_set_id}/products, ownership checked (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
+        "ads_read",
+        "business_management",
         "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "REDUCED: no per-item review status. review_status was removed in v12.0 and channels_to_integrity_status has no documented shape; not-approved items are listed with issue=PRODUCT_NOT_APPROVED instead.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "list_meta_promotable_apps",
       "platform": "meta_ads",
       "action": "Read",
       "domain": "app_promotion",
-      "api": "GET /{act}/advertisable_applications",
+      "api": "GET /{act}/advertisable_applications (fields id,name) (v27.0)",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "optimize_meta_budget",
@@ -3938,17 +3959,20 @@
       "platform": "meta_ads",
       "action": "Analyze",
       "domain": "catalogs_products",
-      "api": "GET /{catalog}/diagnostics + product feed field checks",
+      "api": "GET /{catalog} product_count, /{catalog}/products?error_type=...&summary=total_count (PRODUCT_NOT_APPROVED, EMPTY_*), /{catalog}/external_event_sources (v27.0)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
+        "ads_read",
+        "business_management",
         "catalog_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "The diagnostics edge's ProductCatalogDiagnosticGroup shape is not documented, so it is not used.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_keyword_performance",
