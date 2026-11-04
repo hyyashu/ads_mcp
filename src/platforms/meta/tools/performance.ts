@@ -1,31 +1,14 @@
 import { z } from "zod";
 import { round } from "../../core/report-math";
 import type { MetaRow } from "../client";
-import {
-  INSIGHTS_ROW_CAP,
-  attributionNote,
-  baseOf,
-  computeMetrics,
-  conversionActionInput,
-  conversionTypes,
-  conversionTypesOutput,
-  datesMsg,
-  datesOk,
-  fetchInsights,
-  insightsDateFields,
-  insightsPeriod,
-  metricsShape,
-  metricsOf,
-} from "../insights";
+import { INSIGHTS_ROW_CAP, attributionNote, baseOf, computeMetrics, conversionActionInput, datesMsg, datesOk, fetchInsights, insightsDateFields, metricsShape, metricsOf, reportHeaderShape, reportStart } from "../insights";
 import { accountId, metaId, metaRead, s } from "./common";
 
 const COMMON =
   "Dates are in the ad account's time zone. Conversions use the unified attribution setting (each ad set's own attribution window), so numbers match Ads Manager. Conversions count only the action types listed in conversion_types (see conversion_action); clicks, video views and other engagement are never counted as conversions. Money is in the account's currency. CTR, CPC, CPM, cost per conversion and ROAS are calculated from the base figures and are null when the divisor is zero. Fetched live from the Marketing API Insights.";
 
 const header = {
-  period: z.string(),
-  attribution: z.string(),
-  conversion_types: conversionTypesOutput,
+  ...reportHeaderShape,
 };
 const dateCols = { date_start: z.string().nullable(), date_stop: z.string().nullable() };
 const perfInput = {
@@ -49,8 +32,7 @@ export const getMetaCampaignPerformance = metaRead({
   output: z.object({ ...header, campaigns: z.array(campaignPerfRow), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const { params, period } = insightsPeriod(a, ctx.account?.timeZone ?? null);
-    const types = conversionTypes(a.conversion_action);
+    const { params, period, types, header } = reportStart(a, ctx.account?.timeZone ?? null);
     // Read from the ad account's own insights edge, so every row belongs to this account; the id filter is applied here.
     const { rows, truncated } = await fetchInsights(m, { objectPath: m.adAccountId, level: "campaign", period: params, daily: a.daily });
     const want = a.campaign_ids ? new Set(a.campaign_ids) : null;
@@ -59,7 +41,7 @@ export const getMetaCampaignPerformance = metaRead({
       .map((r) => ({ campaign_id: String(r.campaign_id ?? ""), name: s(r, "campaign_name"), date_start: s(r, "date_start"), date_stop: s(r, "date_stop"), ...metricsOf(r, types) }))
       .sort(bySpend);
     const shown = all.slice(0, a.limit);
-    return { period, attribution: attributionNote, conversion_types: types, campaigns: shown, returned: shown.length, truncated: truncated || all.length > shown.length };
+    return { ...header, campaigns: shown, returned: shown.length, truncated: truncated || all.length > shown.length };
   },
 });
 
@@ -81,15 +63,14 @@ export const getMetaAdsetPerformance = metaRead({
   output: z.object({ ...header, ad_sets: z.array(adsetPerfRow), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const { params, period } = insightsPeriod(a, ctx.account?.timeZone ?? null);
-    const types = conversionTypes(a.conversion_action);
+    const { params, period, types, header } = reportStart(a, ctx.account?.timeZone ?? null);
     if (a.campaign_id) await m.getOwned(a.campaign_id, ["id"], "campaign");
     const { rows, truncated } = await fetchInsights(m, { objectPath: a.campaign_id ?? m.adAccountId, level: "adset", period: params, daily: a.daily });
     const all = rows
       .map((r) => ({ ad_set_id: String(r.adset_id ?? ""), name: s(r, "adset_name"), campaign_id: s(r, "campaign_id"), campaign_name: s(r, "campaign_name"), date_start: s(r, "date_start"), date_stop: s(r, "date_stop"), ...metricsOf(r, types) }))
       .sort(bySpend);
     const shown = all.slice(0, a.limit);
-    return { period, attribution: attributionNote, conversion_types: types, ad_sets: shown, returned: shown.length, truncated: truncated || all.length > shown.length };
+    return { ...header, ad_sets: shown, returned: shown.length, truncated: truncated || all.length > shown.length };
   },
 });
 
@@ -141,8 +122,7 @@ export const analyzeMetaAdPerformance = metaRead({
   }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const { params, period } = insightsPeriod(a, ctx.account?.timeZone ?? null);
-    const types = conversionTypes(a.conversion_action);
+    const { params, period, types, header } = reportStart(a, ctx.account?.timeZone ?? null);
     if (a.campaign_id) await m.getOwned(a.campaign_id, ["id"], "campaign");
     const { rows, truncated } = await fetchInsights(m, { objectPath: a.campaign_id ?? m.adAccountId, level: "ad", period: params });
 

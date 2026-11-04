@@ -255,3 +255,13 @@ export const periodInput = z
   .refine((p) => p.start_date <= p.end_date, "start_date must not be after end_date");
 /** time_range params for an explicit period, with the same checks as insightsPeriod (future end date, 37-month limit). */
 export const rangeParams = (p: { start_date: string; end_date: string }, timeZone: string | null, now = new Date()) => insightsPeriod({ date_range: "LAST_30_DAYS", ...p }, timeZone, now).params;
+
+/** The fields every insights report starts with: the period read, the attribution used and which actions count as conversions. */
+export const reportHeaderShape = { period: z.string(), attribution: z.string(), conversion_types: conversionTypesOutput };
+
+/** Common start of an insights handler: request period, conversion types, and the report header to return. */
+export function reportStart(a: { date_range: Preset; start_date?: string; end_date?: string; conversion_action?: string }, timeZone: string | null) {
+  const { params, period } = insightsPeriod(a, timeZone);
+  const types = conversionTypes(a.conversion_action);
+  return { params, period, types, header: { period, attribution: attributionNote, conversion_types: types } };
+}

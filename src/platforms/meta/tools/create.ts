@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
-import type { Change } from "../../../policy/change-set";
 import type { MetaAdsClient, MetaRow } from "../client";
 import { ADS_MANAGEMENT, accountId, metaId, metaWrite, s } from "./common";
 import {
@@ -26,6 +25,13 @@ import {
   text,
   urlTags,
   verdict,
+  adSetBudgetRule,
+  createChange,
+  createOneAdSet,
+  fullCreateSteps,
+  requireUsable,
+  restrictedCategories,
+  verifyFullCreate,
 } from "./create-kit";
 
 /*
@@ -43,7 +49,7 @@ import {
 
 const PAGES_MANAGE_ADS = "pages_manage_ads";
 const perms = { platformPermissions: [ADS_MANAGEMENT, PAGES_MANAGE_ADS], notes: "The Meta app needs ads_management and pages_manage_ads (ads for a Page); the connected user needs an advertiser role on the ad account and the Page." };
-const create = (resource: string, name: string | null, after: string): Change => ({ resource, id: "new", name, field: "create", before: null, after, unit: "text", effect: "create" });
+const create = createChange;
 const cta = z.enum(CTA).default("LEARN_MORE");
 
 // ----------------------------------------------------------------------------------------------------- creative specs
@@ -93,31 +99,19 @@ function campaignCreator<K extends string, C extends z.ZodType>(o: { name: "crea
 
   /** Validates everything and returns the four POSTs. Read-only. */
   async function prepare(a: A, m: MetaAdsClient) {
-    const cbo = a.budget.level === "campaign";
-    const lifetime = a.budget.type === "lifetime";
-    const adSet = adSetParams(a, a.objective, a.special_ad_categories, lifetime);
-    const budget = budgetParams(a.budget, m.currency);
+    const adSet = adSetParams(a, a.objective, a.special_ad_categories, a.budget.type === "lifetime");
     await checkIdentity(m, a);
     const assets = o.assets(creativeOf(a));
     await checkAssets(m, assets.hashes, assets.videos);
     await requireFreeName(m, `${m.adAccountId}/campaigns`, a.campaign_name, "campaign");
     await requireFreeName(m, `${m.adAccountId}/adcreatives`, a.ad_name, "creative");
-    const campaign: Record<string, string> = {
-      name: a.campaign_name,
-      objective: a.objective,
-      status: "PAUSED",
-      special_ad_categories: JSON.stringify(a.special_ad_categories),
-      ...(cbo ? { ...budget, bid_strategy: "LOWEST_COST_WITHOUT_CAP" } : { is_adset_budget_sharing_enabled: "false" }),
-    };
-    const set = { ...adSet, ...(cbo ? {} : { ...budget, bid_strategy: "LOWEST_COST_WITHOUT_CAP" }) };
-    const creative = o.build(a, creativeOf(a), a.ad_name);
-    const steps: Step[] = [
-      { key: "campaign", label: "campaign", post: () => ({ path: `${m.adAccountId}/campaigns`, params: campaign }) },
-      { key: "ad_set", label: "ad set", post: (ids) => ({ path: `${m.adAccountId}/adsets`, params: { ...set, campaign_id: ids.campaign! } }) },
-      { key: "creative", label: "creative", post: () => ({ path: `${m.adAccountId}/adcreatives`, params: creative }) },
-      { key: "ad", label: "ad", post: (ids) => ({ path: `${m.adAccountId}/ads`, params: { name: a.ad_name, adset_id: ids.ad_set!, creative: JSON.stringify({ creative_id: ids.creative! }), status: "PAUSED" } }) },
-    ];
-    return steps;
+    return fullCreateSteps(m, {
+      campaign: { name: a.campaign_name, objective: a.objective, special_ad_categories: JSON.stringify(a.special_ad_categories) },
+      budget: a.budget,
+      adSet,
+      creative: o.build(a, creativeOf(a), a.ad_name),
+      adName: a.ad_name,
+    });
   }
 
   return metaWrite({
@@ -143,19 +137,7 @@ function campaignCreator<K extends string, C extends z.ZodType>(o: { name: "crea
       const ids = await runSteps(m, await prepare(a, m));
       return { campaign_id: ids.campaign!, ad_set_id: ids.ad_set!, creative_id: ids.creative!, ad_id: ids.ad!, status: "PAUSED" as const, next_step: "Review the ad in Ads Manager, then activate the campaign, ad set and ad with update_meta_campaign, update_meta_ad_set and update_meta_ad." };
     },
-    verify: async (a, ctx) => {
-      const m = ctx.services.meta;
-      const campaigns = await named(m, `${m.adAccountId}/campaigns`, a.campaign_name);
-      const sets = campaigns.length === 1 ? await named(m, `${campaigns[0]}/adsets`, a.ad_set_name) : [];
-      const creatives = await named(m, `${m.adAccountId}/adcreatives`, a.ad_name);
-      const ads = sets.length === 1 ? await named(m, `${sets[0]}/ads`, a.ad_name) : [];
-      return verdict([
-        { key: "campaign", label: "campaign", ids: campaigns },
-        { key: "ad_set", label: "ad set", ids: sets },
-        { key: "creative", label: "creative", ids: creatives },
-        { key: "ad", label: "ad", ids: ads },
-      ]);
-    },
+    verify: async (a, ctx) => verifyFullCreate(ctx.services.meta, a),
   });
 }
 
@@ -188,11 +170,6 @@ export const createMetaCarouselCampaign = campaignCreator({
 });
 
 // ------------------------------------------------------------------------------------------------------- add_meta_ad_set
-const usable = (status: string | null, label: string) => {
-  if (status !== "ACTIVE" && status !== "PAUSED") throw new ToolError("invalid_argument", `The ${label} is ${String(status).toLowerCase()}; new objects cannot be added to it.`);
-};
-const positive = (v: unknown) => Number(v ?? 0) > 0;
-
 const adSetInput = z.object({ account_id: accountId, campaign_id: metaId, ...adSetCore, budget: budgetInput.omit({ level: true }).optional().describe("Required when the campaign has no campaign budget; not allowed when it has one."), is_dynamic_creative: z.boolean().default(false) });
 
 export const addMetaAdSet = metaWrite({
@@ -211,24 +188,19 @@ export const addMetaAdSet = metaWrite({
   execute: async (a, ctx) => {
     const m = ctx.services.meta;
     const p = await prepareAdSet(a, m);
-    const ids = await runSteps(m, [{ key: "ad_set", label: "ad set", post: () => ({ path: `${m.adAccountId}/adsets`, params: p.params }) }]);
-    return { ad_set_id: ids.ad_set!, campaign_id: a.campaign_id, status: "PAUSED" as const };
+    return { ad_set_id: await createOneAdSet(m, p.params), campaign_id: a.campaign_id, status: "PAUSED" as const };
   },
   verify: async (a, ctx) => verdict([{ key: "ad_set", label: "ad set", ids: await named(ctx.services.meta, `${a.campaign_id}/adsets`, a.ad_set_name) }]),
 });
 
 async function prepareAdSet(a: z.infer<typeof adSetInput>, m: MetaAdsClient) {
   const c = await m.getOwned(a.campaign_id, ["id", "name", "status", "objective", "daily_budget", "lifetime_budget", "special_ad_categories"], "campaign");
-  usable(s(c, "status"), "campaign");
+  requireUsable(s(c, "status"), "campaign");
   const objective = s(c, "objective") ?? "";
   if (!(OBJECTIVES as readonly string[]).includes(objective)) throw new ToolError("invalid_argument", `The campaign's objective ${objective || "(unknown)"} has no documented optimization-goal combination here. Supported: ${COMBO_TEXT}.`);
-  const cbo = positive(c.daily_budget) || positive(c.lifetime_budget);
-  if (cbo && a.budget) throw new ToolError("invalid_argument", "The campaign has a campaign budget: the ad set cannot have its own budget.");
-  if (!cbo && !a.budget) throw new ToolError("invalid_argument", "The campaign has no campaign budget: give the ad set a daily or lifetime budget.");
+  const { lifetime } = adSetBudgetRule(c, a.budget);
   if (a.is_dynamic_creative && a.optimization_goal !== "OFFSITE_CONVERSIONS") throw new ToolError("invalid_argument", `Meta requires OFFSITE_CONVERSIONS for dynamic creative ad sets under ${objective}.`);
-  // Only the categories with audience restrictions matter for targeting (CREDIT is the older name of financial products).
-  const special = (Array.isArray(c.special_ad_categories) ? c.special_ad_categories.map(String) : []).filter((x: string) => ([...SPECIAL, "CREDIT"] as string[]).includes(x));
-  const lifetime = a.budget ? a.budget.type === "lifetime" : positive(c.lifetime_budget);
+  const special = restrictedCategories(c); // only the categories with audience restrictions matter for targeting
   const params = adSetParams(a, objective, special, lifetime);
   await checkIdentity(m, { pixel_id: a.pixel_id });
   await requireFreeName(m, `${a.campaign_id}/adsets`, a.ad_set_name, "ad set in this campaign");
@@ -241,7 +213,7 @@ async function prepareAdSet(a: z.infer<typeof adSetInput>, m: MetaAdsClient) {
 // ---------------------------------------------------------------------------------------------------------- add_meta_ad
 async function usableAdSet(m: MetaAdsClient, adSetId: string): Promise<MetaRow> {
   const r = await m.getOwned(adSetId, ["id", "name", "status", "is_dynamic_creative"], "ad set");
-  usable(s(r, "status"), "ad set");
+  requireUsable(s(r, "status"), "ad set");
   return r;
 }
 

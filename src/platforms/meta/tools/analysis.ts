@@ -21,6 +21,7 @@ import {
   rangeParams,
   sumBase,
   todayIn,
+  reportHeaderShape,
 } from "../insights";
 import { EDGE_CAP, accountId, metaId, metaRead, s } from "./common";
 
@@ -63,9 +64,7 @@ export const analyzeMetaWastedSpend = metaRead({
     })
     .refine(datesOk, datesMsg),
   output: z.object({
-    period: z.string(),
-    attribution: z.string(),
-    conversion_types: conversionTypesOutput,
+    ...reportHeaderShape,
     rule: z.string(),
     levels: z.array(
       z.object({
@@ -283,9 +282,7 @@ export const optimizeMetaBudget = metaRead({
     })
     .refine(datesOk, datesMsg),
   output: z.object({
-    period: z.string(),
-    attribution: z.string(),
-    conversion_types: conversionTypesOutput,
+    ...reportHeaderShape,
     rules: z.array(z.string()),
     totals: z.object({ spend: z.number(), conversions: z.number(), conversion_value: z.number(), cost_per_conversion: z.number().nullable(), roas: z.number().nullable() }),
     items: z.array(

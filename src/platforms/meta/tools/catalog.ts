@@ -2,22 +2,7 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import { ratio, round } from "../../core/report-math";
 import type { MetaAdsClient, MetaRow } from "../client";
-import {
-  INSIGHTS_ROW_CAP,
-  attributionNote,
-  computeMetrics,
-  conversionActionInput,
-  conversionTypes,
-  conversionTypesOutput,
-  datesMsg,
-  datesOk,
-  fetchInsights,
-  insightsDateFields,
-  insightsPeriod,
-  metricsShape,
-  sumActions,
-  sumBase,
-} from "../insights";
+import { INSIGHTS_ROW_CAP, attributionNote, computeMetrics, conversionActionInput, datesMsg, datesOk, fetchInsights, insightsDateFields, insightsPeriod, metricsShape, sumActions, sumBase, reportHeaderShape, reportStart } from "../insights";
 import { BUSINESS_MANAGEMENT, CATALOG_MANAGEMENT, EDGE_CAP, accountId, metaId, metaRead, needs, s } from "./common";
 
 // Checked against the Marketing API v27.0 docs on 2026-11-05:
@@ -267,9 +252,7 @@ export const analyzeMetaCatalogPerformance = metaRead({
   permissions: CATALOG_PERMS,
   input: z.object({ ...periodFields, conversion_action: conversionActionInput, ...ruleInput }).refine(datesOk, datesMsg),
   output: z.object({
-    period: z.string(),
-    attribution: z.string(),
-    conversion_types: conversionTypesOutput,
+    ...reportHeaderShape,
     rules: z.array(z.string()),
     totals: metrics,
     campaigns: z.array(z.object({ campaign_id: z.string(), campaign_name: U, ad_sets: z.number(), metrics, flags: flagList })),
@@ -279,8 +262,7 @@ export const analyzeMetaCatalogPerformance = metaRead({
   }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const { params, period } = insightsPeriod(a, ctx.account?.timeZone ?? null);
-    const types = conversionTypes(a.conversion_action);
+    const { params, period, types, header } = reportStart(a, ctx.account?.timeZone ?? null);
     const c = await catalogInsights(m, a.catalog_id, params);
     const byAdSet = groupBy(c.rows, (r) => String(r.adset_id ?? ""));
     const mt = (rows: MetaRow[]) => computeMetrics(sumBase(rows, types));
@@ -323,9 +305,7 @@ export const compareMetaCatalogProductSets = metaRead({
   permissions: CATALOG_PERMS,
   input: z.object({ ...periodFields, conversion_action: conversionActionInput, include_unpromoted: z.boolean().default(false) }).refine(datesOk, datesMsg),
   output: z.object({
-    period: z.string(),
-    attribution: z.string(),
-    conversion_types: conversionTypesOutput,
+    ...reportHeaderShape,
     totals: metrics,
     product_sets: z.array(
       z.object({
@@ -342,8 +322,7 @@ export const compareMetaCatalogProductSets = metaRead({
   }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const { params, period } = insightsPeriod(a, ctx.account?.timeZone ?? null);
-    const types = conversionTypes(a.conversion_action);
+    const { params, period, types, header } = reportStart(a, ctx.account?.timeZone ?? null);
     const c = await catalogInsights(m, a.catalog_id, params);
     const totals = computeMetrics(sumBase(c.rows, types));
     const byAdSet = groupBy(c.rows, (r) => String(r.adset_id ?? ""));
@@ -364,7 +343,7 @@ export const compareMetaCatalogProductSets = metaRead({
       })
       .filter((r) => a.include_unpromoted || r.ad_sets > 0)
       .sort((p, q) => q.metrics.spend - p.metrics.spend);
-    return { period, attribution: attributionNote, conversion_types: types, totals, product_sets: rows, truncated: c.truncated };
+    return { ...header, totals, product_sets: rows, truncated: c.truncated };
   },
 });
 
@@ -426,9 +405,7 @@ export const detectMetaCatalogWaste = metaRead({
   permissions: CATALOG_PERMS,
   input: z.object({ ...periodFields, conversion_action: conversionActionInput, min_spend: z.number().positive().describe("Spend (account currency) from which an ad set without conversions is flagged.") }).refine(datesOk, datesMsg),
   output: z.object({
-    period: z.string(),
-    attribution: z.string(),
-    conversion_types: conversionTypesOutput,
+    ...reportHeaderShape,
     rules: z.array(z.string()),
     ad_sets_without_conversions: z.array(z.object({ ad_set_id: z.string(), name: U, campaign_id: z.string().nullable(), product_set_id: z.string(), spend: z.number() })),
     products_with_spend: z.array(z.object({ product_id: z.string(), retailer_id: U, name: U, reason: z.enum(["not_approved", "out_of_stock"]), spend: z.number(), impressions: z.number() })),
@@ -438,8 +415,7 @@ export const detectMetaCatalogWaste = metaRead({
   }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const { params, period } = insightsPeriod(a, ctx.account?.timeZone ?? null);
-    const types = conversionTypes(a.conversion_action);
+    const { params, period, types, header } = reportStart(a, ctx.account?.timeZone ?? null);
     const c = await catalogInsights(m, a.catalog_id, params);
     const byAdSet = groupBy(c.rows, (r) => String(r.adset_id ?? ""));
     const flagged = c.adSets
