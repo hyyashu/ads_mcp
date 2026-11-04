@@ -1,5 +1,4 @@
-import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
+import { Client, StreamableHTTPClientTransport } from "@modelcontextprotocol/client";
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { csrfToken, getSession } from "../auth/web-session";
@@ -103,6 +102,21 @@ describe("transport and authentication", () => {
     await env.h.db.update(schema.apiToken).set({ revokedAt: new Date() }).where(eq(schema.apiToken.id, id));
     expect((await fetch(`${env.base}/mcp`, { method: "POST", headers: { authorization: `Bearer ${t}`, "content-type": "application/json" }, body: "{}" })).status).toBe(401);
   });
+});
+
+describe("protocol revisions", () => {
+  // ChatGPT tries 2026-07-28 first. SDK v1 answered 400 "Unsupported protocol version"; v2 serves it natively.
+  for (const mode of [{ pin: "2026-07-28" } as const, "auto" as const, "legacy" as const]) {
+    it(`serves a client negotiating ${JSON.stringify(mode)}`, async () => {
+      const c = new Client({ name: "test", version: "1" }, { versionNegotiation: { mode } });
+      await c.connect(new StreamableHTTPClientTransport(new URL(`${env.base}/mcp`), { requestInit: { headers: { Authorization: `Bearer ${env.A.tokens.full}` } } }));
+      const { tools } = await c.listTools();
+      expect(tools.map((t) => t.name)).toContain("list_campaigns");
+      const r = await c.callTool({ name: "list_campaigns", arguments: { account_id: env.A.account } });
+      expect((r.structuredContent as Env2).ok).toBe(true);
+      await c.close();
+    });
+  }
 });
 
 describe("tool discovery", () => {

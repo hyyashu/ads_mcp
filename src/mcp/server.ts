@@ -1,4 +1,4 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { McpServer } from "@modelcontextprotocol/server";
 import type { AuthContext } from "../auth/context";
 import { catalogInstructions, tenantCapabilities, visibleTools } from "./catalog";
 import { type PipelineDeps, runTool } from "./pipeline";
@@ -33,8 +33,8 @@ export async function createMcpServer(deps: PipelineDeps, auth: AuthContext, req
           openWorldHint: true,
         },
       },
-      async (args: Record<string, unknown>, extra: { signal: AbortSignal }) => {
-        const env = await runTool(deps, tool, args, auth, extra.signal, requestId);
+      async (args: Record<string, unknown>, ctx) => {
+        const env = await runTool(deps, tool, args, auth, ctx.mcpReq.signal, requestId);
         return { content: [{ type: "text" as const, text: JSON.stringify(env) }], structuredContent: env as unknown as Record<string, unknown>, isError: !env.ok };
       },
     );

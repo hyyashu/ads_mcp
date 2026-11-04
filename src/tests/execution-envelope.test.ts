@@ -178,7 +178,10 @@ describe("request ids over HTTP", () => {
       body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "tools/call", params: { name: "list_campaigns", arguments: { account_id: acc.id } } }),
     });
     expect(res.headers.get("x-request-id")).toBe("corr-0001-test");
-    const body = (await res.json()) as { result: { structuredContent: { meta: { request_id: string } } } };
+    // 2025-era requests (no per-request envelope) are served by the SDK's stateless fallback, which may answer as SSE.
+    const text = await res.text();
+    const json = res.headers.get("content-type")?.includes("text/event-stream") ? text.split("\n").find((l) => l.startsWith("data: "))!.slice(6) : text;
+    const body = JSON.parse(json) as { result: { structuredContent: { meta: { request_id: string } } } };
     expect(body.result.structuredContent.meta.request_id).toBe("corr-0001-test");
     await st.close();
   });

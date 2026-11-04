@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { type IncomingMessage, type Server, type ServerResponse, createServer } from "node:http";
 import { logger } from "../obs/logger";
-import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import type { Authenticator } from "../auth/context";
+import { toNodeHandler } from "@modelcontextprotocol/node";
+import { createMcpHandler } from "@modelcontextprotocol/server";
+import type { AuthContext, Authenticator } from "../auth/context";
 import type { AppConfig } from "../config";
 import type { WebRoutes } from "../web/routes";
 import { ToolError } from "./errors";
@@ -45,6 +46,20 @@ async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
  */
 export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts: HttpOptions, web: WebRoutes): Server {
   const maxBody = opts.maxBodyBytes ?? 1_000_000;
+  // One MCP handler for the process (SDK v2). It serves 2026-07-28 clients (per-request envelope, no handshake) and
+  // 2025-era clients (stateless fallback) from the same per-request server factory. The caller has already been
+  // authenticated below; who they are reaches the factory through authInfo.extra, never through request headers.
+  const mcp = toNodeHandler(
+    createMcpHandler(
+      (ctx) => {
+        const who = ctx.authInfo?.extra as { auth: AuthContext; requestId: string } | undefined;
+        if (!who) throw new Error("unauthenticated request reached the MCP handler");
+        return createMcpServer(deps, who.auth, who.requestId);
+      },
+      { responseMode: "json", maxRequestBodySize: maxBody, onerror: (error) => logger.warn("mcp.handler_error", { error }) },
+    ),
+    { maxRequestBodySize: maxBody, onerror: (error) => logger.error("mcp.adapter_error", { error }) },
+  );
   const challenge = (scope = "ads:read") => `Bearer realm="ads-mcp", resource_metadata="${opts.config.issuer}/.well-known/oauth-protected-resource", scope="${scope}"`;
 
   return createServer(async (req, res) => {
@@ -80,14 +95,8 @@ export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts:
       }
       for (const [k, v] of Object.entries(cors)) res.setHeader(k, v);
       const body = await readBody(req, maxBody);
-      const server = await createMcpServer(deps, auth, requestId);
-      const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
-      res.on("close", () => {
-        void transport.close();
-        void server.close();
-      });
-      await server.connect(transport);
-      return await transport.handleRequest(req, res, body);
+      const authInfo = { token: "", clientId: auth.tokenId ?? "", scopes: auth.scopes, extra: { auth, requestId } };
+      return await mcp(Object.assign(req, { auth: authInfo }), res, body);
     } catch (e) {
       if (e instanceof ToolError) return json(res, 400, { error: e.message });
       if (e instanceof SyntaxError) return json(res, 400, { error: "invalid JSON" });
