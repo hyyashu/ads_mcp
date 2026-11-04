@@ -179,18 +179,21 @@ const metaApi: Rule[] = [
   [/^optimize_meta_placements$/, { api: "GET /{act}/insights breakdowns=publisher_platform,platform_position, fixed-rule flags (v27.0)", feasibility: "derived", platformPermissions: META_READ }],
   [/^validate_catalog_readiness$/, { api: "GET /{catalog}/diagnostics + product feed field checks", feasibility: "derived", platformPermissions: ["catalog_management"] }],
   [/^(pause|resume)_meta_campaign$/, { api: "POST /{campaign_id} status=PAUSED|ACTIVE", feasibility: "api" }],
-  [/^duplicate_meta_campaign$/, { api: "POST /{campaign_id}/copies", feasibility: "api", notes: "Large copies are asynchronous. Copies must be created PAUSED." }],
+  [/^duplicate_meta_campaign$/, { api: "POST /{campaign_id}/copies (deep_copy, rename_options, status_option=PAUSED; returns copied_campaign_id) (v27.0)", feasibility: "api", notes: "Synchronous only: deep copies are limited to 3 ads (Meta's synchronous limit); larger ones are refused. verify() finds the copy through source_campaign_id." }],
   [/^create_meta_(image|video|carousel|catalog)_campaign$/, { api: "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads", feasibility: "api", notes: "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED." }],
   [/^create_meta_dco_ad$/, { api: "POST /{act}/adcreatives (asset_feed_spec) + POST /{act}/ads", feasibility: "api", notes: "Dynamic creative requires an ad set with dynamic creative enabled." }],
   [/^add_meta_(ad|catalog_ad)$/, { api: "POST /{act}/adcreatives + POST /{act}/ads", feasibility: "api" }],
   [/^add_meta_(ad_set|catalog_ad_set)$/, { api: "POST /{act}/adsets", feasibility: "api" }],
-  [/^update_meta_(campaign|catalog_campaign)$/, { api: "POST /{campaign_id}", feasibility: "api" }],
-  [/^update_meta_(ad_set|catalog_ad_set)$/, { api: "POST /{adset_id}", feasibility: "api" }],
-  [/^update_meta_(ad|catalog_ad)$/, { api: "POST /{ad_id}", feasibility: "api", notes: "Creative content is immutable once an ad is created: creative changes need a new creative." }],
+  [/^update_meta_campaign$/, { api: "POST /{campaign_id}: name, status, daily_budget|lifetime_budget (campaign budget only), spend_cap (922337203685478 removes), bid_strategy=LOWEST_COST_WITHOUT_CAP (v27.0)", feasibility: "api", notes: "Campaign stop_time is read-only at campaign level; bid switches to cap strategies need adset_bid_amounts and are not offered." }],
+  [/^update_meta_catalog_campaign$/, { api: "POST /{campaign_id}", feasibility: "api" }],
+  [/^update_meta_ad_set$/, { api: "POST /{adset_id}: name, status, daily_budget|lifetime_budget (ad set budget only), bid_amount, bid_strategy, end_time (v27.0)", feasibility: "api", notes: "Targeting is not offered: the reference does not state whether a targeting update replaces or merges the spec. Never sends meta_moment_maker_spec." }],
+  [/^update_meta_catalog_ad_set$/, { api: "POST /{adset_id}", feasibility: "api" }],
+  [/^update_meta_ad$/, { api: "POST /{ad_id}: name, status (v27.0)", feasibility: "api", notes: "Creative content is immutable once an ad is created: creative changes need a new creative and ad (creation tools)." }],
+  [/^update_meta_catalog_ad$/, { api: "POST /{ad_id}", feasibility: "api", notes: "Creative content is immutable once an ad is created: creative changes need a new creative." }],
 ];
 
 const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$/;
-const metaHighImpact = /^create_meta_.*_campaign$|^duplicate_meta_campaign$|^resume_meta_campaign$|^update_meta_(campaign|catalog_campaign|ad_set|catalog_ad_set)$|^add_meta_(ad_set|catalog_ad_set)$/;
+const metaHighImpact = /^create_meta_.*_campaign$|^duplicate_meta_campaign$|^resume_meta_campaign$|^update_meta_(campaign|catalog_campaign|ad_set|catalog_ad_set|ad)$|^add_meta_(ad_set|catalog_ad_set)$/;
 
 function firstMatch<T>(rules: [RegExp, T][], name: string, fallback: T): T {
   for (const [re, v] of rules) if (re.test(name)) return v;
