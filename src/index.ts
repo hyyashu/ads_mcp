@@ -6,6 +6,8 @@ import { PlatformOAuth } from "./auth/platform-oauth";
 import { GoogleTokenProvider, MetaTokenProvider } from "./auth/token-providers";
 import { GoogleAdsHttp } from "./platforms/google/http";
 import { MetaGraphHttp } from "./platforms/meta/http";
+import { JobQueue } from "./jobs/queue";
+import { registerSystemJobs } from "./jobs/system";
 import { createServicesFactory } from "./platforms/google/services";
 import { loadConfig } from "./config";
 import { createDb } from "./db";
@@ -74,11 +76,15 @@ function main() {
 
   const server = createHttpServer(deps, new CompositeAuthenticator(oauth, new ApiTokenAuthenticator(db)), { config }, web);
   server.listen(config.port, () => logger.info("startup.listening", { resource: config.resource, issuer: config.issuer }));
-  // Execution records are short-lived observability data: keep 30 days.
-  setInterval(() => void pruneExecutions(db, 30).catch((e) => logger.warn("prune.failed", { error: e })), 24 * 3600_000).unref();
-  // Crash recovery: stuck mutations become "unknown", then are reconciled against live platform state. Never retried.
-  const verifier = createVerifier(deps);
-  setInterval(() => void approvals.recoverStuck().then(() => approvals.reconcileUnknown(verifier)).catch(() => {}), 60_000).unref();
+  // Background work runs as Postgres jobs (M6): one instance runs each recurring job at a time, and work survives restarts.
+  // Set JOBS_ENABLED=false on instances that should only serve requests.
+  if (process.env.JOBS_ENABLED !== "false") {
+    const queue = registerSystemJobs(new JobQueue(db), { db, approvals, verifier: createVerifier(deps) });
+    const worker = queue.start();
+    const stop = () => void worker.stop().finally(() => process.exit(0));
+    process.once("SIGTERM", stop);
+    process.once("SIGINT", stop);
+  }
 }
 
 main();

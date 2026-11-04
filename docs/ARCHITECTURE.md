@@ -37,7 +37,7 @@ Verification labels used below:
 7. Change summaries are free text. Risk is a static per-tool tier, so a budget decrease and a budget increase get the same policy.
 8. No tenant automation policy, no plan entitlements.
 9. MCP: the spec site serves revision 2026-07-28 **[verified 2026-11-02]**; the installed SDK (1.32.2) supports up to 2025-11-25 **[verified 2026-11-02]**. Clients fall back to the older handshake, so this works, but the new revision is not implemented.
-10. No background job table. Reconciliation runs on a `setInterval` in each process.
+10. ~~No background job table. Reconciliation runs on a `setInterval` in each process.~~ Fixed in M6.
 
 **Unsafe or risky (remaining after the 2026-11-04 review fixes)**
 
@@ -316,6 +316,16 @@ Each milestone is one reviewable branch with tests.
    - Not done: a formal `PlatformAdapter` interface. With two platforms the factory branch is the whole contract;
      extract an interface when a third platform arrives rather than guess at it now.
 6. **M6 Jobs**: Postgres job table for async reports and reconciliation; remove per-process intervals.
+   - Done: `job` table (migration 0008) and `jobs/queue.ts`. Claims use `FOR UPDATE SKIP LOCKED`, so any number of
+     instances run workers without coordination; a lease (default 5 min) is reclaimed when it expires, the handler's
+     signal aborts 5 s before expiry, and only the current lease holder can finish a job. Retryable failures back off
+     with full jitter up to `max_attempts`. A partial unique index on `dedupe_key` (queued or running) keeps exactly one
+     instance of each recurring job across all servers. Jobs must be safe to run twice; mutations never run as jobs.
+   - The two `setInterval`s are gone: `system.reconcile` (every 60 s: stuck recovery, then unknown-outcome
+     reconciliation, which still never re-sends a mutation), `system.prune_executions` (daily, 30 days) and
+     `system.prune_jobs` (daily, 7 days). `JOBS_ENABLED=false` turns the worker off on request-only instances.
+   - Not built: async report jobs. No inventory tool can start or poll one, and storing report results would be the
+     first stored copy of platform data; add it with a tool that needs it, with a short result TTL.
 7. **M7 Remaining Google batches**, then Meta writes.
 8. **M8 Live verification** on test accounts (Google Test/Basic, Meta test ad account).
 9. **M9 Hardening**: KMS-wrapped keys, row-level security, DCR optional.

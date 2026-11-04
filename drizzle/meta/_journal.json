@@ -57,6 +57,13 @@
       "when": 1793792061062,
       "tag": "0007_open_thunderbird",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793793283389,
+      "tag": "0008_cheerful_stick",
+      "breakpoints": true
     }
   ]
 }

@@ -294,3 +294,33 @@ export const tenantPolicy = pgTable("tenant_policy", {
   updatedBy: text("updated_by").references(() => appUser.id, { onDelete: "set null" }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
 });
+
+/**
+ * Postgres-backed jobs (M6). Payloads carry ids and parameters only, never credentials or platform data. Jobs must be
+ * safe to run twice (a lease can expire while a slow worker is still running): mutations never run as jobs.
+ */
+export const job = pgTable(
+  "job",
+  {
+    id: id(),
+    /** Null for system jobs (reconciliation, pruning). */
+    tenantId: text("tenant_id").references(() => tenant.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(),
+    status: text("status").notNull().default("queued"), // queued | running | done | failed
+    payload: jsonb("payload").notNull().default({}),
+    /** At most one queued or running job per key (recurring system jobs use this to never double-schedule). */
+    dedupeKey: text("dedupe_key"),
+    runAfter: timestamp("run_after", { withTimezone: true }).notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    maxAttempts: integer("max_attempts").notNull().default(5),
+    leaseUntil: timestamp("lease_until", { withTimezone: true }),
+    lockedBy: text("locked_by"),
+    lastError: text("last_error"),
+    createdAt: created(),
+    finishedAt: timestamp("finished_at", { withTimezone: true }),
+  },
+  (t) => [
+    index("job_due_idx").on(t.status, t.runAfter),
+    uniqueIndex("job_dedupe_uq").on(t.dedupeKey).where(sql`${t.dedupeKey} is not null and ${t.status} in ('queued', 'running')`),
+  ],
+);
