@@ -101,6 +101,42 @@ export const editInput = <T extends z.ZodRawShape>(shape: T) =>
 const campaignInput = editInput(campaignFields);
 type CampaignIn = z.infer<typeof campaignInput>;
 
+type Ref = { resource: string; id: string; name: string | null };
+type Diff = { params: Record<string, string>; changes: Change[] };
+
+/** Name and status: send only what differs. Shared by the campaign, ad set and ad updaters. */
+function diffNameStatus(a: { name?: string; status?: string }, st: { name: string | null; status: string | null }, ref: Ref, params: Diff["params"], changes: Diff["changes"]) {
+  if (a.name !== undefined && a.name !== st.name) (params.name = a.name), changes.push(textChange(ref, "name", st.name, a.name));
+  if (a.status !== undefined && a.status !== st.status) (params.status = a.status), changes.push(statusChange(ref, st.status!, a.status));
+}
+
+/**
+ * Daily or lifetime budget on the object that owns it. `notOwner` is the refusal when this object does not own the budget
+ * (null when it does). Switching between daily and lifetime is refused.
+ */
+function diffBudgets(
+  a: { daily_budget?: number; lifetime_budget?: number },
+  st: { currency: string | null; daily_budget: number | null; lifetime_budget: number | null },
+  ref: Ref,
+  params: Diff["params"],
+  changes: Diff["changes"],
+  label: string,
+  notOwner: string | null,
+) {
+  for (const f of ["daily_budget", "lifetime_budget"] as const) {
+    if (a[f] === undefined) continue;
+    if (notOwner) throw new ToolError("invalid_argument", notOwner);
+    if (st[f] === null) throw new ToolError("invalid_argument", `This ${label} uses a ${f === "daily_budget" ? "lifetime" : "daily"} budget. Switching budget type is not supported here.`);
+    const v = minor(a[f]!, st.currency, f);
+    if (v !== st[f]) (params[f] = String(v)), changes.push(money(ref, f, st[f], v, st.currency));
+  }
+}
+
+const sameNameStatus = (a: { name?: string; status?: string }, after: { name: string | null; status: string | null }) => (a.name === undefined || after.name === a.name) && (a.status === undefined || after.status === a.status);
+/** landed(): name, status and budgets read back as requested. */
+const landedCommon = (a: { name?: string; status?: string; daily_budget?: number; lifetime_budget?: number }, after: { name: string | null; status: string | null; daily_budget: number | null; lifetime_budget: number | null }, cur: string | null) =>
+  sameNameStatus(a, after) && (a.daily_budget === undefined || after.daily_budget === toMinor(a.daily_budget, cur)) && (a.lifetime_budget === undefined || after.lifetime_budget === toMinor(a.lifetime_budget, cur));
+
 function campaignPlan(a: CampaignIn, st: CampaignState) {
   if (!st.exists) throw new ToolError("not_found", `No campaign ${a.campaign_id} in this ad account.`);
   editable(st.status, "campaign");
@@ -109,15 +145,8 @@ function campaignPlan(a: CampaignIn, st: CampaignState) {
   const params: Record<string, string> = {};
   const changes: Change[] = [];
   const cbo = st.daily_budget !== null || st.lifetime_budget !== null;
-  if (a.name !== undefined && a.name !== st.name) (params.name = a.name), changes.push(textChange(ref, "name", st.name, a.name));
-  if (a.status !== undefined && a.status !== st.status) (params.status = a.status), changes.push(statusChange(ref, st.status!, a.status));
-  for (const f of ["daily_budget", "lifetime_budget"] as const) {
-    if (a[f] === undefined) continue;
-    if (!cbo) throw new ToolError("invalid_argument", "This campaign does not use a campaign budget: its budgets are on the ad sets. Use update_meta_ad_set.");
-    if (st[f] === null) throw new ToolError("invalid_argument", `This campaign uses a ${f === "daily_budget" ? "lifetime" : "daily"} budget. Switching budget type is not supported here.`);
-    const v = minor(a[f]!, cur, f);
-    if (v !== st[f]) (params[f] = String(v)), changes.push(money(ref, f, st[f], v, cur));
-  }
+  diffNameStatus(a, st, ref, params, changes);
+  diffBudgets(a, st, ref, params, changes, "campaign", cbo ? null : "This campaign does not use a campaign budget: its budgets are on the ad sets. Use update_meta_ad_set.");
   if (a.spend_cap === "remove") {
     if (st.spend_cap !== null) {
       params.spend_cap = NO_SPEND_CAP;
@@ -162,10 +191,7 @@ export const campaignEditDef = stateDef({
     if (!after.exists || !before.exists) return false;
     const cur = before.currency;
     return (
-      (a.name === undefined || after.name === a.name) &&
-      (a.status === undefined || after.status === a.status) &&
-      (a.daily_budget === undefined || after.daily_budget === toMinor(a.daily_budget, cur)) &&
-      (a.lifetime_budget === undefined || after.lifetime_budget === toMinor(a.lifetime_budget, cur)) &&
+      landedCommon(a, after, cur) &&
       (a.spend_cap === undefined || after.spend_cap === (a.spend_cap === "remove" ? null : toMinor(a.spend_cap, cur))) &&
       (a.bid_strategy === undefined || after.bid_strategy === a.bid_strategy)
     );
@@ -234,15 +260,8 @@ function adSetPlan(a: AdSetIn, st: AdSetState, now: number) {
   const ref = { resource: "ad_set", id: a.ad_set_id, name: st.name };
   const params: Record<string, string> = {};
   const changes: Change[] = [];
-  if (a.name !== undefined && a.name !== st.name) (params.name = a.name), changes.push(textChange(ref, "name", st.name, a.name));
-  if (a.status !== undefined && a.status !== st.status) (params.status = a.status), changes.push(statusChange(ref, st.status!, a.status));
-  for (const f of ["daily_budget", "lifetime_budget"] as const) {
-    if (a[f] === undefined) continue;
-    if (st.campaign_budget) throw new ToolError("invalid_argument", "This ad set is under a campaign budget: change the budget with update_meta_campaign.");
-    if (st[f] === null) throw new ToolError("invalid_argument", `This ad set uses a ${f === "daily_budget" ? "lifetime" : "daily"} budget. Switching budget type is not supported here.`);
-    const v = minor(a[f]!, cur, f);
-    if (v !== st[f]) (params[f] = String(v)), changes.push(money(ref, f, st[f], v, cur));
-  }
+  diffNameStatus(a, st, ref, params, changes);
+  diffBudgets(a, st, ref, params, changes, "ad set", st.campaign_budget ? "This ad set is under a campaign budget: change the budget with update_meta_campaign." : null);
   const strategy = a.bid_strategy ?? st.bid_strategy;
   if (a.bid_strategy !== undefined && a.bid_strategy !== st.bid_strategy) {
     if (st.campaign_budget) throw new ToolError("invalid_argument", "This ad set is under a campaign budget: Meta sets the bid strategy on the campaign.");
@@ -288,10 +307,7 @@ export const adSetEditDef = stateDef({
     if (!after.exists || !before.exists) return false;
     const cur = before.currency;
     return (
-      (a.name === undefined || after.name === a.name) &&
-      (a.status === undefined || after.status === a.status) &&
-      (a.daily_budget === undefined || after.daily_budget === toMinor(a.daily_budget, cur)) &&
-      (a.lifetime_budget === undefined || after.lifetime_budget === toMinor(a.lifetime_budget, cur)) &&
+      landedCommon(a, after, cur) &&
       (a.bid_amount === undefined || after.bid_amount === toMinor(a.bid_amount, cur)) &&
       (a.bid_strategy === undefined || after.bid_strategy === a.bid_strategy) &&
       (a.end_time === undefined || after.end_time === epoch(a.end_time))
@@ -326,12 +342,11 @@ export const adEditDef = stateDef({
     const ref = { resource: "ad", id: a.ad_id, name: st.name };
     const params: Record<string, string> = {};
     const changes: Change[] = [];
-    if (a.name !== undefined && a.name !== st.name) (params.name = a.name), changes.push(textChange(ref, "name", st.name, a.name));
-    if (a.status !== undefined && a.status !== st.status) (params.status = a.status), changes.push(statusChange(ref, st.status!, a.status));
+    diffNameStatus(a, st, ref, params, changes);
     if (!changes.length) throw nothing();
     return { summary: summarize("ad", st.name, a.ad_id, changes), changes, post: { path: a.ad_id, params } };
   },
-  landed: (a, _b, after) => after.exists && (a.name === undefined || after.name === a.name) && (a.status === undefined || after.status === a.status),
+  landed: (a, _b, after) => after.exists && sameNameStatus(a, after),
   result: (a, after) => ({ ad_id: a.ad_id, name: after.exists ? after.name : null, status: after.exists ? after.status : null }),
 });
 export const updateMetaAd = metaStateWrite(adEditDef);

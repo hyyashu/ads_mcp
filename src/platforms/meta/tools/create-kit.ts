@@ -277,3 +277,66 @@ export function verdict(found: Lookup[]): { outcome: "applied" | "not_applied" |
 }
 
 export const ownedRow = async (m: MetaAdsClient, oid: string, fields: string[], label: string): Promise<MetaRow> => m.getOwned(oid, fields, label);
+
+// ------------------------------------------------------------------------------------- shared by the create tools
+/** A "create" row in a change set. */
+export const createChange = (resource: string, name: string | null, after: string): Change => ({ resource, id: "new", name, field: "create", before: null, after, unit: "text", effect: "create" });
+/** New objects can only be added under an ACTIVE or PAUSED parent. */
+export function requireUsable(status: string | null, label: string): void {
+  if (status !== "ACTIVE" && status !== "PAUSED") throw new ToolError("invalid_argument", `The ${label} is ${String(status).toLowerCase()}; new objects cannot be added to it.`);
+}
+export const positive = (v: unknown) => Number(v ?? 0) > 0;
+/** The campaign's special ad categories that restrict audiences (CREDIT is the older name of financial products). */
+export const restrictedCategories = (c: MetaRow): string[] =>
+  (Array.isArray(c.special_ad_categories) ? c.special_ad_categories.map(String) : []).filter((x: string) => ([...SPECIAL, "CREDIT"] as string[]).includes(x));
+
+/**
+ * Budget rule for adding an ad set to an existing campaign: a campaign with a campaign budget gives its ad sets none, a
+ * campaign without one needs an ad set budget. Returns whether the ad set's schedule is lifetime-budgeted.
+ */
+export function adSetBudgetRule(c: MetaRow, budget: { type: "daily" | "lifetime" } | undefined): { lifetime: boolean } {
+  const cbo = positive(c.daily_budget) || positive(c.lifetime_budget);
+  if (cbo && budget) throw new ToolError("invalid_argument", "The campaign has a campaign budget: the ad set cannot have its own budget.");
+  if (!cbo && !budget) throw new ToolError("invalid_argument", "The campaign has no campaign budget: give the ad set a daily or lifetime budget.");
+  return { lifetime: budget ? budget.type === "lifetime" : positive(c.lifetime_budget) };
+}
+
+/**
+ * The four steps of a full create (campaign → ad set → creative → ad), all PAUSED. The budget goes on the campaign (campaign
+ * budget) or the ad set, with lowest-cost bidding. `campaign` holds the objective-specific campaign fields.
+ */
+export function fullCreateSteps(
+  m: MetaAdsClient,
+  o: { campaign: Record<string, string>; budget: BudgetIn; adSet: Record<string, string>; creative: Record<string, string>; adName: string },
+): Step[] {
+  const cbo = o.budget.level === "campaign";
+  const budget = { ...budgetParams(o.budget, m.currency), bid_strategy: "LOWEST_COST_WITHOUT_CAP" };
+  const campaign = { ...o.campaign, status: "PAUSED", ...(cbo ? budget : { is_adset_budget_sharing_enabled: "false" }) };
+  const adSet = { ...o.adSet, ...(cbo ? {} : budget) };
+  return [
+    { key: "campaign", label: "campaign", post: () => ({ path: `${m.adAccountId}/campaigns`, params: campaign }) },
+    { key: "ad_set", label: "ad set", post: (ids) => ({ path: `${m.adAccountId}/adsets`, params: { ...adSet, campaign_id: ids.campaign! } }) },
+    { key: "creative", label: "creative", post: () => ({ path: `${m.adAccountId}/adcreatives`, params: o.creative }) },
+    { key: "ad", label: "ad", post: (ids) => ({ path: `${m.adAccountId}/ads`, params: { name: o.adName, adset_id: ids.ad_set!, creative: JSON.stringify({ creative_id: ids.creative! }), status: "PAUSED" } }) },
+  ];
+}
+
+/** verify() for a full create: finds each object by its exact (unique) name under its parent. */
+export async function verifyFullCreate(m: MetaAdsClient, a: { campaign_name: string; ad_set_name: string; ad_name: string }) {
+  const campaigns = await named(m, `${m.adAccountId}/campaigns`, a.campaign_name);
+  const sets = campaigns.length === 1 ? await named(m, `${campaigns[0]}/adsets`, a.ad_set_name) : [];
+  const creatives = await named(m, `${m.adAccountId}/adcreatives`, a.ad_name);
+  const ads = sets.length === 1 ? await named(m, `${sets[0]}/ads`, a.ad_name) : [];
+  return verdict([
+    { key: "campaign", label: "campaign", ids: campaigns },
+    { key: "ad_set", label: "ad set", ids: sets },
+    { key: "creative", label: "creative", ids: creatives },
+    { key: "ad", label: "ad", ids: ads },
+  ]);
+}
+
+/** Creates one ad set from prepared params (single step, never retried). */
+export async function createOneAdSet(m: MetaAdsClient, params: Record<string, string>): Promise<string> {
+  const ids = await runSteps(m, [{ key: "ad_set", label: "ad set", post: () => ({ path: `${m.adAccountId}/adsets`, params }) }]);
+  return ids.ad_set!;
+}
