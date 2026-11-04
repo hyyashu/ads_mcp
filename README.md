@@ -94,6 +94,36 @@ issued with `issueApiToken` (read/write scopes only).
 - Google: create a Cloud project, enable the Google Ads API, request Basic/Standard access for that project, set the OAuth consent screen (the `adwords` scope is sensitive and needs verification for external users).
 - Meta: a Meta app with Business Verification and App Review for `ads_management` and the other requested permissions.
 
+### Docker / Dokploy
+
+The `Dockerfile` builds a production image: runtime dependencies only, a non-root user, `tini` as PID 1, and a health
+check on `/healthz`. On every start, `scripts/docker-start.sh` applies pending migrations (`drizzle-kit migrate`;
+already applied ones are skipped) and then starts the server. It refuses to start without `DATABASE_URL`.
+
+1. **Database:** in the Dokploy project, create a **Postgres** service. Copy its **internal** connection URL
+   (`postgres://user:pass@<service-host>:5432/<db>`).
+2. **Application:** create an **Application** from this Git repository (branch `main`), with **Build Type: Dockerfile**
+   and Dockerfile path `Dockerfile`.
+3. **Environment:** set at least
+   ```
+   DATABASE_URL=postgres://...            # internal URL from step 1
+   ADS_MCP_KEYS=1:<openssl rand -base64 32>
+   PUBLIC_URL=https://ads.example.com     # the domain from step 4, no trailing slash
+   ```
+   Add the `GOOGLE_*`, `META_*` and `YOUTUBE_API_KEY` values from `.env.example` as needed. The image already sets
+   `NODE_ENV=production`, `PORT=8787`, `TRUST_PROXY=1` (Dokploy's Traefik is the trusted proxy) and `RATE_LIMIT_STORE=db`.
+   Set `RUN_MIGRATIONS=false` to skip the automatic migrations.
+4. **Domain:** add the domain with **container port 8787** and HTTPS (Let's Encrypt) enabled. Register the OAuth
+   redirect URIs above using this domain.
+5. **Deploy**, then create the first workspace from the application's **Terminal** in Dokploy:
+   ```bash
+   ADS_MCP_OWNER_PASSWORD='a-long-password' node --import tsx scripts/create-tenant.ts "My Agency" owner@example.com
+   ```
+   Sign in at `$PUBLIC_URL/login`. MCP clients connect to `$PUBLIC_URL/mcp`.
+
+Back up the Postgres service (Dokploy → Backups): it holds the encrypted platform credentials and approvals. Keep
+`ADS_MCP_KEYS` safe as well: without it, the stored credentials cannot be decrypted.
+
 ## Known gaps and limitations
 
 - 188 tools pending. See `docs/TRACKING.md`. Three need platform support verified before they can be built honestly: `get_benchmark_context` (competitive metrics availability), `validate_video` (YouTube Data API key and what Google Ads exposes), `get_meta_audience_insights` (only officially supported capabilities; explicit unsupported errors otherwise).
