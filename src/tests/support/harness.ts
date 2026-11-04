@@ -9,6 +9,7 @@ import { createServicesFactory } from "../../platforms/google/services";
 import { ApprovalService } from "../../security/approvals";
 import { RateLimiter } from "../../security/rate-limit";
 import { addUser, seedAccount, seedTenant, testDb } from "../helpers";
+import { schemaChecked } from "./schema-guard";
 
 /**
  * Everything a Google tool test needs except the fake API itself: a fresh database, one tenant with an owner and a second
@@ -23,7 +24,7 @@ export async function googleHarness(label: string, fetch: FetchLike) {
   const second = (await addUser(db, tenantId, "adm", "admin")).id;
   const accountId = (await seedAccount(db, tenantId, "google_ads")).id;
   const approvals = new ApprovalService(db);
-  const http = new GoogleAdsHttp({ apiVersion: "v99", sleep: async () => {}, fetch });
+  const http = new GoogleAdsHttp({ apiVersion: "v99", sleep: async () => {}, fetch: schemaChecked(fetch) });
   const deps: PipelineDeps = {
     db,
     registry: new ToolRegistry(loadInventory()).registerAll(googleTools),

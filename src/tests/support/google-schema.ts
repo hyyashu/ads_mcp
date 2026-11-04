@@ -1,0 +1,96 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+/**
+ * Checks requests against Google's published v26 REST schema (inventory/google-ads-v26-schema.json, built from the
+ * discovery document by scripts/build-google-schema-index.py). The Google test harness runs every request through it, so
+ * a GAQL field, enum value or mutate body field that does not exist in the API fails the test that sent it.
+ */
+type Prop = { ref?: string; type?: string; enum?: string[]; array?: boolean };
+const index = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google-ads-v26-schema.json"), "utf8")) as { version: string; schemas: Record<string, Record<string, Prop>> };
+export const SCHEMA_VERSION = index.version;
+
+const camel = (s: string) => s.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
+
+/** Resolves a GAQL field path (e.g. campaign.network_settings.target_search_network) to its schema property. */
+export function resolveField(path: string): Prop | null {
+  const parts = path.split(".");
+  let schema = "Services__GoogleAdsRow";
+  let prop: Prop | null = null;
+  for (const raw of parts) {
+    const props = index.schemas[schema];
+    if (!props) return null;
+    prop = props[camel(raw)] ?? null;
+    if (!prop) return null;
+    if (prop.ref) schema = prop.ref;
+  }
+  return prop;
+}
+
+const RESERVED = new Set(["SELECT", "FROM", "WHERE", "AND", "OR", "ORDER", "BY", "LIMIT", "PARAMETERS", "DESC", "ASC", "IN", "NOT", "LIKE", "IS", "NULL", "DURING", "BETWEEN", "CONTAINS", "ANY", "ALL", "NONE", "REGEXP_MATCH", "TRUE", "FALSE"]);
+
+/** Problems with a GAQL query: unknown resource or fields, and enum literals that are not values of the compared field. */
+export function checkGaql(query: string): string[] {
+  const problems: string[] = [];
+  const noStrings = query.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, "''");
+  const from = /\bFROM\s+([a-z_]+)/i.exec(noStrings)?.[1];
+  if (!from || !resolveField(from)) problems.push(`unknown FROM resource: ${from}`);
+  for (const m of noStrings.matchAll(/\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\b/g)) {
+    if (!resolveField(m[1]!)) problems.push(`unknown field: ${m[1]}`);
+  }
+  // field = 'ENUM' / field IN ('A', 'B') / field != 'X': check enum literals against the field's enum.
+  for (const m of query.matchAll(/\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\s*(=|!=|IN|NOT IN)\s*(\([^)]*\)|'[^']*')/gi)) {
+    const p = resolveField(m[1]!);
+    if (!p?.enum) continue;
+    for (const lit of m[3]!.matchAll(/'([^']*)'/g)) if (!p.enum.includes(lit[1]!)) problems.push(`${m[1]}: '${lit[1]}' is not a valid value`);
+  }
+  for (const w of noStrings.match(/\b[A-Z_]{2,}\b/g) ?? []) if (!RESERVED.has(w) && !/^LAST_|^THIS_|^TODAY|^YESTERDAY/.test(w)) problems.push(`unexpected keyword: ${w}`);
+  return problems;
+}
+
+/** Unknown keys (and invalid enum values) in a request body, checked recursively against a schema. */
+export function checkBody(schema: string, body: unknown, at = ""): string[] {
+  const props = index.schemas[schema];
+  if (!props) return [`${at || "(body)"}: unknown schema ${schema}`];
+  if (body === null || typeof body !== "object" || Array.isArray(body)) return [];
+  const out: string[] = [];
+  for (const [k, v] of Object.entries(body as Record<string, unknown>)) {
+    const p = props[k];
+    const here = at ? `${at}.${k}` : k;
+    if (!p) {
+      out.push(`${here}: not a field of ${schema}`);
+      continue;
+    }
+    const items = p.array ? (Array.isArray(v) ? v : [v]) : [v];
+    for (const item of items) {
+      if (p.ref && item && typeof item === "object") out.push(...checkBody(p.ref, item, here));
+      else if (p.enum && typeof item === "string" && !p.enum.includes(item)) out.push(`${here}: '${item}' is not a valid value`);
+    }
+  }
+  return out;
+}
+
+/** The request schema for a REST path such as customers/1/campaigns:mutate or customers/1/googleAds:search. */
+export function requestSchemaFor(path: string): string | null {
+  const m = /\/([A-Za-z]+):([A-Za-z]+)$/.exec(path);
+  if (!m) return null;
+  const [, service, method] = m;
+  const pascal = service![0]!.toUpperCase() + service!.slice(1);
+  if (service === "googleAds") return method === "mutate" ? "Services__MutateGoogleAdsRequest" : method === "searchStream" ? "Services__SearchGoogleAdsStreamRequest" : "Services__SearchGoogleAdsRequest";
+  const name = `Services__${method![0]!.toUpperCase()}${method!.slice(1)}${pascal}Request`;
+  return index.schemas[name] ? name : null;
+}
+
+/** All problems with one Google Ads REST request (path and JSON body). */
+export function checkRequest(path: string, body: unknown): string[] {
+  const schema = requestSchemaFor(path);
+  const out: string[] = [];
+  if (!schema) {
+    if (/:[a-zA-Z]+$/.test(path)) out.push(`no request schema for ${path}`);
+    return out;
+  }
+  out.push(...checkBody(schema, body).map((p) => `${path}: ${p}`));
+  const q = (body as { query?: unknown } | null)?.query;
+  if (typeof q === "string") out.push(...checkGaql(q).map((p) => `GAQL: ${p}`));
+  return out;
+}

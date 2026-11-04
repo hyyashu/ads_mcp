@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it } from "vitest";
+import { schemaChecked } from "./support/schema-guard";
 import type { GoogleTokenProvider } from "../auth/token-providers";
 import { type Db, schema } from "../db";
 import { loadInventory } from "../inventory";
@@ -42,12 +43,12 @@ beforeAll(async () => {
 const http = new GoogleAdsHttp({
   apiVersion: "v99",
   sleep: async () => {},
-  fetch: async (url, init) => {
+  fetch: schemaChecked(async (url, init) => {
     const req: Req = { path: url.replace("https://googleads.googleapis.com/v99/", ""), body: JSON.parse(String(init?.body ?? "{}")), headers: init!.headers as Record<string, string> };
     seen.push(req);
     const r = responder(req);
     return r instanceof Response ? r : J(200, r);
-  },
+  }),
 });
 
 function deps(): PipelineDeps {
