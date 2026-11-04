@@ -175,12 +175,28 @@ describe("Client ID Metadata Documents", () => {
     expect(cimdCalls).toBe(1);
   });
 
+  it("accepts a document that prefers private_key_jwt but also supports public auth (ChatGPT's shape)", async () => {
+    const u = "https://client.example.com/chatgpt-shape.json";
+    cimdDoc = {
+      client_id: u,
+      client_name: "ChatGPT",
+      redirect_uris: ["https://client.example.com/connector_platform_oauth_redirect"],
+      token_endpoint_auth_method: "private_key_jwt",
+      token_endpoint_auth_methods_supported: ["none", "private_key_jwt"],
+      grant_types: ["authorization_code", "refresh_token"],
+      response_types: ["code"],
+      jwks_uri: "https://client.example.com/oauth/jwks.json",
+    };
+    expect(await st.oauth.resolveClient(u)).toMatchObject({ clientId: u, name: "ChatGPT" });
+  });
+
   it("rejects documents that are inconsistent or unsafe", async () => {
     const cases: Record<string, Record<string, unknown>> = {
       "client_id mismatch": { ...good(), client_id: "https://other.example/x.json" },
       "has a secret": { ...good(), client_secret: "s3cret" },
       "bad redirect": { ...good(), redirect_uris: ["http://evil.example/cb"] },
       "confidential auth": { ...good(), token_endpoint_auth_method: "client_secret_post" },
+      "confidential only": { ...good(), token_endpoint_auth_method: "private_key_jwt", token_endpoint_auth_methods_supported: ["private_key_jwt"] },
       "no redirects": { ...good(), redirect_uris: [] },
     };
     for (const [name, doc] of Object.entries(cases)) {
