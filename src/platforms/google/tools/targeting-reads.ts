@@ -215,7 +215,7 @@ const CHANNELS = ["youtube_in_stream", "youtube_in_feed", "youtube_shorts", "dis
 export const getDemandgenChannelControls = googleRead({
   name: "get_demandgen_channel_controls",
   title: "Demand Gen channel controls",
-  description: "Shows where each Demand Gen ad group may serve: all Google channels, or a selected set (YouTube in-stream, in-feed and Shorts, Discover, Gmail, Display, Maps). Optionally one campaign or some ad groups. Fetched live.",
+  description: "Shows where each Demand Gen ad group may serve. channel_config is CHANNEL_STRATEGY (then channel_strategy is ALL_CHANNELS or ALL_OWNED_AND_OPERATED_CHANNELS) or SELECTED_CHANNELS (then selected_channels lists YouTube in-stream, in-feed and Shorts, Discover, Gmail, Display, Maps). Optionally one campaign or some ad groups. Fetched live.",
   input: z.object(scopeInput),
   output: z.object({ ad_groups: z.array(z.object({ ad_group_id: z.string().min(1), campaign_id: z.string().nullable(), name: z.string().nullable(), channel_strategy: z.string().nullable(), channel_config: z.string().nullable(), selected_channels: z.record(z.string(), z.boolean().nullable()) })) }),
   handler: async (a, ctx) => {

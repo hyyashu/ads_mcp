@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { drainSchemaProblems, schemaChecked } from "./support/schema-guard";
 import { SCHEMA_VERSION, checkBody, checkGaql, checkRequest, requestSchemaFor, resolveField } from "./support/google-schema";
 
 describe("Google Ads v26 schema checker", () => {
@@ -37,5 +38,11 @@ describe("Google Ads v26 schema checker", () => {
     expect(checkBody("Services__MutateCampaignsRequest", { operations: [{ update: { resourceName: "x", status: "STOPPED" }, updateMask: "status" }] })).toEqual(["operations.update.status: 'STOPPED' is not a valid value"]);
     expect(checkBody("Services__MutateCampaignsRequest", { operations: [{ update: { budget: 5 } }] })).toEqual(["operations.update.budget: not a field of Resources__Campaign"]);
     expect(checkRequest("customers/1/notAService:mutate", {})).toEqual(["no request schema for customers/1/notAService:mutate"]);
+  });
+
+  it("the harness guard records bad requests and unrealistic fixture rows", async () => {
+    const f = schemaChecked(async () => new Response(JSON.stringify({ results: [{ campaign: { id: "1", status: "RUNNING" } }] })));
+    await (f as (u: string, i?: RequestInit) => Promise<Response>)("https://googleads.googleapis.com/v26/customers/1/googleAds:search", { method: "POST", body: JSON.stringify({ query: "SELECT campaign.nope FROM campaign" }) });
+    expect(drainSchemaProblems()).toEqual(["GAQL: unknown field: campaign.nope", "fixture row: campaign.status: 'RUNNING' is not a valid value"]);
   });
 });

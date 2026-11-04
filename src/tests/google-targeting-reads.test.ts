@@ -56,12 +56,12 @@ describe("ad group criteria reads", () => {
   it("display ad group settings, frequency caps and demand gen channel controls", async () => {
     g.search.ad_group = (q) =>
       q.includes("DEMAND_GEN")
-        ? [{ adGroup: { id: "71", name: "DG", demandGenAdGroupSettings: { channelControls: { channelStrategy: "SELECTED_CHANNELS", selectedChannels: { youtubeShorts: true, gmail: false } } } }, campaign: { id: "70" } }]
+        ? [{ adGroup: { id: "71", name: "DG", demandGenAdGroupSettings: { channelControls: { channelConfig: "SELECTED_CHANNELS", selectedChannels: { youtubeShorts: true, gmail: false } } } }, campaign: { id: "70" } }]
         : [{ adGroup: { id: "61", name: "Disp", status: "ENABLED", cpcBidMicros: "700000", optimizedTargetingEnabled: true, targetingSetting: { targetRestrictions: [{ targetingDimension: "AUDIENCE", bidOnly: true }] } }, campaign: { id: "51" } }];
     const s = await data("get_display_ad_group_settings");
     expect(s.ad_groups[0]).toMatchObject({ ad_group_id: "61", cpc_bid: 0.7, cpm_bid: null, optimized_targeting: true, target_restrictions: [{ dimension: "AUDIENCE", bid_only: true }] });
     const dg = await data("get_demandgen_channel_controls");
-    expect(dg.ad_groups[0]).toMatchObject({ channel_strategy: "SELECTED_CHANNELS", selected_channels: { youtube_shorts: true, gmail: false, maps: null } });
+    expect(dg.ad_groups[0]).toMatchObject({ channel_config: "SELECTED_CHANNELS", channel_strategy: null, selected_channels: { youtube_shorts: true, gmail: false, maps: null } });
     g.search.campaign = [{ campaign: { id: "51", name: "Disp", frequencyCaps: [{ key: { level: "AD_GROUP", eventType: "IMPRESSION", timeUnit: "WEEK", timeLength: 1 }, cap: 5 }] } }];
     expect((await data("get_display_frequency_caps")).campaigns[0].frequency_caps[0]).toMatchObject({ level: "AD_GROUP", cap: 5 });
   });

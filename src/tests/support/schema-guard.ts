@@ -1,5 +1,5 @@
 import { afterEach, expect } from "vitest";
-import { checkRequest } from "./google-schema";
+import { checkBody, checkRequest } from "./google-schema";
 
 /** Problems found in requests sent to the fake Google Ads API during the current test. */
 const problems: string[] = [];
@@ -17,9 +17,22 @@ export function schemaChecked<F extends (url: string, init?: RequestInit) => Pro
       }
       problems.push(...checkRequest(m[1]!, body));
     }
-    return fetch(url, init);
+    const res = await fetch(url, init);
+    // Fake search responses must look like real ones too: unknown fields or invented enum values in fixtures hide bugs.
+    if (m && /googleAds:search(Stream)?$/.test(m[1]!) && res.ok) {
+      try {
+        const j = (await res.clone().json()) as { results?: unknown[] } | { results?: unknown[] }[];
+        for (const chunk of Array.isArray(j) ? j : [j]) for (const row of chunk.results ?? []) problems.push(...checkBody("Services__GoogleAdsRow", row).map((p) => `fixture row: ${p}`));
+      } catch {
+        /* not JSON: the client reports it */
+      }
+    }
+    return res;
   }) as F;
 }
+
+/** For the guard's own test: returns and clears the problems recorded so far. */
+export const drainSchemaProblems = () => problems.splice(0);
 
 afterEach(() => {
   const found = problems.splice(0);
