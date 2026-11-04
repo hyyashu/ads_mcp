@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, eq, inArray, lt, lte, or, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { job } from "../db/schema";
 import { toToolError } from "../mcp/errors";
@@ -85,7 +85,9 @@ export class JobQueue {
         .where(
           and(
             inArray(job.kind, kinds),
-            sql`((${job.status} = 'queued' and ${job.runAfter} <= ${now}) or (${job.status} = 'running' and ${job.leaseUntil} < ${now}))`,
+            // Typed column comparisons, not a raw sql`` template: postgres.js refuses a bare Date parameter in raw SQL
+            // ("The string argument must be of type string... Received an instance of Date"); PGlite (the tests) accepts it.
+            or(and(eq(job.status, "queued"), lte(job.runAfter, now)), and(eq(job.status, "running"), lt(job.leaseUntil, now))),
           ),
         )
         .orderBy(job.runAfter)

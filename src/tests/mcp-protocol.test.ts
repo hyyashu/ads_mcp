@@ -106,13 +106,13 @@ describe("transport and authentication", () => {
 });
 
 describe("tool discovery", () => {
-  it("lists only registered tools, each with input schema, output schema and annotations", async () => {
+  it("lists only registered tools, each with input schema and annotations, and no output schema", async () => {
     const c = await client(env.base, env.A.tokens.full);
     const { tools } = await c.listTools();
     expect(tools.map((t) => t.name).sort()).toEqual(["get_campaign_dates", "get_campaign_labels", "list_campaigns", "pause_campaign", "remove_ad"]);
     for (const t of tools) {
       expect(t.inputSchema.type).toBe("object");
-      expect(t.outputSchema?.type).toBe("object");
+      expect(t.outputSchema).toBeUndefined(); // keeps tools/list small enough for ChatGPT (see server.ts)
       expect(t.description!.length).toBeGreaterThan(20);
     }
     const by = Object.fromEntries(tools.map((t) => [t.name, t.annotations]));
