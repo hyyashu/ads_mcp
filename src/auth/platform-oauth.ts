@@ -19,7 +19,8 @@ export const GOOGLE_ADS_SCOPE = "https://www.googleapis.com/auth/adwords";
 /** Each Meta permission beyond ads_read needs App Review before non-developer users can grant it. */
 export const META_SCOPES = {
   read: ["ads_read", "business_management", "pages_show_list", "pages_read_engagement", "catalog_management", "instagram_basic", "leads_retrieval"],
-  write: ["ads_read", "ads_management", "business_management", "pages_show_list", "pages_read_engagement", "catalog_management", "instagram_basic", "leads_retrieval"],
+  // pages_manage_ads: creating ads for a Page (Ad Account promote_pages reference). Connections made before it was added must reconnect.
+  write: ["ads_read", "ads_management", "business_management", "pages_show_list", "pages_read_engagement", "pages_manage_ads", "catalog_management", "instagram_basic", "leads_retrieval"],
 } as const;
 
 export type Access = "read" | "write";

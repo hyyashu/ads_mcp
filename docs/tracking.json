@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 204,
+    "implemented": 210,
     "external_limitation": 1,
-    "pending": 27
+    "pending": 21
   },
   "rows": [
     {
@@ -2900,34 +2900,36 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "ads",
-      "api": "POST /{act}/adcreatives + POST /{act}/ads",
-      "risk": "write",
+      "api": "POST /{act}/adcreatives (optional, single image or video) + POST /{act}/ads, PAUSED (v27.0)",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_meta_ad_set",
       "platform": "meta_ads",
       "action": "Create",
       "domain": "ad_sets",
-      "api": "POST /{act}/adsets",
+      "api": "POST /{act}/adsets under an owned campaign, PAUSED (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "add_meta_catalog_ad",
@@ -3070,18 +3072,19 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "creatives",
-      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "api": "POST /{act}/campaigns -> /{act}/adsets -> /{act}/adcreatives (object_story_spec link_data / video_data / child_attachments) -> /{act}/ads, all PAUSED (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Existing library images/videos only (no uploads); website destinations only. Not atomic: each step is sent once, a later failure reports the ids already created; verify() finds objects by their unique names.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_meta_catalog_campaign",
@@ -3106,36 +3109,38 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "creatives",
-      "api": "POST /{act}/adcreatives (asset_feed_spec) + POST /{act}/ads",
-      "risk": "write",
+      "api": "POST /{act}/adcreatives (asset_feed_spec) + POST /{act}/ads, in an empty ad set with is_dynamic_creative=true (v27.0)",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "notes": "Dynamic creative requires an ad set with dynamic creative enabled.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "One ad per dynamic creative ad set (Dynamic Creative guide).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_meta_image_campaign",
       "platform": "meta_ads",
       "action": "Create",
       "domain": "creatives",
-      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "api": "POST /{act}/campaigns -> /{act}/adsets -> /{act}/adcreatives (object_story_spec link_data / video_data / child_attachments) -> /{act}/ads, all PAUSED (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Existing library images/videos only (no uploads); website destinations only. Not atomic: each step is sent once, a later failure reports the ids already created; verify() finds objects by their unique names.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_meta_product_set",
@@ -3159,18 +3164,19 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "creatives",
-      "api": "POST /{act}/campaigns, /adsets, /adcreatives (+ /adimages or /advideos uploads), /ads",
+      "api": "POST /{act}/campaigns -> /{act}/adsets -> /{act}/adcreatives (object_story_spec link_data / video_data / child_attachments) -> /{act}/ads, all PAUSED (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
-        "ads_management"
+        "ads_management",
+        "pages_manage_ads"
       ],
       "accountScope": "required",
-      "notes": "Multi-step and NOT atomic on Meta: partial failure handling and cleanup are required. Everything is created PAUSED.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Existing library images/videos only (no uploads); website destinations only. Not atomic: each step is sent once, a later failure reports the ids already created; verify() finds objects by their unique names.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "detect_meta_catalog_waste",
