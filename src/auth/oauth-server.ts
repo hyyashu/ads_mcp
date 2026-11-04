@@ -247,7 +247,8 @@ export class OAuthServer {
 
     const requested = (q.get("scope") ?? "").split(/\s+/).filter(Boolean);
     if (requested.some((s) => !(SCOPES_SUPPORTED as readonly string[]).includes(s))) return fail("invalid_scope", "unknown scope requested");
-    const scopes = requested.length ? [...new Set(requested)] : ["ads:read"];
+    // No scope requested: ask for both. The consent page lets the person narrow it to read only, and roles cap it.
+    const scopes = requested.length ? [...new Set(requested)] : ["ads:read", "ads:write"];
     return { kind: "ok", client, redirectUri, scopes, codeChallenge: challenge, state, resource: this.d.config.resource };
   }
 

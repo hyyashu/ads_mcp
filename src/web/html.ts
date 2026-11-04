@@ -20,7 +20,8 @@ button.primary{background:#1f4fd8;color:#fff;border-color:#1f4fd8}button.danger{
 input{font:inherit;padding:7px 9px;border:1px solid #9aa7b4;border-radius:6px;width:100%;box-sizing:border-box;margin:4px 0 12px}
 .muted{color:#5b6b79;font-size:13px}.msg{background:#eef4ff;border:1px solid #c5d6fb;padding:8px 12px;border-radius:6px}
 .err{background:#fdecea;border:1px solid #f3b8b3;padding:8px 12px;border-radius:6px}code{background:#f0f3f6;padding:1px 5px;border-radius:4px}
-form{display:inline}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}`;
+form{display:inline}.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=radio]{width:auto;margin:0 8px 0 0}fieldset label{display:block;margin:6px 0}`;
 
 export const page = (title: string, body: string, nav = "") =>
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(title)}</title><style>${CSS}</style></head><body>${nav}<h1>${esc(title)}</h1>${body}</body></html>`;

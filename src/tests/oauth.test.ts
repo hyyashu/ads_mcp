@@ -50,16 +50,17 @@ async function register(extra: Record<string, unknown> = {}, uris: string[] = ["
 }
 
 /** Runs the whole browser flow up to the redirect carrying the code. */
-async function getCode(opts: { email?: string; scope?: string; client?: string; redirect?: string; challenge: string; state?: string }) {
+async function getCode(opts: { email?: string; scope?: string | null; client?: string; redirect?: string; challenge: string; state?: string; access?: "read" | "write" }) {
   const cookie = await st.login(opts.email ?? owner.email);
   const params = new URLSearchParams({
     client_id: opts.client!, redirect_uri: opts.redirect ?? "https://client.example/cb", response_type: "code", code_challenge: opts.challenge, code_challenge_method: "S256",
     state: opts.state ?? "xyz", scope: opts.scope ?? "ads:read", resource: `${st.base}/mcp`,
   });
+  if (opts.scope === null) params.delete("scope");
   const page = await fetch(`${st.base}/authorize?${params}`, { headers: { cookie } });
   const html = await page.text();
   const csrf = html.split('action="/authorize"')[1]?.match(/name="csrf" value="([^"]+)"/)?.[1];
-  const res = await fetch(`${st.base}/authorize`, { method: "POST", redirect: "manual", headers: { cookie, origin: st.base, "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ ...Object.fromEntries(params), csrf: csrf ?? "", decision: "allow" }) });
+  const res = await fetch(`${st.base}/authorize`, { method: "POST", redirect: "manual", headers: { cookie, origin: st.base, "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ ...Object.fromEntries(params), csrf: csrf ?? "", decision: "allow", ...(opts.access ? { access: opts.access } : {}) }) });
   return { page, html, res, location: res.headers.get("location") ? new URL(res.headers.get("location")!) : null };
 }
 
@@ -68,10 +69,10 @@ async function tokenCall(body: Record<string, string>) {
   return { status: r.status, body: (await r.json()) as Record<string, any>, headers: r.headers };
 }
 
-async function fullGrant(scope = "ads:read ads:write", email = owner.email) {
+async function fullGrant(scope: string | null = "ads:read ads:write", email = owner.email, access?: "read" | "write") {
   const reg = await register();
   const p = pkce();
-  const got = await getCode({ client: reg.body.client_id, challenge: p.challenge, scope, email });
+  const got = await getCode({ client: reg.body.client_id, challenge: p.challenge, scope, email, access });
   const code = got.location!.searchParams.get("code")!;
   const tok = await tokenCall({ grant_type: "authorization_code", code, code_verifier: p.verifier, client_id: reg.body.client_id, redirect_uri: "https://client.example/cb" });
   return { reg, p, code, tok };
@@ -107,7 +108,7 @@ describe("discovery (RFC 9728 / RFC 8414)", () => {
     const r = await fetch(`${st.base}/mcp`, { method: "POST", headers: { "content-type": "application/json" }, body: "{}" });
     expect(r.status).toBe(401);
     expect(r.headers.get("www-authenticate")).toContain(`resource_metadata="${st.base}/.well-known/oauth-protected-resource"`);
-    expect(r.headers.get("www-authenticate")).toContain('scope="ads:read"');
+    expect(r.headers.get("www-authenticate")).toContain('scope="ads:read ads:write"');
   });
 
   it("answers CORS preflight for the public OAuth endpoints", async () => {
@@ -283,6 +284,33 @@ describe("authorization code flow with PKCE", () => {
     const got = await getCode({ client: url, redirect: "https://app.example.com/cb", challenge: p.challenge });
     const tok = await tokenCall({ grant_type: "authorization_code", code: got.location!.searchParams.get("code")!, code_verifier: p.verifier, client_id: url, redirect_uri: "https://app.example.com/cb" });
     expect(tok.status).toBe(200);
+  });
+
+  it("the consent page offers read only or read and propose changes, with changes pre-selected", async () => {
+    const reg = await register();
+    const got = await getCode({ client: reg.body.client_id, challenge: pkce().challenge, scope: "ads:read ads:write" });
+    expect(got.html).toMatch(/name="access" value="write" checked/);
+    expect(got.html).toMatch(/name="access" value="read"/);
+    const ro = await getCode({ client: reg.body.client_id, challenge: pkce().challenge, scope: "ads:read" });
+    expect(ro.html).not.toContain('name="access"'); // nothing to choose when only read was requested
+    const mem = await getCode({ client: reg.body.client_id, challenge: pkce().challenge, scope: "ads:read ads:write", email: member.email });
+    expect(mem.html).not.toContain('name="access"'); // members only ever get read
+  });
+
+  it("grants what the person chose: write by default, read only when they pick it", async () => {
+    const both = await fullGrant("ads:read ads:write", owner.email, "write");
+    expect(both.tok.body.scope).toBe("ads:read ads:write");
+    const readOnly = await fullGrant("ads:read ads:write", owner.email, "read");
+    expect(readOnly.tok.body.scope).toBe("ads:read");
+    const noScope = await fullGrant(null, owner.email); // a client that asks for nothing gets the default: both
+    expect(noScope.tok.body.scope).toBe("ads:read ads:write");
+  });
+
+  it("a forged access=write cannot widen the grant", async () => {
+    const ro = await fullGrant("ads:read", owner.email, "write"); // client asked for read only
+    expect(ro.tok.body.scope).toBe("ads:read");
+    const mem = await fullGrant("ads:read ads:write", member.email, "write");
+    expect(mem.tok.body.scope).toBe("ads:read");
   });
 
   it("members only ever receive read scope", async () => {

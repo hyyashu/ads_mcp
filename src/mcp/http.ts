@@ -60,7 +60,7 @@ export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts:
     ),
     { maxRequestBodySize: maxBody, onerror: (error) => logger.error("mcp.adapter_error", { error }) },
   );
-  const challenge = (scope = "ads:read") => `Bearer realm="ads-mcp", resource_metadata="${opts.config.issuer}/.well-known/oauth-protected-resource", scope="${scope}"`;
+  const challenge = (scope = "ads:read ads:write") => `Bearer realm="ads-mcp", resource_metadata="${opts.config.issuer}/.well-known/oauth-protected-resource", scope="${scope}"`;
 
   return createServer(async (req, res) => {
     // Correlation id: accept a well-formed inbound one (from a proxy), otherwise mint one. Returned on every response.
