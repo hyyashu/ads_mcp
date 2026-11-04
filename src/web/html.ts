@@ -7,7 +7,9 @@ export const SECURITY_HEADERS: Record<string, string> = {
   "cache-control": "no-store",
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY", // consent and approval pages must never be framed (clickjacking)
-  "referrer-policy": "no-referrer",
+  // Not "no-referrer": under it browsers send `Origin: null` on same-origin form POSTs, which the CSRF
+  // origin check (routes.ts sameOrigin) then refuses. "same-origin" still sends no referrer to other sites.
+  "referrer-policy": "same-origin",
   "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; frame-ancestors 'none'; base-uri 'none'",
 };
 
