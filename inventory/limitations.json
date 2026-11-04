@@ -1,1 +1,6 @@
-{}
+{
+  "create_youtube_campaign": {
+    "reason": "Google Ads API v26 cannot create Video campaigns. Google's Video campaigns overview (developers.google.com/google-ads/api/docs/video/overview, checked 2026-11-04): \"Video campaigns cannot be created or mutated using the Google Ads API\", apart from VideoResponsiveAdInfo changes. Video campaigns are readable for reporting.",
+    "alternative": "create_demandgen_campaign: Demand Gen campaigns serve video ads on YouTube and are fully supported for creation in the API."
+  }
+}
