@@ -2,7 +2,9 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import { statusChange } from "../../../policy/change-set";
 import { type MetaAdsClient, fromMinor } from "../client";
-import { accountId, metaId, metaRead, metaWrite, s } from "./common";
+import { withHidden } from "../../core/hidden";
+import { accountId, metaId, metaRead, s } from "./common";
+import { metaStateWrite } from "./write-kit";
 
 // Field names from the Marketing API Campaign reference (ad-campaign-group). Budgets are strings in the currency's minor unit.
 const LIST_FIELDS = ["id", "name", "status", "effective_status", "objective", "buying_type", "bid_strategy", "daily_budget", "lifetime_budget", "start_time", "stop_time"];
@@ -60,49 +62,42 @@ export const listMetaCampaigns = metaRead({
   },
 });
 
-async function current(m: MetaAdsClient, id: string) {
-  const r = await m.getOwned(id, ["id", "name", "status", "effective_status"], "campaign");
-  const status = s(r, "status");
-  if (!status) throw new ToolError("internal", "Meta did not return the campaign's status.");
-  return { name: s(r, "name"), status, effective: s(r, "effective_status") };
+/** A campaign's live status (null when it does not exist in this ad account). Never throws for missing campaigns, so the
+ * same read serves planning, execution and crash-recovery verification. */
+async function readCampaign(m: MetaAdsClient, id: string) {
+  let r: Record<string, unknown> | null = null;
+  try {
+    r = await m.getOwned(id, ["id", "name", "status", "effective_status"], "campaign");
+  } catch (e) {
+    if (!(e instanceof ToolError && e.code === "not_found")) throw e;
+  }
+  if (r && !s(r, "status")) throw new ToolError("internal", "Meta did not return the campaign's status.");
+  return withHidden({ status: r ? s(r, "status") : null }, { name: r ? s(r, "name") : null });
 }
 
 function statusTool(name: "pause_meta_campaign" | "resume_meta_campaign", to: "PAUSED" | "ACTIVE", risk: "write" | "high_impact") {
   const verb = to === "PAUSED" ? "Pause" : "Resume";
   const output = z.object({ campaign_id: z.string(), status: z.literal(to), previous_status: z.string() });
-  return metaWrite({
+  return metaStateWrite({
     name,
     title: `${verb} Meta campaign`,
     risk,
     description: `${verb}s one Meta campaign after human approval${to === "ACTIVE" ? " from a second person, because resuming can start spend immediately (ad sets and ads inside must also be active to deliver)" : ""}. Deleted or archived campaigns cannot be changed. Confirmed by re-reading the campaign from Meta.`,
     input: z.object({ account_id: accountId, campaign_id: metaId }),
     output,
-    plan: async (a, ctx) => {
-      const cur = await current(ctx.services.meta, a.campaign_id);
+    read: (a, m) => readCampaign(m, a.campaign_id),
+    build: (a, cur) => {
+      if (cur.status === null) throw new ToolError("not_found", `No campaign ${a.campaign_id} in this ad account.`);
       if (cur.status === "DELETED" || cur.status === "ARCHIVED") throw new ToolError("invalid_argument", `The campaign is ${cur.status.toLowerCase()} and cannot be changed.`);
       if (cur.status === to) throw new ToolError("invalid_argument", `The campaign is already ${to.toLowerCase()}.`);
       return {
-        summary: `${verb} Meta campaign "${cur.name ?? a.campaign_id}" (${a.campaign_id}): ${cur.status} -> ${to}`,
-        snapshot: { status: cur.status },
-        changes: [statusChange({ resource: "campaign", id: a.campaign_id, name: cur.name }, cur.status, to)],
+        summary: `${verb} Meta campaign "${cur.__hidden.name ?? a.campaign_id}" (${a.campaign_id}): ${cur.status} -> ${to}`,
+        changes: [statusChange({ resource: "campaign", id: a.campaign_id, name: cur.__hidden.name }, cur.status, to)],
+        post: { path: a.campaign_id, params: { status: to } },
       };
     },
-    verify: async (a, ctx, run) => {
-      const cur = await current(ctx.services.meta, a.campaign_id);
-      if (cur.status === to) return { outcome: "applied" };
-      return cur.status === (run.snapshot as { status: string }).status ? { outcome: "not_applied" } : { outcome: "indeterminate", detail: `status is ${cur.status}` };
-    },
-    execute: async (a, ctx, run) => {
-      const m = ctx.services.meta;
-      const before = (run.snapshot as { status: string }).status;
-      const cur = await current(m, a.campaign_id);
-      if (cur.status !== before) throw new ToolError("conflict", `The campaign changed since this was requested (now ${cur.status}).`);
-      await m.post(a.campaign_id, { status: to });
-      // Never claim success without confirmation: the live state decides, not the {success: true} body.
-      const after = await current(m, a.campaign_id);
-      if (after.status !== to) throw new ToolError("unknown_outcome", `Meta accepted the request but the campaign reads ${after.status}.`);
-      return { campaign_id: a.campaign_id, status: to, previous_status: before } as z.infer<typeof output>;
-    },
+    landed: (_a, _b, after) => after.status === to,
+    result: (a, _after, before) => ({ campaign_id: a.campaign_id, status: to, previous_status: before.status! }) as z.infer<typeof output>,
   });
 }
 

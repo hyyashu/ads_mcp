@@ -4,6 +4,7 @@ import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
 import { Gaql, fromMicros, lit, num, pick } from "../gaql";
 import { Money, accountId, dateClause, dateFields, datesMsg, datesOk, googleRead, googleWrite, idSchema as id, ratio, round, str } from "./common";
+import { stateWrite, withHidden } from "./write-kit";
 
 // v26 references (checked 2026-11-02): AdGroupAd.ad_group, ad and resource_name are immutable; status is
 // ENABLED/PAUSED/REMOVED; resource name customers/{c}/adGroupAds/{ad_group_id}~{ad_id}; AdGroupAdOperation is
@@ -49,67 +50,66 @@ const uniquePairs = <T extends { ad_group_id: string; ad_id: string }>(xs: T[]) 
 const policyNote = (a: AdInfo) => (a.approval && a.approval !== "APPROVED" ? ` [policy: ${a.approval}${a.approval === "DISAPPROVED" ? ": it will not serve until approved" : ""}]` : "");
 
 // --------------------------------------------------------------------------------------------- status tools
+/** One ad's live status (null when missing), with its approval and resource name carried alongside the snapshot. */
+async function readAd(ads: GoogleAdsClient, a: { ad_group_id: string; ad_id: string }) {
+  const ad = (await readAds(ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
+  return withHidden({ status: ad?.status ?? null }, { ad: ad ?? null });
+}
+/** Refuses missing and removed ads with the same messages requireLive uses. */
+function liveAd(a: { ad_group_id: string; ad_id: string }, s: { status: string | null; __hidden: { ad: AdInfo | null } }): AdInfo {
+  if (!s.__hidden.ad) throw new ToolError("not_found", `Not found (an ad is identified by both its ad group id and ad id): ${adKey(a.ad_group_id, a.ad_id)}`);
+  if (s.status === "REMOVED") throw new ToolError("invalid_argument", `Already removed and cannot be changed: ${adKey(a.ad_group_id, a.ad_id)}`);
+  return s.__hidden.ad;
+}
+
 function statusTool(name: string, title: string, to: "ENABLED" | "PAUSED", risk: "write" | "high_impact") {
   const verb = to === "PAUSED" ? "Pause" : "Resume";
-  return googleWrite({
+  return stateWrite({
     name,
     title,
     risk,
     description: `${verb}s one ad after human approval.${to === "ENABLED" ? " Resuming can start spend immediately, so it needs a second approver, and an ad that is disapproved still will not serve." : ""} Removed ads cannot be changed. Confirmed by re-reading the ad's status.`,
     input: z.object({ account_id: accountId, ad_group_id: id, ad_id: id }),
     output: z.object({ ad_group_id: z.string(), ad_id: z.string(), status: z.literal(to), previous_status: z.string() }),
-    plan: async (a, ctx) => {
-      const [ad] = await requireLive(ctx.services.ads, [a]);
-      if (ad!.status === to) throw new ToolError("invalid_argument", `The ad is already ${to.toLowerCase()}.`);
-      return { summary: `${verb} ad ${a.ad_id} in ad group ${a.ad_group_id}: ${ad!.status} -> ${to}${to === "ENABLED" ? policyNote(ad!) : ""}`, snapshot: { status: ad!.status }, changes: [statusChange({ resource: "ad", id: adKey(a.ad_group_id, a.ad_id) }, ad!.status, to)] };
+    read: (a, ads) => readAd(ads, a),
+    build: (a, s) => {
+      const ad = liveAd(a, s);
+      if (ad.status === to) throw new ToolError("invalid_argument", `The ad is already ${to.toLowerCase()}.`);
+      return {
+        summary: `${verb} ad ${a.ad_id} in ad group ${a.ad_group_id}: ${ad.status} -> ${to}${to === "ENABLED" ? policyNote(ad) : ""}`,
+        changes: [statusChange({ resource: "ad", id: adKey(a.ad_group_id, a.ad_id) }, ad.status, to)],
+        ops: [],
+        mutate: { service: "adGroupAds", operations: [{ update: { resourceName: ad.resourceName, status: to }, updateMask: "status" }] },
+      };
     },
-    verify: async (a, ctx, run) => {
-      const cur = (await readAds(ctx.services.ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
-      if (!cur) return { outcome: "indeterminate", detail: "ad not found" };
-      if (cur.status === to) return { outcome: "applied" };
-      return cur.status === (run.snapshot as { status: string }).status ? { outcome: "not_applied" } : { outcome: "indeterminate", detail: `status is ${cur.status}` };
-    },
-    execute: async (a, ctx, run) => {
-      const ads = ctx.services.ads;
-      const [cur] = await requireLive(ads, [a]);
-      const before = (run.snapshot as { status: string }).status;
-      if (cur!.status !== before) throw new ToolError("conflict", `The ad changed since this was requested (now ${cur!.status}).`);
-      await ads.mutate("adGroupAds", [{ update: { resourceName: cur!.resourceName, status: to }, updateMask: "status" }]);
-      const after = (await readAds(ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
-      if (after?.status !== to) throw new ToolError("unknown_outcome", `Google accepted the request but the ad reads ${after?.status ?? "missing"}.`);
-      return { ad_group_id: a.ad_group_id, ad_id: a.ad_id, status: to, previous_status: before } as { ad_group_id: string; ad_id: string; status: typeof to; previous_status: string };
-    },
+    landed: (_a, _b, after) => after.status === to,
+    result: (a, _after, _r, before) => ({ ad_group_id: a.ad_group_id, ad_id: a.ad_id, status: to, previous_status: before.status! }) as { ad_group_id: string; ad_id: string; status: typeof to; previous_status: string },
   });
 }
 
 export const pauseAd = statusTool("pause_ad", "Pause ad", "PAUSED", "write");
 export const resumeAd = statusTool("resume_ad", "Resume ad", "ENABLED", "high_impact");
 
-export const removeAd = googleWrite({
+export const removeAd = stateWrite({
   name: "remove_ad",
   title: "Remove ad",
   risk: "destructive",
   description: "Permanently removes one ad after approval from a second person. A removed ad cannot be restored; a new ad would have to be created and loses its history. To stop an ad temporarily, pause it instead.",
   input: z.object({ account_id: accountId, ad_group_id: id, ad_id: id }),
   output: z.object({ ad_group_id: z.string(), ad_id: z.string(), removed: z.literal(true) }),
-  plan: async (a, ctx) => {
-    const [ad] = await requireLive(ctx.services.ads, [a]);
-    return { summary: `Permanently remove ad ${a.ad_id} from ad group ${a.ad_group_id} (currently ${ad!.status}). This cannot be undone.`, snapshot: { status: ad!.status }, changes: [statusChange({ resource: "ad", id: adKey(a.ad_group_id, a.ad_id) }, ad!.status, "REMOVED")] };
+  read: (a, ads) => readAd(ads, a),
+  build: (a, s) => {
+    const ad = liveAd(a, s);
+    return {
+      summary: `Permanently remove ad ${a.ad_id} from ad group ${a.ad_group_id} (currently ${ad.status}). This cannot be undone.`,
+      changes: [statusChange({ resource: "ad", id: adKey(a.ad_group_id, a.ad_id) }, ad.status, "REMOVED")],
+      ops: [],
+      mutate: { service: "adGroupAds", operations: [{ remove: ad.resourceName }] },
+    };
   },
-  verify: async (a, ctx, run) => {
-    const cur = (await readAds(ctx.services.ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
-    if (!cur || cur.status === "REMOVED") return { outcome: "applied" };
-    return cur.status === (run.snapshot as { status: string }).status ? { outcome: "not_applied" } : { outcome: "indeterminate", detail: `status is ${cur.status}` };
-  },
-  execute: async (a, ctx, run) => {
-    const ads = ctx.services.ads;
-    const [cur] = await requireLive(ads, [a]);
-    if (cur!.status !== (run.snapshot as { status: string }).status) throw new ToolError("conflict", "The ad changed since this was requested.");
-    await ads.mutate("adGroupAds", [{ remove: cur!.resourceName }]);
-    const after = (await readAds(ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
-    if (after && after.status !== "REMOVED") throw new ToolError("unknown_outcome", `Google accepted the request but the ad still reads ${after.status}.`);
-    return { ad_group_id: a.ad_group_id, ad_id: a.ad_id, removed: true as const };
-  },
+  // A removed ad reads as REMOVED, or is no longer returned at all.
+  landed: (_a, _b, after) => after.status === null || after.status === "REMOVED",
+  result: (a) => ({ ad_group_id: a.ad_group_id, ad_id: a.ad_id, removed: true as const }),
 });
 
 export const bulkUpdateAdStatus = googleWrite({
