@@ -61,6 +61,19 @@ export class GoogleAdsClient {
   }
 
   /**
+   * Sends a mutating RPC that is not part of GoogleAdsService.Mutate, e.g. "customers/{customer}/productLinks:create".
+   * Counted and never retried, exactly like mutate().
+   */
+  async sendRpc<T = Row>(path: string, body: Row): Promise<T> {
+    const p = path.replace("{customer}", this.o.customerId);
+    if (!new RegExp(`^customers/${this.o.customerId}/[A-Za-z]+:(create|remove|update)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
+    const base = await this.base();
+    this.assertNotAborted();
+    this.sent++;
+    return this.o.http.call<T>({ ...base, path: p, body, idempotent: false });
+  }
+
+  /**
    * Calls a read-only RPC that is not a GAQL search, e.g. "geoTargetConstants:suggest" or
    * "customers/{id}:generateKeywordIdeas" (pass `{customer}` to have the account id filled in). Retried like reads.
    * Never use it for anything that changes an account: those go through mutate().

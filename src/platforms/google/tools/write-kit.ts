@@ -27,7 +27,8 @@ export interface StateWriteDef<I extends z.ZodObject, O extends z.ZodType, S> {
   /** `svc` gives access to the image fetcher for tools that upload images (see withImages). */
   read(a: z.infer<I>, ads: GoogleAdsClient, svc: GoogleServices): Promise<S>;
   /** Throw invalid_argument when nothing would change. `ops` are GoogleAdsService MutateOperations. */
-  build(a: z.infer<I>, s: S, ads: GoogleAdsClient): { summary: string; changes: Change[]; ops: Row[] };
+  /** `rpc` instead of `ops` for services outside GoogleAdsService.Mutate (sent once with sendRpc). */
+  build(a: z.infer<I>, s: S, ads: GoogleAdsClient): { summary: string; changes: Change[]; ops: Row[]; rpc?: { path: string; body: Row } };
   /** True when the live state `after` shows the whole change applied (given the approved state `before`). */
   landed(a: z.infer<I>, before: S, after: S): boolean;
   result(a: z.infer<I>, after: S, responses: Row[], before: S): z.infer<O>;
@@ -45,7 +46,7 @@ export function stateWrite<I extends z.ZodObject, O extends z.ZodType, S>(d: Sta
     plan: async (a, ctx) => {
       const s = await d.read(a, ctx.services.ads, ctx.services);
       const b = d.build(a, s, ctx.services.ads);
-      if (!b.ops.length) throw new ToolError("invalid_argument", "Nothing would change.");
+      if (!b.ops.length && !b.rpc) throw new ToolError("invalid_argument", "Nothing would change.");
       return { summary: b.summary, snapshot: s, changes: b.changes };
     },
     verify: async (a, ctx, run) => {
@@ -57,8 +58,8 @@ export function stateWrite<I extends z.ZodObject, O extends z.ZodType, S>(d: Sta
       const ads = ctx.services.ads;
       const s = await d.read(a, ads, ctx.services);
       if (canonicalJson(s) !== canonicalJson(run.snapshot)) throw new ToolError("conflict", "The account changed since this was requested. Nothing was applied; request the change again.");
-      const { ops } = d.build(a, s, ads);
-      const res = await ads.mutateBatch(ops); // one atomic request: all operations or none
+      const { ops, rpc } = d.build(a, s, ads);
+      const res = rpc ? { mutateOperationResponses: [await ads.sendRpc(rpc.path, rpc.body)] } : await ads.mutateBatch(ops); // one atomic request: all operations or none
       const after = await d.read(a, ads, ctx.services);
       if (!d.landed(a, s, after)) throw new ToolError("unknown_outcome", "Google accepted the request but the account does not read back as requested.");
       return d.result(a, after, res.mutateOperationResponses ?? [], s);

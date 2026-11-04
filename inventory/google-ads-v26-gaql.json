@@ -7830,6 +7830,46 @@
 },
 "from_metrics_segments": []
 },
+"product_link_invitation": {
+"attributed": [
+"customer"
+],
+"fields": {
+"product_link_invitation.advertising_partner.customer": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.advertising_partner_properties.allowed_domain": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.hotel_center.hotel_center_id": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.merchant_center.merchant_center_id": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.product_link_invitation_id": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.status": {
+"filterable": true,
+"selectable": true
+},
+"product_link_invitation.type": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": []
+},
 "search_term_view": {
 "attributed": [
 "ad_group",

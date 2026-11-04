@@ -20,7 +20,7 @@ export const IMAGE_SPECS = {
   LANDSCAPE_LOGO: { ratio: 4, minW: 512, minH: 128, label: "landscape 4:1, at least 512x128" },
 } as const;
 export type ImageFieldType = keyof typeof IMAGE_SPECS;
-/** Google accepts small rounding differences in aspect ratio; 1% here. [tolerance not stated in the docs; chosen conservatively] */
+/** Aspect ratios may differ by +-1% (stated in the v26 DemandGenMultiAssetAdInfo reference for the same image types). */
 const RATIO_TOLERANCE = 0.01;
 
 export interface ImageInfo {

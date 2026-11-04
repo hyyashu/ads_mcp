@@ -102,8 +102,11 @@ export function requestSchemaFor(path: string): string | null {
   if (/^\d+$/.test(service!)) return index.schemas[`Services__${M}Request`] ? `Services__${M}Request` : null;
   const pascal = service![0]!.toUpperCase() + service!.slice(1);
   if (service === "googleAds") return method === "mutate" ? "Services__MutateGoogleAdsRequest" : method === "searchStream" ? "Services__SearchGoogleAdsStreamRequest" : "Services__SearchGoogleAdsRequest";
-  const name = `Services__${method![0]!.toUpperCase()}${method!.slice(1)}${pascal}Request`;
-  return index.schemas[name] ? name : null;
+  const name = `Services__${M}${pascal}Request`;
+  if (index.schemas[name]) return name;
+  // Single-resource services name the request in the singular: productLinks:create -> CreateProductLinkRequest.
+  const singular = `Services__${M}${pascal.replace(/s$/, "")}Request`;
+  return index.schemas[singular] ? singular : null;
 }
 
 /** All problems with one Google Ads REST request (path and JSON body). */
