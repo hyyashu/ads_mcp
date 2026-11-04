@@ -5,7 +5,7 @@ import type { MetaServices } from "../services";
 export const ADS_READ = "ads_read";
 export const ADS_MANAGEMENT = "ads_management";
 
-export const accountId = z.string().min(1).describe("Connected Meta ad account id, as listed in your connections.");
+export const accountId = z.string().min(1).describe("Meta ad account: the ad account id (e.g. act_1234567890) or the account_id from list_accounts.");
 export const metaId = z.string().regex(/^\d{1,25}$/, "numeric Meta object id");
 
 const meta = platformTools<MetaServices>("meta_ads", {

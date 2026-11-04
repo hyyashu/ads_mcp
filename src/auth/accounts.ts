@@ -9,6 +9,21 @@ import type { ResolvedAccount } from "../mcp/tool";
  * Resolves the caller-supplied account_id to an account THIS TENANT may use. A foreign or unknown id
  * is reported as not_found, so ids of other tenants cannot be probed.
  */
+/**
+ * An account can be named by this server's id (from list_accounts) or by the platform's own id: a Google Ads customer
+ * id ("488-059-4061" or "4880594061") or a Meta ad account id ("act_123" or "123"). Either way the lookup stays scoped to
+ * the caller's workspace and platform, and (tenant, platform, external id) is unique, so this cannot reach another
+ * workspace's account.
+ */
+function accountMatch(accountId: string, platform: Platform) {
+  const raw = accountId.trim();
+  const external =
+    platform === "google_ads" && /^\d{3}-?\d{3}-?\d{4}$/.test(raw) ? raw.replace(/-/g, "")
+    : platform === "meta_ads" && /^(act_)?\d{1,20}$/.test(raw) ? (raw.startsWith("act_") ? raw : `act_${raw}`)
+    : null;
+  return external ? and(eq(connectedAccount.platform, platform), eq(connectedAccount.externalId, external))! : eq(connectedAccount.id, raw);
+}
+
 export async function resolveAccount(
   db: Db,
   tenantId: string,
@@ -30,7 +45,7 @@ export async function resolveAccount(
     })
     .from(connectedAccount)
     .innerJoin(platformConnection, eq(platformConnection.id, connectedAccount.connectionId))
-    .where(and(eq(connectedAccount.id, accountId), eq(connectedAccount.tenantId, tenantId)));
+    .where(and(accountMatch(accountId, platform), eq(connectedAccount.tenantId, tenantId)));
 
   if (!row || row.platform !== platform) throw new ToolError("not_found", "No such connected account for this tool's platform.");
   if (row.connStatus !== "active") {

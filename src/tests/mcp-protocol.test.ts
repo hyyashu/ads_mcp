@@ -232,6 +232,18 @@ describe("write tools and approval", () => {
     await c.close();
   });
 
+  it("the same change named by Google customer id or by account_id is one approval, stored with this server's id", async () => {
+    const c = await client(env.base, env.A.tokens.full);
+    const a = await call(c, "pause_campaign", { account_id: "123-456-7890", campaign_id: "109" });
+    const b = await call(c, "pause_campaign", { account_id: env.A.account, campaign_id: "109" });
+    expect(a.env.ok).toBe(true);
+    expect(b.env.approval.approval_id).toBe(a.env.approval.approval_id);
+    const [row] = await env.h.db.select().from(schema.approvalRequest).where(eq(schema.approvalRequest.id, a.env.approval.approval_id));
+    expect((row!.args as { account_id: string }).account_id).toBe(env.A.account);
+    expect(row!.accountId).toBe(env.A.account);
+    await c.close();
+  });
+
   it("no bearer token, however privileged, can approve: only a human browser session can", async () => {
     const c = await client(env.base, env.A.tokens.full);
     const { env: e } = await call(c, "pause_campaign", { account_id: env.A.account, campaign_id: "102" });

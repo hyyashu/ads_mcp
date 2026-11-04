@@ -368,6 +368,25 @@ describe("list_accounts", () => {
   });
 });
 
+describe("account_id accepts the Google customer id", () => {
+  it("resolves 123-456-7890 and 1234567890 to this workspace's account, and never to another workspace's", async () => {
+    responder = () => ({ results: [] });
+    for (const id of ["123-456-7890", "1234567890", " 1234567890 "]) {
+      const env = await run("list_campaigns", {}, id);
+      expect(env.ok, id).toBe(true);
+    }
+    expect(seen.at(-1)!.path).toContain("customers/1234567890/");
+    // Another workspace's customer id is unknown here, exactly like an unknown internal id.
+    const foreign = await seedTenant(db, "G4", "owner");
+    await seedAccount(db, foreign.tenant.id, "google_ads", "write", "active", "9998887777");
+    for (const id of ["999-888-7777", "9998887777", "not-an-id"]) {
+      const env = await run("list_campaigns", {}, id);
+      expect(env.ok, id).toBe(false);
+      expect((env as any).error.code, id).toBe("not_found");
+    }
+  });
+});
+
 // ------------------------------------------------------------------------------------ error handling ----
 describe("platform errors surface as structured results", () => {
   it.each([
