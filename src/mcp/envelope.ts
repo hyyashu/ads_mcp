@@ -27,6 +27,11 @@ export const MetaSchema = z.object({
   /** Correlates this response with server logs and execution records. Quote it when reporting a problem. */
   request_id: z.string().optional(),
   api_version: z.string().optional(),
+  /** Present when a workspace automation rule applied the change without a person (the data is the confirmed result). */
+  auto_approval: z
+    .object({ approval_id: z.string(), rule: z.string(), change_set: ChangeSetSchema.optional() })
+    .describe("This change was applied by a workspace automation rule configured by an owner, not by a person approving it.")
+    .optional(),
   /** Reporting units of the account this call used. Absent for tools that use no ad account. */
   account: z
     .object({

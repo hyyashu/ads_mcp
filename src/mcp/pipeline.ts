@@ -5,13 +5,14 @@ import type { Db } from "../db";
 import { recordExecution, type ExecutionOutcome } from "../obs/executions";
 import { logger } from "../obs/logger";
 import type { Change, ChangeSet } from "../policy/change-set";
+import { loadRules, matchRules } from "../policy/automation";
 import { effectiveRisk, riskRank, type WriteRisk } from "../policy/risk";
 import { audit, recordUsage } from "../security/audit";
 import type { ApprovalService, Executor } from "../security/approvals";
 import { canonicalJson } from "../security/canonical";
 import type { Limiter } from "../security/rate-limit";
 import { type Envelope, approvalEnvelope, errorEnvelope, okEnvelope } from "./envelope";
-import { ToolError, toToolError } from "./errors";
+import { ERROR_CODES, ToolError, toToolError } from "./errors";
 import type { ToolRegistry } from "./registry";
 import { type AnyTool, type ResolvedAccount, type ToolContext, type VerifyResult, riskOf } from "./tool";
 
@@ -69,6 +70,18 @@ async function buildContext(deps: PipelineDeps, tool: AnyTool, args: Record<stri
   if (!lim.ok) throw new ToolError("quota_exceeded", "Too many requests for this ad account. Slow down and retry.", { retryAfterSeconds: lim.retryAfterSeconds });
   const services = await deps.createServices({ tenantId: auth.tenantId, account, signal });
   return { tenantId: auth.tenantId, userId: auth.userId, account, services, signal };
+}
+
+/**
+ * Applies a queued request through a workspace rule when one covers its stored change set. Returns the finished row, or
+ * null when no rule applies (or the daily cap is reached): the request then simply stays pending for a person.
+ */
+async function tryAutomation(deps: PipelineDeps, tenantId: string, row: { id: string; risk: string; changeSet: unknown }) {
+  const rules = await loadRules(deps.db, tenantId);
+  if (!rules.pause.enabled && !rules.budget.enabled) return null;
+  const m = matchRules(rules, row.risk as WriteRisk, (row.changeSet as ChangeSet | null) ?? null);
+  if (!m.rule) return null;
+  return deps.approvals.autoApprove({ tenantId, approvalId: row.id, rule: m.rule, maxPerDay: rules.max_auto_per_day, execute: createExecutor(deps) });
 }
 
 /** Risk and stored change set of a planned write: direction-aware when the tool reports its changes. */
@@ -140,19 +153,34 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
       if (row.status === "executed") {
         throw new ToolError("conflict", "This exact change was already approved and applied a few minutes ago, so nothing new was queued. If it has since been reverted, retry in a few minutes or change the arguments.", { details: { approval_id: row.id } });
       }
-      outcome = "approval_pending";
-      env = approvalEnvelope(
-        {
-          approval_id: row.id,
-          status: "pending_approval",
-          risk: row.risk,
-          summary: row.summary,
-          expires_at: row.expiresAt.toISOString(),
-          ...(row.changeSet ? { change_set: row.changeSet as ChangeSet } : {}),
-          message: "Nothing has been changed. An owner or admin must approve this request outside this conversation.",
-        },
-        tool.platform,
-      );
+      // Workspace automation: an owner-configured rule may apply this exact, stored change set without a person.
+      const auto = row.status === "pending" ? await tryAutomation(deps, auth.tenantId, row) : null;
+      if (auto) {
+        if (auto.status !== "executed") {
+          const e = (auto.result as { error?: { code?: string; message?: string } } | null)?.error;
+          const code = auto.status === "unknown_outcome" ? "unknown_outcome" : ((ERROR_CODES as readonly string[]).includes(e?.code ?? "") ? (e!.code as ToolError["code"]) : "internal");
+          throw new ToolError(code, `The workspace rule "${auto.approvedByRule}" approved this change, but applying it ${auto.status === "unknown_outcome" ? "has an unconfirmed outcome: check the ad platform before retrying" : "failed"}. ${e?.message ?? ""}`.trim(), {
+            details: { approval_id: auto.id, status: auto.status },
+          });
+        }
+        outcome = "ok";
+        env = okEnvelope(auto.result, tool.platform);
+        env.meta.auto_approval = { approval_id: auto.id, rule: auto.approvedByRule!, change_set: (auto.changeSet as ChangeSet | null) ?? undefined };
+      } else {
+        outcome = "approval_pending";
+        env = approvalEnvelope(
+          {
+            approval_id: row.id,
+            status: "pending_approval",
+            risk: row.risk,
+            summary: row.summary,
+            expires_at: row.expiresAt.toISOString(),
+            ...(row.changeSet ? { change_set: row.changeSet as ChangeSet } : {}),
+            message: "Nothing has been changed. An owner or admin must approve this request outside this conversation.",
+          },
+          tool.platform,
+        );
+      }
     }
   } catch (e) {
     const err = toToolError(e);

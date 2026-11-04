@@ -286,7 +286,17 @@ Each milestone is one reviewable branch with tests.
      riskier than the approved level is refused. Adopted by pause/resume campaign and ad group, pause/resume/remove
      ad, bulk ad status, update_campaign, update_ad_group_settings, update_keyword, bulk keyword status. Other write
      tools keep their declared risk until they report changes.
-   - M3b (next): tenant automation policy.
+   - M3b (done): workspace automation rules (`policy/automation.ts`, table `tenant_policy`, migration 0007). Off by
+     default. Rules: `pause` (pauses only) and `budget` (daily budget increases within both a percent and an amount
+     limit, inclusive; decreases only with `allow_decrease`), plus `max_auto_per_day` (UTC day). Every change in the
+     stored change set must be covered; destructive, bulk (>20 resources), enabling, bids, renames, tools without a
+     change set, an unknown current budget or an unknown currency are never automated. The rule is applied to the
+     stored change set right after queueing; the daily cap is checked and the request claimed under a per-tenant
+     advisory lock, so concurrent calls cannot exceed it. The executor still re-plans and refuses on drift.
+     `approval_request.approved_by_rule` records the rule (decided_by null); audit `approval.auto_approved`. The
+     response is the confirmed result with `meta.auto_approval`; a failure after sending is returned as
+     `unknown_outcome`, never success. Only an owner edits rules, in the browser (session + CSRF + same origin); no
+     MCP tool or bearer token can. A stored value that no longer validates fails closed (nothing automatic).
 4. **M4 Catalog exposure**: per-caller `tools/list` filtering by connection and scope; tenant bundles.
 5. **M5 Adapter contract and Meta core**: extract the adapter interface from Google; Meta transport, error mapping, first read tools, each endpoint checked against the official reference first.
 6. **M6 Jobs**: Postgres job table for async reports and reconciliation; remove per-process intervals.

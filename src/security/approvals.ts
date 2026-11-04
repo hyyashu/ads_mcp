@@ -1,5 +1,5 @@
 import type { ChangeSet } from "../policy/change-set";
-import { and, eq, lt, sql } from "drizzle-orm";
+import { and, eq, gt, gte, isNotNull, lt, sql } from "drizzle-orm";
 import type { VerifyResult } from "../mcp/tool";
 import type { Role } from "../auth/context";
 import type { Db } from "../db";
@@ -163,11 +163,42 @@ export class ApprovalService {
 
     await audit(this.db, { tenantId: o.tenantId, userId: o.decider.userId, event: `approval.${o.decision}`, tool: row.tool, accountId: row.accountId, refId: row.id });
     if (o.decision === "reject") return claimed;
+    return this.run(claimed, o.execute, o.decider.userId);
+  }
 
+  /**
+   * Approves a pending request on behalf of a workspace automation rule (the caller has already matched the rule against
+   * the stored change set). The per-day cap is checked and the request claimed under a per-tenant lock, so concurrent
+   * calls cannot exceed it. Returns null when the cap is reached: the request then stays pending for a person.
+   */
+  async autoApprove(o: { tenantId: string; approvalId: string; rule: string; maxPerDay: number; execute: Executor }): Promise<ApprovalRow | null> {
+    const now = this.now();
+    const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+    const claimed = await this.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${"auto:" + o.tenantId}))`);
+      const [used] = await tx
+        .select({ n: sql<number>`count(*)::int` })
+        .from(approvalRequest)
+        .where(and(eq(approvalRequest.tenantId, o.tenantId), isNotNull(approvalRequest.approvedByRule), gte(approvalRequest.decidedAt, day)));
+      if ((used?.n ?? 0) >= o.maxPerDay) return null;
+      const [row] = await tx
+        .update(approvalRequest)
+        .set({ status: "executing", approvedByRule: o.rule, decidedBy: null, decidedAt: now, executingSince: now })
+        .where(and(eq(approvalRequest.id, o.approvalId), eq(approvalRequest.tenantId, o.tenantId), eq(approvalRequest.status, "pending"), gt(approvalRequest.expiresAt, now)))
+        .returning();
+      return row ?? null;
+    });
+    if (!claimed) return null;
+    await audit(this.db, { tenantId: o.tenantId, event: "approval.auto_approved", tool: claimed.tool, accountId: claimed.accountId, refId: claimed.id, outcome: o.rule });
+    return this.run(claimed, o.execute, null);
+  }
+
+  /** Executes a claimed request and records the outcome. */
+  private async run(claimed: ApprovalRow, execute: Executor, actor: string | null): Promise<ApprovalRow> {
     let status: string;
     let result: unknown;
     try {
-      result = await o.execute(claimed);
+      result = await execute(claimed);
       status = "executed";
     } catch (e) {
       const err = e instanceof ToolError ? e : new ToolError("internal", "Execution failed");
@@ -178,9 +209,9 @@ export class ApprovalService {
     const [done] = await this.db
       .update(approvalRequest)
       .set({ status, result: result as object, executingSince: null })
-      .where(eq(approvalRequest.id, row.id))
+      .where(eq(approvalRequest.id, claimed.id))
       .returning();
-    await audit(this.db, { tenantId: o.tenantId, userId: o.decider.userId, event: `approval.${status}`, tool: row.tool, accountId: row.accountId, refId: row.id, outcome: status });
+    await audit(this.db, { tenantId: claimed.tenantId, userId: actor ?? undefined, event: `approval.${status}`, tool: claimed.tool, accountId: claimed.accountId, refId: claimed.id, outcome: status });
     return done!;
   }
 

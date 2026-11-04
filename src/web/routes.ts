@@ -1,3 +1,4 @@
+import { AutomationRulesSchema, autoApprovedToday, loadRules, saveRules } from "../policy/automation";
 import type { ChangeSet } from "../policy/change-set";
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { and, desc, eq, inArray, ne } from "drizzle-orm";
@@ -81,7 +82,7 @@ export class WebRoutes {
   }
 
   private nav(role: Role) {
-    return `<p class="muted"><a href="/connections">Connections</a> · <a href="/approvals">Approvals</a> · signed in as ${esc(role)} · <form method="post" action="/logout" style="display:inline">${"{LOGOUT}"}<button>Sign out</button></form></p>`;
+    return `<p class="muted"><a href="/connections">Connections</a> · <a href="/approvals">Approvals</a> · <a href="/settings/automation">Automation</a> · signed in as ${esc(role)} · <form method="post" action="/logout" style="display:inline">${"{LOGOUT}"}<button>Sign out</button></form></p>`;
   }
 
   private navFor(s: WebSession) {
@@ -133,6 +134,8 @@ export class WebRoutes {
     const dec = path.match(/^\/approvals\/([\w-]+)\/decision$/);
     if (dec && method === "POST") return this.decide(req, res, dec[1]!);
     if (path === "/connections" && method === "GET") return this.connectionsPage(req, res, url);
+    if (path === "/settings/automation" && method === "GET") return this.automationPage(req, res, url);
+    if (path === "/settings/automation" && method === "POST") return this.saveAutomation(req, res);
     const start = path.match(/^\/connect\/(google|meta)\/start$/);
     if (start && method === "POST") return this.connectStart(req, res, PLATFORM_BY_SLUG[start[1]!]!);
     const cb = path.match(/^\/connect\/(google|meta)\/callback$/);
@@ -361,7 +364,7 @@ ${hidden("csrf", csrfToken(s, "consent"))}
         ? `<form method="post" action="/approvals/${esc(r.a.id)}/decision">${hidden("csrf", csrfToken(s, `approval:${r.a.id}`))}<button class="primary" name="decision" value="approve">Approve</button> <button class="danger" name="decision" value="reject">Reject</button></form>${r.a.risk !== "write" ? `<p class="muted">Needs someone other than the requester.</p>` : ""}`
         : `<p class="muted">Only an owner or admin can decide.</p>`
     }</div>`;
-    this.html(res, 200, page("Approvals", `${flash(url.searchParams.get("msg"))}<h2>Waiting</h2>${pending.length ? pending.map(card).join("") : `<p class="muted">Nothing is waiting.</p>`}<h2>Recent</h2>${other.map((r) => `<p class="muted">${esc(r.a.tool)} · ${esc(r.a.summary)} · <strong>${esc(r.a.status)}</strong></p>`).join("") || `<p class="muted">Nothing yet.</p>`}`, this.navFor(s)));
+    this.html(res, 200, page("Approvals", `${flash(url.searchParams.get("msg"))}<h2>Waiting</h2>${pending.length ? pending.map(card).join("") : `<p class="muted">Nothing is waiting.</p>`}<h2>Recent</h2>${other.map((r) => `<p class="muted">${esc(r.a.tool)} · ${esc(r.a.summary)} · <strong>${esc(r.a.status)}</strong>${r.a.approvedByRule ? ` · applied by rule: ${esc(r.a.approvedByRule)}` : ""}</p>`).join("") || `<p class="muted">Nothing yet.</p>`}`, this.navFor(s)));
     return true;
   }
 
@@ -388,6 +391,63 @@ ${hidden("csrf", csrfToken(s, "consent"))}
       const msg = e instanceof ToolError ? e.message : "Could not record the decision.";
       this.redirect(res, `/approvals?msg=${encodeURIComponent(msg)}`);
     }
+    return true;
+  }
+
+  // -------------------------------------------------------------- automation ----
+  // Only an owner can change what may happen without a person. Never reachable through an MCP tool or a bearer token.
+  private async automationPage(req: IncomingMessage, res: ServerResponse, url: URL) {
+    const s = await this.session(req);
+    if (!s) return this.toLogin(res, url);
+    const r = await loadRules(this.d.db, s.tenantId);
+    const used = await autoApprovedToday(this.d.db, s.tenantId);
+    const owner = s.role === "owner";
+    const dis = owner ? "" : " disabled";
+    const box = (name: string, on: boolean, label: string) => `<p><label><input type="checkbox" name="${name}" value="1"${on ? " checked" : ""}${dis}> ${esc(label)}</label></p>`;
+    const numIn = (name: string, v: number, label: string, step = "any") => `<p><label>${esc(label)} <input type="number" name="${name}" value="${esc(v)}" min="0" step="${step}"${dis}></label></p>`;
+    const body = `${flash(url.searchParams.get("msg"))}
+<p class="muted">Everything here is off by default. A rule only applies a change whose current and new values were read live and shown in a change set. Removals, enabling, bid changes and changes to more than 20 items always need a person. Nothing said in a chat counts as an approval.</p>
+<form method="post" action="/settings/automation">${hidden("csrf", csrfToken(s, "automation"))}
+<h2>Pausing</h2>${box("pause", r.pause.enabled, "Apply pauses (campaigns, ad groups, ads, keywords) without approval")}
+<h2>Daily budgets</h2>${box("budget", r.budget.enabled, "Apply daily budget changes within these limits without approval")}
+${numIn("max_increase_pct", r.budget.max_increase_pct, "Largest increase, percent")}
+${numIn("max_increase_amount", r.budget.max_increase_amount, "Largest increase, in the account's currency")}
+${box("allow_decrease", r.budget.allow_decrease, "Also apply budget decreases")}
+<h2>Limit</h2>${numIn("max_auto_per_day", r.max_auto_per_day, "Most automatic changes per day (UTC)", "1")}
+<p class="muted">Applied automatically today: ${esc(used)}</p>
+${owner ? `<button class="primary">Save</button>` : `<p class="muted">Only an owner can change these rules.</p>`}</form>`;
+    this.html(res, 200, page("Automation", body, this.navFor(s)));
+    return true;
+  }
+
+  private async saveAutomation(req: IncomingMessage, res: ServerResponse) {
+    const s = await this.session(req);
+    if (!s) {
+      this.html(res, 401, page("Sign in required", flash("Your session expired.", true)));
+      return true;
+    }
+    const form = await this.readForm(req);
+    if (!this.sameOrigin(req) || !verifyCsrf(s, "automation", form.get("csrf") ?? undefined)) {
+      this.html(res, 403, page("Refused", flash("Invalid or cross-site request.", true)));
+      return true;
+    }
+    if (s.role !== "owner") {
+      this.html(res, 403, page("Refused", flash("Only an owner can change automation rules.", true)));
+      return true;
+    }
+    const n = (k: string) => Number(form.get(k) ?? "0");
+    const parsed = AutomationRulesSchema.safeParse({
+      pause: { enabled: form.get("pause") === "1" },
+      budget: { enabled: form.get("budget") === "1", max_increase_pct: n("max_increase_pct"), max_increase_amount: n("max_increase_amount"), allow_decrease: form.get("allow_decrease") === "1" },
+      max_auto_per_day: n("max_auto_per_day"),
+    });
+    if (!parsed.success) {
+      this.redirect(res, `/settings/automation?msg=${encodeURIComponent("Not saved: " + parsed.error.issues.map((i) => i.path.join(".")).join(", ") + " out of range.")}`);
+      return true;
+    }
+    await saveRules(this.d.db, s.tenantId, parsed.data, s.userId);
+    await audit(this.d.db, { tenantId: s.tenantId, userId: s.userId, event: "policy.updated", outcome: JSON.stringify(parsed.data).slice(0, 500) });
+    this.redirect(res, `/settings/automation?msg=${encodeURIComponent("Saved.")}`);
     return true;
   }
 

@@ -117,6 +117,8 @@ export const approvalRequest = pgTable(
     status: text("status").notNull().default("pending"), // pending|rejected|executing|executed|failed|expired|unknown_outcome
     requestedBy: text("requested_by").references(() => appUser.id, { onDelete: "set null" }),
     decidedBy: text("decided_by").references(() => appUser.id, { onDelete: "set null" }),
+    /** Set when a workspace automation rule approved this instead of a person (decided_by is then null). */
+    approvedByRule: text("approved_by_rule"),
     result: jsonb("result"),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: created(),
@@ -284,3 +286,11 @@ export const toolExecution = pgTable(
   },
   (t) => [index("tool_exec_tenant_time_idx").on(t.tenantId, t.createdAt), index("tool_exec_request_idx").on(t.requestId)],
 );
+
+/** A workspace's automation rules (policy/automation.ts). No row = everything needs a person. Owners edit it in the browser only. */
+export const tenantPolicy = pgTable("tenant_policy", {
+  tenantId: text("tenant_id").primaryKey().references(() => tenant.id, { onDelete: "cascade" }),
+  rules: jsonb("rules").notNull(),
+  updatedBy: text("updated_by").references(() => appUser.id, { onDelete: "set null" }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull(),
+});
