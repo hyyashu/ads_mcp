@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ToolError } from "../../../mcp/errors";
 import { asText, platformTools } from "../../core/tool-defs";
 import type { MetaServices } from "../services";
 
@@ -19,3 +20,28 @@ export const metaWrite = meta.write;
 
 /** A Graph API field (Meta's JSON keeps snake_case keys, so no name conversion) as text, or null when absent. */
 export const s = (row: Record<string, unknown>, k: string): string | null => asText(row[k]);
+
+// Permissions beyond ads_read, as Meta's v27 reference states them for each endpoint (checked 2026-11-05). Tools declare them
+// with `permissions: { platformPermissions: [...] }`; the OAuth consent already requests all of these (META_SCOPES).
+export const PAGES_SHOW_LIST = "pages_show_list";
+export const PAGES_READ_ENGAGEMENT = "pages_read_engagement";
+export const INSTAGRAM_BASIC = "instagram_basic";
+export const LEADS_RETRIEVAL = "leads_retrieval";
+/** Builds a read tool's permission block with the extra permissions and a note naming them for the Meta app. */
+export const needs = (...extra: string[]) => ({ platformPermissions: [ADS_READ, ...extra], notes: `The Meta app needs ${[ADS_READ, ...extra].join(", ")}.` });
+
+/** Rows read from one listing edge before filtering. Above this a result says truncated. */
+export const EDGE_CAP = 5_000;
+
+/**
+ * An id is accepted only if it appears on one of this ad account's own edges (pixels on /adspixels, Pages on /promote_pages, ...).
+ * Used where the object itself has no documented account_id field to check. Refused ids are not_found, like getOwned.
+ */
+export async function requireOnEdge(m: import("../client").MetaAdsClient, edge: string, id: string, label: string): Promise<void> {
+  if (!/^\d{1,25}$/.test(id)) throw new ToolError("invalid_argument", `${label} id must be numeric.`);
+  const rows = await m.list(`${m.adAccountId}/${edge}`, { fields: "id" }, EDGE_CAP);
+  if (!rows.some((r) => String(r.id) === id)) throw new ToolError("not_found", `No ${label} ${id} available to this ad account.`);
+}
+
+/** The Page must be one this ad account promotes (GET /{act}/promote_pages). */
+export const requirePromotablePage = (m: import("../client").MetaAdsClient, pageId: string) => requireOnEdge(m, "promote_pages", pageId, "Page");

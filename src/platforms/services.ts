@@ -29,6 +29,16 @@ export const fetchPageSafely = async (url: string): Promise<string> => {
   }
 };
 
+/** Meta image download: https only, public hosts, no redirects, PNG/JPEG/GIF only. The 30 MB cap is this server's download
+ * limit, not a Meta spec. */
+export const fetchMetaImageSafely: ImageFetcher = async (url) => {
+  try {
+    return (await safeFetchBytes(url, { accept: "image/png,image/jpeg,image/gif", contentTypes: ["image/png", "image/jpeg", "image/gif"], maxBytes: 30 * 1024 * 1024, timeoutMs: 20_000, userAgent: "ads-mcp-image-fetcher" })).bytes;
+  } catch (e) {
+    throw new ToolError("invalid_argument", `The image could not be downloaded: ${(e as Error).message}`);
+  }
+};
+
 /** Builds platform clients for one authorized account (the platform adapter seam: one branch per platform). Handlers never see tokens: they only get these clients. */
 export function createServicesFactory(d: ServiceFactoryDeps) {
   return async (o: { tenantId: string; account: { platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null }; signal?: AbortSignal }): Promise<unknown> => {
@@ -52,9 +62,17 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         adAccountId: o.account.externalId,
         currency: o.account.currencyCode ?? null,
         getToken: () => tokens.getToken(o.tenantId, o.account.connectionId),
+        // Page token: GET /{page-id}?fields=access_token with the user token (Page reference: returned only when the user has a
+        // role on the Page). Fetched per call and never cached, logged or returned to a handler.
+        getPageToken: async (pageId: string) => {
+          const user = await tokens.getToken(o.tenantId, o.account.connectionId);
+          const r = await http.call<{ access_token?: string }>({ ...user, path: pageId, params: { fields: "access_token" }, idempotent: true, signal: o.signal });
+          if (!r.access_token) throw new ToolError("platform_permission_denied", "Meta returned no Page access token: the connected user needs a role on this Page.");
+          return { accessToken: r.access_token, appSecretProof: tokens.proofFor(r.access_token) };
+        },
         signal: o.signal,
       });
-      return { meta, mutationsSent: () => meta.mutationsSent } satisfies MetaServices;
+      return { meta, mutationsSent: () => meta.mutationsSent, fetchImage: d.fetchImage ?? fetchMetaImageSafely } satisfies MetaServices;
     }
     throw new ToolError("unsupported", `Platform ${o.account.platform} is not available yet.`);
   };

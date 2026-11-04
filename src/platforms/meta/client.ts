@@ -41,6 +41,8 @@ export class MetaAdsClient {
       adAccountId: string;
       currency: string | null;
       getToken: () => Promise<{ accessToken: string; appSecretProof: string }>;
+      /** A Page access token for a Page the connected user has a role on (needed by Page edges such as leadgen_forms). */
+      getPageToken?: (pageId: string) => Promise<{ accessToken: string; appSecretProof: string }>;
       signal?: AbortSignal;
     },
   ) {
@@ -71,6 +73,25 @@ export class MetaAdsClient {
     let after: string | undefined;
     do {
       const page = await this.get<{ data?: MetaRow[]; paging?: { cursors?: { after?: string }; next?: string } }>(path, { limit: String(Math.min(100, cap)), ...params, ...(after ? { after } : {}) });
+      rows.push(...(page.data ?? []));
+      after = page.paging?.next ? page.paging.cursors?.after : undefined;
+    } while (after && rows.length < cap);
+    return rows.slice(0, cap);
+  }
+
+  /**
+   * Reads a Page edge with that Page's access token. The token never leaves the client: handlers only get the rows. Callers
+   * must first check the Page is one this ad account can promote (requirePromotablePage in tools/common.ts).
+   */
+  async listAsPage(pageId: string, path: string, params: Record<string, string> = {}, maxRows = 500): Promise<MetaRow[]> {
+    if (!/^\d{1,25}$/.test(pageId)) throw new ToolError("invalid_argument", "Page id must be numeric.");
+    if (!this.o.getPageToken) throw new ToolError("unsupported", "Page access is not configured on this server.");
+    const t = await this.o.getPageToken(pageId);
+    const cap = Math.min(maxRows, HARD_ROW_CAP);
+    const rows: MetaRow[] = [];
+    let after: string | undefined;
+    do {
+      const page = await this.o.http.call<{ data?: MetaRow[]; paging?: { cursors?: { after?: string }; next?: string } }>({ ...t, path, params: { limit: String(Math.min(100, cap)), ...params, ...(after ? { after } : {}) }, idempotent: true, signal: this.o.signal });
       rows.push(...(page.data ?? []));
       after = page.paging?.next ? page.paging.cursors?.after : undefined;
     } while (after && rows.length < cap);

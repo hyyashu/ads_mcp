@@ -173,6 +173,7 @@ export const metricsOf = (row: MetaRow, types: readonly string[]): Metrics => co
 
 export const METRIC_FIELDS = ["spend", "impressions", "reach", "frequency", "clicks", "inline_link_clicks", "actions", "action_values"];
 const LEVEL_FIELDS = {
+  account: [],
   campaign: ["campaign_id", "campaign_name"],
   adset: ["campaign_id", "campaign_name", "adset_id", "adset_name"],
   ad: ["campaign_id", "campaign_name", "adset_id", "adset_name", "ad_id", "ad_name"],
@@ -186,7 +187,7 @@ export const INSIGHTS_ROW_CAP = 2_000;
  * Reads insights for `objectPath` ("act_..." or an owned campaign id) at `level`, following cursor paging up to `cap` rows.
  * Always sends use_unified_attribution_setting=true. `daily` adds time_increment=1 (one row per object per day).
  */
-export async function fetchInsights(m: MetaAdsClient, o: { objectPath: string; level: InsightsLevel; period: Record<string, string>; daily?: boolean; cap?: number }): Promise<{ rows: MetaRow[]; truncated: boolean }> {
+export async function fetchInsights(m: MetaAdsClient, o: { objectPath: string; level: InsightsLevel; period: Record<string, string>; daily?: boolean; cap?: number; breakdowns?: readonly string[] }): Promise<{ rows: MetaRow[]; truncated: boolean }> {
   const cap = o.cap ?? INSIGHTS_ROW_CAP;
   const rows = await m.list(
     `${o.objectPath}/insights`,
@@ -195,6 +196,7 @@ export async function fetchInsights(m: MetaAdsClient, o: { objectPath: string; l
       fields: [...LEVEL_FIELDS[o.level], ...METRIC_FIELDS].join(","),
       use_unified_attribution_setting: "true",
       time_increment: o.daily ? "1" : "all_days",
+      ...(o.breakdowns?.length ? { breakdowns: o.breakdowns.join(",") } : {}),
       ...o.period,
     },
     cap + 1,
@@ -204,3 +206,52 @@ export async function fetchInsights(m: MetaAdsClient, o: { objectPath: string; l
 
 export const conversionTypesOutput = z.array(z.string()).describe("The action types counted as conversions.");
 export const attributionNote = "Unified attribution setting (the ad sets' own attribution windows), matching Ads Manager.";
+
+// ---------------------------------------------------------------------------------------------------------------
+// Breakdowns. Values and valid combinations from "Insights API Breakdowns" (v27, updated 2026-10-15): single breakdowns from the
+// `breakdowns` enum, and the documented combinations age+gender and publisher_platform+platform_position. The same page says
+// `region` no longer returns off-Meta action metrics, so conversions are reported as unavailable for it.
+export const BREAKDOWNS = {
+  age: ["age"],
+  gender: ["gender"],
+  age_gender: ["age", "gender"],
+  country: ["country"],
+  region: ["region"],
+  publisher_platform: ["publisher_platform"],
+  placement: ["publisher_platform", "platform_position"],
+  device_platform: ["device_platform"],
+} as const;
+export type BreakdownName = keyof typeof BREAKDOWNS;
+export const breakdownInput = z.enum(Object.keys(BREAKDOWNS) as [BreakdownName, ...BreakdownName[]]).describe("age, gender, age_gender, country, region, publisher_platform, placement (publisher_platform + platform_position) or device_platform.");
+/** Breakdowns for which Meta does not return off-Meta conversions (Insights API Breakdowns, "Type 1"). */
+export const NO_CONVERSIONS: readonly BreakdownName[] = ["region"];
+export const segmentOf = (row: MetaRow, b: BreakdownName): Record<string, string | null> => Object.fromEntries(BREAKDOWNS[b].map((k) => [k, row[k] === undefined || row[k] === null ? null : String(row[k])]));
+export const segmentLabel = (seg: Record<string, string | null>) => Object.values(seg).map((v) => v ?? "unknown").join(" / ");
+
+/** Base figures added up over rows (reach and frequency are not additive and are left out). */
+export function sumBase(rows: MetaRow[], types: readonly string[]) {
+  const t = { spend: 0, impressions: 0, clicks: 0, inline_link_clicks: 0, conversions: 0, conversion_value: 0, reach: null as number | null, frequency: null as number | null };
+  for (const r of rows) {
+    const b = baseOf(r, types);
+    t.spend += b.spend;
+    t.impressions += b.impressions;
+    t.clicks += b.clicks;
+    t.inline_link_clicks += b.inline_link_clicks;
+    t.conversions += b.conversions;
+    t.conversion_value += b.conversion_value;
+  }
+  return t;
+}
+
+/** YYYY-MM-DD plus n days (n may be negative). */
+export function addDays(d: string, n: number): string {
+  const [y, m, dd] = d.split("-").map(Number) as [number, number, number];
+  return new Date(Date.UTC(y, m - 1, dd + n)).toISOString().slice(0, 10);
+}
+
+/** An explicit period input ({start_date, end_date}) for tools that compare two periods. */
+export const periodInput = z
+  .object({ start_date: day.describe("YYYY-MM-DD, ad account time zone."), end_date: day.describe("YYYY-MM-DD, inclusive.") })
+  .refine((p) => p.start_date <= p.end_date, "start_date must not be after end_date");
+/** time_range params for an explicit period, with the same checks as insightsPeriod (future end date, 37-month limit). */
+export const rangeParams = (p: { start_date: string; end_date: string }, timeZone: string | null, now = new Date()) => insightsPeriod({ date_range: "LAST_30_DAYS", ...p }, timeZone, now).params;
