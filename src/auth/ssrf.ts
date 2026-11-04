@@ -46,6 +46,27 @@ export function assertSafeHttpsUrl(raw: string): URL {
   return u;
 }
 
+type LookupCallback = (err: NodeJS.ErrnoException | null, address: string | { address: string; family: number }[], family?: number) => void;
+
+/**
+ * A `lookup` for http(s).request that refuses forbidden addresses at connect time. Node may call lookup with `{ all: true }`
+ * (it does by default on Node 20+, for happy-eyeballs connection attempts) and then expects an ARRAY of {address, family};
+ * otherwise it expects a single address and family. Both forms are supported here.
+ */
+export function safeLookup(resolve: (host: string) => Promise<string[]>) {
+  return (host: string, opts: { all?: boolean } | number | undefined, cb: LookupCallback) => {
+    resolve(host).then(
+      (addrs) => {
+        if (addrs.length === 0 || addrs.some(isForbiddenAddress)) return cb(new UnsafeUrlError("host resolves to a forbidden address") as NodeJS.ErrnoException, "", 4);
+        const list = addrs.map((address) => ({ address, family: isIP(address) === 6 ? 6 : 4 }));
+        if (typeof opts === "object" && opts?.all) return cb(null, list);
+        cb(null, list[0]!.address, list[0]!.family);
+      },
+      (e) => cb(e as NodeJS.ErrnoException, "", 4),
+    );
+  };
+}
+
 export interface SafeFetchOptions {
   timeoutMs?: number;
   maxBytes?: number;
@@ -70,16 +91,7 @@ export async function safeFetchJson(raw: string, opts: SafeFetchOptions = {}): P
         headers: { accept: "application/json", "user-agent": "ads-mcp-client-metadata-fetcher" },
         timeout: opts.timeoutMs ?? 5000,
         // Validate the address actually used for the connection.
-        lookup: (host, _o, cb) => {
-          resolve(host).then(
-            (addrs) => {
-              const bad = addrs.find(isForbiddenAddress);
-              if (bad || addrs.length === 0) return cb(new UnsafeUrlError(`host resolves to a forbidden address`) as NodeJS.ErrnoException, "", 4);
-              cb(null, addrs[0]!, isIP(addrs[0]!) === 6 ? 6 : 4);
-            },
-            (e) => cb(e as NodeJS.ErrnoException, "", 4),
-          );
-        },
+        lookup: safeLookup(resolve) as never,
       },
       (res) => {
         if (res.statusCode !== 200) {

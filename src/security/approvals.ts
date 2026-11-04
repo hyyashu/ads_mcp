@@ -19,6 +19,11 @@ export interface ApprovalOptions {
   dedupeWindowMs?: number;
   /** Requests stuck "executing" longer than this are marked unknown_outcome, never retried. */
   stuckAfterMs?: number;
+  /**
+   * Test seam only: runs inside request()'s transaction right after the existing row is read, so tests can simulate a
+   * concurrent writer. Never set in production.
+   */
+  afterExistingRead?: (tx: Parameters<Parameters<Db["transaction"]>[0]>[0], key: string) => Promise<void>;
 }
 
 /** Outcomes of an executor: a definite result, or a ToolError saying whether the mutation may have happened. */
@@ -34,6 +39,7 @@ export class ApprovalService {
   private ttlMs: number;
   private dedupeMs: number;
   private stuckMs: number;
+  private afterRead?: ApprovalOptions["afterExistingRead"];
 
   constructor(
     private db: Db,
@@ -43,6 +49,7 @@ export class ApprovalService {
     this.ttlMs = opts.ttlMs ?? 24 * 3600_000;
     this.dedupeMs = opts.dedupeWindowMs ?? 10 * 60_000;
     this.stuckMs = opts.stuckAfterMs ?? 10 * 60_000;
+    this.afterRead = opts.afterExistingRead;
   }
 
   /**
@@ -64,7 +71,9 @@ export class ApprovalService {
     const now = this.now();
 
     return this.db.transaction(async (tx) => {
-      const [existing] = await tx.select().from(approvalRequest).where(eq(approvalRequest.idempotencyKey, key));
+      // Lock the row (if any): a concurrent decide() that wants to claim it waits until this transaction commits.
+      const [existing] = await tx.select().from(approvalRequest).where(eq(approvalRequest.idempotencyKey, key)).for("update");
+      if (this.afterRead) await this.afterRead(tx, key);
       if (existing) {
         const age = now.getTime() - existing.createdAt.getTime();
         const live = existing.status === "pending" && existing.expiresAt > now;
@@ -78,10 +87,13 @@ export class ApprovalService {
           throw new ToolError("conflict", "A previous attempt at this exact change has an unconfirmed outcome. Check the ad platform, then change the arguments or resolve it before retrying.");
         }
         // Finished long ago, rejected, failed, expired or superseded: free the key so the change can be requested again.
-        await tx
+        // Guarded on the status we read: if the row changed meanwhile (e.g. an approver claimed it), never overwrite it.
+        const freed = await tx
           .update(approvalRequest)
           .set({ idempotencyKey: `${key}:${existing.id}`, ...(live ? { status: "expired", result: { superseded: true, reason: "The ad account changed after this was requested; a newer request replaced it." } } : {}) })
-          .where(eq(approvalRequest.id, existing.id));
+          .where(and(eq(approvalRequest.id, existing.id), eq(approvalRequest.status, existing.status)))
+          .returning({ id: approvalRequest.id });
+        if (!freed.length) throw new ToolError("conflict", "This exact change was just approved or changed by someone else. Check the approvals page before requesting it again.");
       }
       const [row] = await tx
         .insert(approvalRequest)
@@ -100,8 +112,13 @@ export class ApprovalService {
           createdAt: now,
           expiresAt: new Date(now.getTime() + this.ttlMs),
         })
+        // Two identical requests at the same moment: the second must get the first one back, not a database error.
+        .onConflictDoNothing({ target: approvalRequest.idempotencyKey })
         .returning();
-      return { row: row!, deduplicated: false };
+      if (row) return { row, deduplicated: false };
+      const [winner] = await tx.select().from(approvalRequest).where(eq(approvalRequest.idempotencyKey, key));
+      if (!winner) throw new ToolError("transient", "A concurrent identical request could not be read back. Retry.");
+      return { row: winner, deduplicated: true };
     });
   }
 

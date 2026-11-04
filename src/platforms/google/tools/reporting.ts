@@ -5,6 +5,9 @@ import { ADS_SCOPE, Money, accountId, campaignIds, dateClause, dateFields, dates
 import { and, eq, gte, sql } from "drizzle-orm";
 import { platformConnection, usageCounter } from "../../../db/schema";
 
+/** Upper bound for the extra totals query (the client's hard row cap). */
+const TOTALS_CAP = 10_000;
+
 /** An id field must exist: a row without one is a malformed response and fails output validation. */
 const idStr = (row: Record<string, unknown>, f: string) => String(pick(row, f) ?? "");
 
@@ -75,7 +78,7 @@ export const getCampaignPerformance = googleRead({
   title: "Campaign performance",
   description: "Campaign-level performance for a period: impressions, clicks, cost, conversions, conversion value, and the ratios CTR, average CPC, cost per conversion and ROAS calculated from those figures. Fetched live from Google Ads.",
   input: z.object({ account_id: accountId, ...dateFields, campaign_ids: campaignIds.optional(), order_by: z.enum(["cost", "clicks", "conversions", "impressions"]).default("cost"), limit: z.number().int().min(1).max(200).default(50) }).refine(datesOk, datesMsg),
-  output: z.object({ period: z.string(), campaigns: z.array(perfRow), totals: perfRow.omit({ campaign_id: true, name: true, status: true }), returned: z.number(), truncated: z.boolean() }),
+  output: z.object({ period: z.string(), campaigns: z.array(perfRow), totals: perfRow.omit({ campaign_id: true, name: true, status: true }).describe("Over every matching campaign, not only the returned ones (see totals_scope)."), totals_scope: z.enum(["all_matching", "first_10000_campaigns"]), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const order = { cost: "metrics.cost_micros", clicks: "metrics.clicks", conversions: "metrics.conversions", impressions: "metrics.impressions" }[a.order_by];
     const q = new Gaql()
@@ -98,13 +101,28 @@ export const getCampaignPerformance = googleRead({
       status: str(r, "campaign.status"),
       ...calc(num(pick(r, "metrics.impressions")), num(pick(r, "metrics.clicks")), fromMicros(pick(r, "metrics.cost_micros")), num(pick(r, "metrics.conversions")), num(pick(r, "metrics.conversions_value"))),
     }));
-    const sum = (k: "impressions" | "clicks" | "cost" | "conversions" | "conversion_value") => campaigns.reduce((s, c) => s + c[k], 0);
+    const truncated = rows.length > a.limit;
+    // Totals must describe every matching campaign, not just the page shown. When the page is truncated, read the metrics of
+    // all matching campaigns (up to the client's 10,000-row cap) and say which scope the totals cover.
+    let all = rows;
+    if (truncated) {
+      const tq = new Gaql()
+        .select("campaign.id", "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value")
+        .from("campaign")
+        .where("campaign.status != 'REMOVED'")
+        .where(dateClause(a))
+        .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined)
+        .limit(TOTALS_CAP);
+      all = await ctx.services.ads.query(tq, { maxRows: TOTALS_CAP });
+    }
+    const tot = (f: string, micros = false) => all.reduce((s, r) => s + (micros ? fromMicros(pick(r, f)) : num(pick(r, f))), 0);
     return {
       period: a.start_date && a.end_date ? `${a.start_date}..${a.end_date}` : a.date_range,
       campaigns,
-      totals: calc(sum("impressions"), sum("clicks"), sum("cost"), sum("conversions"), sum("conversion_value")),
+      totals: calc(tot("metrics.impressions"), tot("metrics.clicks"), tot("metrics.cost_micros", true), tot("metrics.conversions"), tot("metrics.conversions_value")),
+      totals_scope: all.length >= TOTALS_CAP ? ("first_10000_campaigns" as const) : ("all_matching" as const),
       returned: shown.length,
-      truncated: rows.length > a.limit,
+      truncated,
     };
   },
 });

@@ -26,7 +26,14 @@ interface Crit {
 /** The parent must exist and not be removed (see requireParent in common.ts). */
 const requireParent = async (ads: GoogleAdsClient, s: Scope): Promise<void> => void (await requireParentOf(ads, s.level, s.id, "Keywords"));
 
-async function listCriteria(ads: GoogleAdsClient, s: Scope): Promise<Crit[]> {
+/** Most keywords we read for a duplicate check. Larger scopes are refused rather than checked partially. */
+const LIST_CAP = 10_000;
+
+/**
+ * Keywords in a scope. With `ids`, only those criteria are read (exact, no size limit concerns). Without, every keyword is
+ * read for duplicate detection; if the scope holds LIST_CAP or more, the check would be incomplete, so it is refused.
+ */
+async function listCriteria(ads: GoogleAdsClient, s: Scope, ids?: string[]): Promise<Crit[]> {
   const t = s.level === "ad_group" ? "ad_group_criterion" : "campaign_criterion";
   const q = new Gaql()
     .select(`${t}.criterion_id`, `${t}.keyword.text`, `${t}.keyword.match_type`, `${t}.status`, ...(s.level === "ad_group" ? ["ad_group_criterion.cpc_bid_micros"] : []))
@@ -35,9 +42,13 @@ async function listCriteria(ads: GoogleAdsClient, s: Scope): Promise<Crit[]> {
     .where(`${t}.type = 'KEYWORD'`)
     .where(`${t}.negative = ${s.negative ? "TRUE" : "FALSE"}`)
     .where(`${t}.status != 'REMOVED'`)
+    .where(ids?.length ? `${t}.criterion_id IN ${lit.list([...new Set(ids)].map(lit.id))}` : undefined)
     .orderBy(`${t}.criterion_id`)
-    .limit(5000);
-  const rows = await ads.query(q, { maxRows: 5000 });
+    .limit(LIST_CAP);
+  const rows = await ads.query(q, { maxRows: LIST_CAP });
+  if (!ids && rows.length >= LIST_CAP) {
+    throw new ToolError("unsupported", `This ${s.level === "ad_group" ? "ad group" : "campaign"} has ${LIST_CAP.toLocaleString("en-US")} or more keywords, so duplicates cannot be checked completely. Nothing was queued.`);
+  }
   return rows.map((r) => ({
     id: String(pick(r, `${t}.criterion_id`) ?? ""),
     text: str(r, `${t}.keyword.text`) ?? "",
@@ -104,8 +115,8 @@ async function verifyAdd(ads: GoogleAdsClient, s: Scope, items: Item[], snapshot
 // ------------------------------------------------------------------------------------------------ shared remove logic
 async function planRemove(ads: GoogleAdsClient, s: Scope, ids: string[], label: string) {
   await requireParent(ads, s);
-  const have = new Map((await listCriteria(ads, s)).map((c) => [c.id, c]));
   const unique = sortedKeys(ids);
+  const have = new Map((await listCriteria(ads, s, unique)).map((c) => [c.id, c]));
   const missing = unique.filter((i) => !have.has(i));
   if (missing.length) throw new ToolError("invalid_argument", `Not found in this ${s.level === "ad_group" ? "ad group" : "campaign"} (or not a ${label}): ${missing.slice(0, 10).join(", ")}`);
   const names = unique.slice(0, 10).map((i) => `${have.get(i)!.text} [${have.get(i)!.matchType}]`).join(", ");
@@ -115,10 +126,10 @@ async function planRemove(ads: GoogleAdsClient, s: Scope, ids: string[], label: 
 async function execRemove(ads: GoogleAdsClient, s: Scope, ids: string[], snapshot: unknown) {
   const snap = snapshot as { ids: string[] };
   const unique = sortedKeys(ids);
-  const have = new Set((await listCriteria(ads, s)).map((c) => c.id));
+  const have = new Set((await listCriteria(ads, s, unique)).map((c) => c.id));
   if (JSON.stringify(unique) !== JSON.stringify(snap.ids) || unique.some((i) => !have.has(i))) throw new ToolError("conflict", "The keywords changed since this was requested.");
   await ads.mutate(service(s), unique.map((i) => ({ remove: critResource(ads.customerId, s, i) })));
-  const after = new Set((await listCriteria(ads, s)).map((c) => c.id));
+  const after = new Set((await listCriteria(ads, s, unique)).map((c) => c.id));
   const still = unique.filter((i) => after.has(i));
   if (still.length) throw new ToolError("unknown_outcome", `Google accepted the request but ${still.length} keyword(s) are still present.`);
   return { removed: unique.length, criterion_ids: unique };
@@ -126,7 +137,7 @@ async function execRemove(ads: GoogleAdsClient, s: Scope, ids: string[], snapsho
 
 async function verifyRemove(ads: GoogleAdsClient, s: Scope, ids: string[]) {
   const unique = sortedKeys(ids);
-  const have = new Set((await listCriteria(ads, s)).map((c) => c.id));
+  const have = new Set((await listCriteria(ads, s, unique)).map((c) => c.id));
   const gone = unique.filter((i) => !have.has(i)).length;
   if (gone === unique.length) return { outcome: "applied" as const };
   if (gone === 0) return { outcome: "not_applied" as const };
@@ -159,7 +170,7 @@ export const updateKeyword = googleWrite({
   plan: async (a, ctx) => {
     const s: Scope = { level: "ad_group", id: a.ad_group_id, negative: false };
     await requireParent(ctx.services.ads, s);
-    const c = (await listCriteria(ctx.services.ads, s)).find((x) => x.id === a.criterion_id);
+    const c = (await listCriteria(ctx.services.ads, s, [a.criterion_id])).find((x) => x.id === a.criterion_id);
     if (!c) throw new ToolError("not_found", `No keyword ${a.criterion_id} in ad group ${a.ad_group_id}.`);
     const parts: string[] = [];
     if (a.status !== undefined && a.status !== c.status) parts.push(`status ${c.status} -> ${a.status}`);
@@ -168,7 +179,7 @@ export const updateKeyword = googleWrite({
     return { summary: `Keyword "${c.text}" [${c.matchType}] in ad group ${a.ad_group_id}: ${parts.join("; ")}`, snapshot: { status: c.status, cpc: c.cpcMicros } };
   },
   verify: async (a, ctx, run) => {
-    const c = (await listCriteria(ctx.services.ads, { level: "ad_group", id: a.ad_group_id, negative: false })).find((x) => x.id === a.criterion_id);
+    const c = (await listCriteria(ctx.services.ads, { level: "ad_group", id: a.ad_group_id, negative: false }, [a.criterion_id])).find((x) => x.id === a.criterion_id);
     const b = run.snapshot as { status: string; cpc: number | null };
     if (!c) return { outcome: "indeterminate", detail: "keyword not found" };
     if ((a.status === undefined || c.status === a.status) && (a.cpc_bid === undefined || c.cpcMicros === toMicros(a.cpc_bid))) return { outcome: "applied" };
@@ -176,7 +187,7 @@ export const updateKeyword = googleWrite({
   },
   execute: async (a, ctx, run) => {
     const s: Scope = { level: "ad_group", id: a.ad_group_id, negative: false };
-    const cur = (await listCriteria(ctx.services.ads, s)).find((x) => x.id === a.criterion_id);
+    const cur = (await listCriteria(ctx.services.ads, s, [a.criterion_id])).find((x) => x.id === a.criterion_id);
     const b = run.snapshot as { status: string; cpc: number | null };
     if (!cur || cur.status !== b.status || cur.cpcMicros !== b.cpc) throw new ToolError("conflict", "The keyword changed since this was requested.");
     const update: Record<string, unknown> = { resourceName: critResource(ctx.services.ads.customerId, s, a.criterion_id) };
@@ -184,7 +195,7 @@ export const updateKeyword = googleWrite({
     if (a.status !== undefined) (update.status = a.status), mask.push("status");
     if (a.cpc_bid !== undefined) (update.cpcBidMicros = String(toMicros(a.cpc_bid))), mask.push("cpc_bid_micros");
     await ctx.services.ads.mutate("adGroupCriteria", [{ update, updateMask: mask.join(",") }]);
-    const after = (await listCriteria(ctx.services.ads, s)).find((x) => x.id === a.criterion_id);
+    const after = (await listCriteria(ctx.services.ads, s, [a.criterion_id])).find((x) => x.id === a.criterion_id);
     if (!after || (a.status !== undefined && after.status !== a.status) || (a.cpc_bid !== undefined && after.cpcMicros !== toMicros(a.cpc_bid))) throw new ToolError("unknown_outcome", "Google accepted the request but the keyword does not read back as requested.");
     return { criterion_id: after.id, text: after.text, match_type: after.matchType, status: after.status, cpc_bid: after.cpcMicros === null ? null : fromMicros(after.cpcMicros) };
   },
@@ -216,8 +227,8 @@ export const bulkUpdateKeywordStatus = googleWrite({
   plan: async (a, ctx) => {
     const s: Scope = { level: "ad_group", id: a.ad_group_id, negative: false };
     await requireParent(ctx.services.ads, s);
-    const have = new Map((await listCriteria(ctx.services.ads, s)).map((c) => [c.id, c]));
     const ids = sortedKeys(a.criterion_ids);
+    const have = new Map((await listCriteria(ctx.services.ads, s, ids)).map((c) => [c.id, c]));
     const missing = ids.filter((i) => !have.has(i));
     if (missing.length) throw new ToolError("invalid_argument", `Not found in this ad group (or not a keyword): ${missing.slice(0, 10).join(", ")}`);
     const changing = ids.filter((i) => have.get(i)!.status !== a.status);
@@ -226,7 +237,7 @@ export const bulkUpdateKeywordStatus = googleWrite({
   },
   verify: async (a, ctx, run) => {
     const { changing } = run.snapshot as { changing: string[] };
-    const now = new Map((await listCriteria(ctx.services.ads, { level: "ad_group", id: a.ad_group_id, negative: false })).map((c) => [c.id, c.status]));
+    const now = new Map((await listCriteria(ctx.services.ads, { level: "ad_group", id: a.ad_group_id, negative: false }, changing)).map((c) => [c.id, c.status]));
     const done = changing.filter((i) => now.get(i) === a.status).length;
     if (done === changing.length) return { outcome: "applied" };
     return done === 0 ? { outcome: "not_applied" } : { outcome: "indeterminate", detail: `${done} of ${changing.length} updated` };
@@ -234,11 +245,11 @@ export const bulkUpdateKeywordStatus = googleWrite({
   execute: async (a, ctx, run) => {
     const s: Scope = { level: "ad_group", id: a.ad_group_id, negative: false };
     const { changing } = run.snapshot as { changing: string[] };
-    const now = new Map((await listCriteria(ctx.services.ads, s)).map((c) => [c.id, c.status]));
+    const now = new Map((await listCriteria(ctx.services.ads, s, a.criterion_ids)).map((c) => [c.id, c.status]));
     const still = sortedKeys(a.criterion_ids).filter((i) => now.get(i) !== a.status);
     if (JSON.stringify(still) !== JSON.stringify(changing)) throw new ToolError("conflict", "The keywords changed since this was requested.");
     await ctx.services.ads.mutate("adGroupCriteria", changing.map((i) => ({ update: { resourceName: critResource(ctx.services.ads.customerId, s, i), status: a.status }, updateMask: "status" })));
-    const after = new Map((await listCriteria(ctx.services.ads, s)).map((c) => [c.id, c.status]));
+    const after = new Map((await listCriteria(ctx.services.ads, s, changing)).map((c) => [c.id, c.status]));
     if (changing.some((i) => after.get(i) !== a.status)) throw new ToolError("unknown_outcome", "Google accepted the request but some keywords do not read back as requested.");
     return { updated: changing.length, criterion_ids: changing, status: a.status };
   },

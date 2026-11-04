@@ -41,7 +41,9 @@ export class GoogleTokenProvider {
 
   async getAccessToken(tenantId: string, connectionId: string): Promise<string> {
     const now = (this.o.now ?? Date.now)();
-    const hit = this.cache.get(connectionId);
+    // Keyed by tenant AND connection: a cached token must never be returned to a different tenant.
+    const cacheKey = `${tenantId}:${connectionId}`;
+    const hit = this.cache.get(cacheKey);
     if (hit && hit.exp - 60_000 > now) return hit.token;
 
     const conn = await load(this.o.db, tenantId, connectionId);
@@ -61,17 +63,18 @@ export class GoogleTokenProvider {
     if (!res.ok || !body.access_token) {
       if (body.error === "invalid_grant" || body.error === "unauthorized_client") {
         await markNeedsReauth(this.o.db, tenantId, connectionId);
-        this.cache.delete(connectionId);
+        this.forget(connectionId);
         throw new ToolError("auth_expired", "Google access was revoked or expired. Reconnect the Google Ads account.");
       }
       throw new ToolError(res.status >= 500 ? "transient" : "auth_expired", "Google refused to refresh credentials.");
     }
-    this.cache.set(connectionId, { token: body.access_token, exp: now + (body.expires_in ?? 3600) * 1000 });
+    this.cache.set(cacheKey, { token: body.access_token, exp: now + (body.expires_in ?? 3600) * 1000 });
     return body.access_token;
   }
 
+  /** Drops cached tokens for a connection (call on disconnect and when it needs re-authentication). */
   forget(connectionId: string) {
-    this.cache.delete(connectionId);
+    for (const k of this.cache.keys()) if (k.endsWith(`:${connectionId}`)) this.cache.delete(k);
   }
 }
 

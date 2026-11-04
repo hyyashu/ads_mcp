@@ -19,7 +19,7 @@ import type { PipelineDeps } from "../mcp/pipeline";
 import { ToolRegistry } from "../mcp/registry";
 import type { AnyTool, ReadTool, WriteTool } from "../mcp/tool";
 import { ApprovalService, type ApprovalOptions } from "../security/approvals";
-import { RateLimiter } from "../security/rate-limit";
+import { type Limiter, RateLimiter } from "../security/rate-limit";
 
 export async function testDb(): Promise<Db> {
   const db = createDb(); // in-memory embedded Postgres
@@ -159,14 +159,14 @@ export interface Stack {
 }
 
 /** The whole HTTP stack (MCP endpoint, OAuth server, web pages) on an ephemeral port. */
-export async function startStack(h: Harness, o: { platformCfg?: Partial<PlatformOAuthConfig>; fetch?: FetchLike; allowedOrigins?: string[]; fetchClientMetadata?: (u: string) => Promise<unknown> } = {}): Promise<Stack> {
+export async function startStack(h: Harness, o: { platformCfg?: Partial<PlatformOAuthConfig>; fetch?: FetchLike; allowedOrigins?: string[]; fetchClientMetadata?: (u: string) => Promise<unknown>; limiters?: Partial<{ login: Limiter; loginAccount: Limiter; register: Limiter; token: Limiter }> } = {}): Promise<Stack> {
   const config: AppConfig = { port: 0, issuer: "http://127.0.0.1:0", resource: "http://127.0.0.1:0/mcp", secureCookies: false, trustProxy: false, allowedOrigins: o.allowedOrigins ?? ["https://allowed.example"], rateLimitStore: "memory" };
   const cipher = testCipher();
   const oauth = new OAuthServer({ db: h.db, config: { issuer: config.issuer, resource: config.resource }, fetchClientMetadata: o.fetchClientMetadata });
   const platformConfig: PlatformOAuthConfig = { publicUrl: config.issuer, ...o.platformCfg };
   const platform = new PlatformOAuth(h.db, cipher, platformConfig, { fetch: o.fetch });
   const big = () => new RateLimiter(10_000, 10_000);
-  const web = new WebRoutes({ db: h.db, config, oauth, platform, approvals: h.approvals, pipeline: h.deps, limiters: { login: big(), register: big(), token: big() } });
+  const web = new WebRoutes({ db: h.db, config, oauth, platform, approvals: h.approvals, pipeline: h.deps, limiters: { login: big(), loginAccount: big(), register: big(), token: big(), ...o.limiters } });
   const server = createHttpServer(h.deps, new CompositeAuthenticator(oauth, new ApiTokenAuthenticator(h.db)), { config, maxBodyBytes: 50_000 }, web);
   await new Promise<void>((r) => server.listen(0, "127.0.0.1", r));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;

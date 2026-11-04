@@ -48,6 +48,7 @@ export class ApiTokenAuthenticator implements Authenticator {
         userId: apiToken.userId,
         scopes: apiToken.scopes,
         expiresAt: apiToken.expiresAt,
+        lastUsedAt: apiToken.lastUsedAt,
         role: appUser.role,
       })
       .from(apiToken)
@@ -55,7 +56,10 @@ export class ApiTokenAuthenticator implements Authenticator {
       .where(and(eq(apiToken.tokenHash, sha256(m[1]!)), isNull(apiToken.revokedAt)));
     if (!row) return null;
     if (row.expiresAt && row.expiresAt <= this.now()) return null;
-    await this.db.update(apiToken).set({ lastUsedAt: this.now() }).where(eq(apiToken.id, row.id));
+    // "Last used" only needs minute precision: skip the write on most requests instead of one write per call.
+    if (!row.lastUsedAt || this.now().getTime() - row.lastUsedAt.getTime() > 60_000) {
+      await this.db.update(apiToken).set({ lastUsedAt: this.now() }).where(eq(apiToken.id, row.id));
+    }
     return { tenantId: row.tenantId, userId: row.userId, role: row.role as Role, scopes: row.scopes, tokenId: row.id };
   }
 }

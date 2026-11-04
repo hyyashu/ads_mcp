@@ -192,7 +192,7 @@ export const getAdPerformance = googleRead({
   title: "Ad performance",
   description: "Ad-level performance for a period: impressions, clicks, cost, conversions, conversion value, and CTR, average CPC, cost per conversion and ROAS calculated from those figures. Fetched live from Google Ads; ratios are null when their denominator is zero.",
   input: z.object({ account_id: accountId, ...dateFields, ...scopeFilters, order_by: z.enum(["cost", "clicks", "conversions", "impressions"]).default("cost"), limit: z.number().int().min(1).max(200).default(50) }).refine(datesOk, datesMsg),
-  output: z.object({ period: z.string(), ads: z.array(perf.extend({ ad_group_id: z.string().nullable(), ad_id: z.string().min(1), status: z.string().nullable() })), totals: perf, returned: z.number(), truncated: z.boolean() }),
+  output: z.object({ period: z.string(), ads: z.array(perf.extend({ ad_group_id: z.string().nullable(), ad_id: z.string().min(1), status: z.string().nullable() })), totals: perf.describe("Over every matching ad, not only the returned ones (see totals_scope)."), totals_scope: z.enum(["all_matching", "first_10000_ads"]), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const order = { cost: "metrics.cost_micros", clicks: "metrics.clicks", conversions: "metrics.conversions", impressions: "metrics.impressions" }[a.order_by];
     const q = new Gaql()
@@ -206,8 +206,29 @@ export const getAdPerformance = googleRead({
       .limit(a.limit + 1);
     const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1 });
     const shown = rows.slice(0, a.limit).map((r) => ({ ad_group_id: str(r, "ad_group.id"), ad_id: String(pick(r, "ad_group_ad.ad.id") ?? ""), status: str(r, "ad_group_ad.status"), ...calc(num(pick(r, "metrics.impressions")), num(pick(r, "metrics.clicks")), fromMicros(pick(r, "metrics.cost_micros")), num(pick(r, "metrics.conversions")), num(pick(r, "metrics.conversions_value"))) }));
-    const sum = (k: "impressions" | "clicks" | "cost" | "conversions" | "conversion_value") => shown.reduce((s, x) => s + x[k], 0);
-    return { period: a.start_date && a.end_date ? `${a.start_date}..${a.end_date}` : a.date_range, ads: shown, totals: calc(sum("impressions"), sum("clicks"), sum("cost"), sum("conversions"), sum("conversion_value")), returned: shown.length, truncated: rows.length > a.limit };
+    const truncated = rows.length > a.limit;
+    // Totals cover every matching ad, not only the page shown (up to the client's 10,000-row cap).
+    let all = rows;
+    if (truncated) {
+      const tq = new Gaql()
+        .select("ad_group_ad.ad.id", "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value")
+        .from("ad_group_ad")
+        .where("ad_group_ad.status != 'REMOVED'")
+        .where(dateClause(a))
+        .where(a.campaign_id && `campaign.id = ${lit.id(a.campaign_id)}`)
+        .where(a.ad_group_id && `ad_group.id = ${lit.id(a.ad_group_id)}`)
+        .limit(10_000);
+      all = await ctx.services.ads.query(tq, { maxRows: 10_000 });
+    }
+    const tot = (f: string, micros = false) => all.reduce((s, r) => s + (micros ? fromMicros(pick(r, f)) : num(pick(r, f))), 0);
+    return {
+      period: a.start_date && a.end_date ? `${a.start_date}..${a.end_date}` : a.date_range,
+      ads: shown,
+      totals: calc(tot("metrics.impressions"), tot("metrics.clicks"), tot("metrics.cost_micros", true), tot("metrics.conversions"), tot("metrics.conversions_value")),
+      totals_scope: all.length >= 10_000 ? ("first_10000_ads" as const) : ("all_matching" as const),
+      returned: shown.length,
+      truncated,
+    };
   },
 });
 

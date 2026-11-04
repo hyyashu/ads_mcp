@@ -41,7 +41,8 @@ function main() {
 
   const approvals = new ApprovalService(db);
   const oauth = new OAuthServer({ db, config: { issuer: config.issuer, resource: config.resource } });
-  const platform = new PlatformOAuth(db, cipher, { publicUrl: config.issuer, google: config.google, meta: config.meta });
+  const googleTokens = config.google ? new GoogleTokenProvider({ db, cipher, clientId: config.google.clientId, clientSecret: config.google.clientSecret }) : undefined;
+  const platform = new PlatformOAuth(db, cipher, { publicUrl: config.issuer, google: config.google, meta: config.meta }, { onRevoked: (id) => googleTokens?.forget(id) });
 
   const deps: PipelineDeps = {
     db,
@@ -53,7 +54,7 @@ function main() {
     createServices: createServicesFactory({
       db,
       google: config.google
-        ? { tokens: new GoogleTokenProvider({ db, cipher, clientId: config.google.clientId, clientSecret: config.google.clientSecret }), http: new GoogleAdsHttp({ apiVersion: config.google.apiVersion }) }
+        ? { tokens: googleTokens!, http: new GoogleAdsHttp({ apiVersion: config.google.apiVersion }) }
         : undefined,
     }),
   };
@@ -64,7 +65,7 @@ function main() {
     platform,
     approvals,
     pipeline: deps,
-    limiters: { login: limiter("login", 5, 0.05), register: limiter("register", 20, 0.01), token: limiter("token", 60, 1) },
+    limiters: { login: limiter("login", 5, 0.05), loginAccount: limiter("login-account", 20, 20 / 3600), register: limiter("register", 20, 0.01), token: limiter("token", 60, 1) },
   });
 
   const server = createHttpServer(deps, new CompositeAuthenticator(oauth, new ApiTokenAuthenticator(db)), { config }, web);

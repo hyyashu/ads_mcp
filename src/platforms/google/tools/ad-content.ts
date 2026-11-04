@@ -31,6 +31,16 @@ interface Asset { text: string; pinned_field?: string | null }
 interface Rsa { adGroupId: string; adId: string; status: string; type: string; adResource: string; finalUrls: string[]; headlines: Asset[]; descriptions: Asset[]; path1: string | null; path2: string | null }
 interface Patch { headlines?: Asset[]; descriptions?: Asset[]; final_urls?: string[]; path1?: string | null; path2?: string | null }
 
+/** URL as Google may store it: scheme and host lower-cased, a bare host given a trailing "/". Unparsable values are kept as-is. */
+const normUrl = (u: string) => {
+  try {
+    return new URL(u.trim()).href;
+  } catch {
+    return u.trim();
+  }
+};
+const sameUrls = (a: string[], b: string[]) => JSON.stringify(a.map(normUrl)) === JSON.stringify(b.map(normUrl));
+
 const canon = (xs: Asset[]) => xs.map((x) => `${x.pinned_field ?? ""}|${x.text.trim()}`).sort();
 const sameAssets = (a: Asset[], b: Asset[]) => JSON.stringify(canon(a)) === JSON.stringify(canon(b));
 const assets = (v: unknown): Asset[] => ((v as { text?: string; pinnedField?: string }[] | undefined) ?? []).filter((x) => typeof x.text === "string").map((x) => ({ text: String(x.text), pinned_field: x.pinnedField && !/^UNSPECIFIED$/.test(x.pinnedField) ? String(x.pinnedField) : null }));
@@ -69,8 +79,8 @@ const patched = (cur: Rsa, p: Patch) => ({
 });
 const fieldsOf = (p: Patch) => (["headlines", "descriptions", "final_urls", "path1", "path2"] as const).filter((k) => p[k] !== undefined);
 const same = (cur: Rsa, want: ReturnType<typeof patched>, keys: readonly string[]) =>
-  keys.every((k) => (k === "headlines" ? sameAssets(cur.headlines, want.headlines) : k === "descriptions" ? sameAssets(cur.descriptions, want.descriptions) : k === "final_urls" ? JSON.stringify(cur.finalUrls) === JSON.stringify(want.final_urls) : k === "path1" ? cur.path1 === want.path1 : cur.path2 === want.path2));
-const snapOf = (cur: Rsa, keys: readonly string[]) => Object.fromEntries(keys.map((k) => [k, k === "headlines" ? canon(cur.headlines) : k === "descriptions" ? canon(cur.descriptions) : k === "final_urls" ? cur.finalUrls : k === "path1" ? cur.path1 : cur.path2]));
+  keys.every((k) => (k === "headlines" ? sameAssets(cur.headlines, want.headlines) : k === "descriptions" ? sameAssets(cur.descriptions, want.descriptions) : k === "final_urls" ? sameUrls(cur.finalUrls, want.final_urls) : k === "path1" ? cur.path1 === want.path1 : cur.path2 === want.path2));
+const snapOf = (cur: Rsa, keys: readonly string[]) => Object.fromEntries(keys.map((k) => [k, k === "headlines" ? canon(cur.headlines) : k === "descriptions" ? canon(cur.descriptions) : k === "final_urls" ? cur.finalUrls.map(normUrl) : k === "path1" ? cur.path1 : cur.path2]));
 
 function updateOp(cur: Rsa, p: Patch) {
   const update: Record<string, unknown> = { resourceName: cur.adResource };

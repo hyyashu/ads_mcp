@@ -2,7 +2,15 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { AuthContext } from "../auth/context";
 import { envelope } from "./envelope";
 import { type PipelineDeps, runTool } from "./pipeline";
-import { riskOf } from "./tool";
+import { type AnyTool, riskOf } from "./tool";
+
+/** Output envelopes are built once per tool and reused: the server is rebuilt per request, its schemas need not be. */
+const envelopes = new WeakMap<AnyTool, ReturnType<typeof envelope>>();
+const envelopeFor = (t: AnyTool) => {
+  let e = envelopes.get(t);
+  if (!e) envelopes.set(t, (e = envelope(t.output)));
+  return e;
+};
 
 export const SERVER_INFO = { name: "ads-mcp", version: "0.1.0" } as const;
 
@@ -21,7 +29,7 @@ export function createMcpServer(deps: PipelineDeps, auth: AuthContext): McpServe
         title: tool.title,
         description: tool.description,
         inputSchema: tool.input,
-        outputSchema: envelope(tool.output),
+        outputSchema: envelopeFor(tool),
         annotations: {
           readOnlyHint: tool.kind === "read",
           destructiveHint: risk === "destructive",

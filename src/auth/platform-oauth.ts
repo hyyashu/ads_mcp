@@ -52,14 +52,18 @@ export class PlatformOAuth {
   private f: FetchLike;
   private now: () => Date;
 
+  private onRevoked?: (connectionId: string) => void;
+
   constructor(
     private db: Db,
     private cipher: CredentialCipher,
     private cfg: PlatformOAuthConfig,
-    opts: { fetch?: FetchLike; now?: () => Date } = {},
+    /** onRevoked: called after a connection is disconnected, so in-memory caches (e.g. Google access tokens) are cleared. */
+    opts: { fetch?: FetchLike; now?: () => Date; onRevoked?: (connectionId: string) => void } = {},
   ) {
     this.f = opts.fetch ?? fetch;
     this.now = opts.now ?? (() => new Date());
+    this.onRevoked = opts.onRevoked;
   }
 
   enabled(platform: PlatformKey) {
@@ -339,6 +343,7 @@ export class PlatformOAuth {
     }
     await this.db.update(platformConnection).set({ status: "revoked", credentialsEnc: "revoked", revokedAt: this.now() }).where(eq(platformConnection.id, connectionId));
     await this.db.delete(connectedAccount).where(and(eq(connectedAccount.connectionId, connectionId), eq(connectedAccount.tenantId, actor.tenantId)));
+    this.onRevoked?.(connectionId);
     await audit(this.db, { tenantId: actor.tenantId, userId: actor.userId, event: "connection.disconnected", refId: connectionId, outcome: revoked ? "revoked_at_platform" : "local_only" });
     return { revokedAtPlatform: revoked };
   }

@@ -22,7 +22,8 @@ export interface WebDeps {
   platform: PlatformOAuth | null;
   approvals: ApprovalService;
   pipeline: PipelineDeps;
-  limiters: { login: Limiter; register: Limiter; token: Limiter };
+  /** login: per IP+email. loginAccount: per email across all IPs, so rotating addresses does not reset an account's budget. */
+  limiters: { login: Limiter; loginAccount: Limiter; register: Limiter; token: Limiter };
 }
 
 const PUBLIC_CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, authorization, mcp-protocol-version", "access-control-max-age": "600" };
@@ -311,7 +312,9 @@ ${hidden("csrf", csrfToken(s, "consent"))}
     const form = await this.readForm(req);
     const email = (form.get("email") ?? "").trim().toLowerCase();
     const next = this.safeNext(form.get("next"));
-    const lim = await this.d.limiters.login.take(`${this.ip(req)}|${email}`);
+    const perIp = await this.d.limiters.login.take(`${this.ip(req)}|${email}`);
+    const perAccount = perIp.ok ? await this.d.limiters.loginAccount.take(email) : perIp;
+    const lim = perIp.ok ? perAccount : perIp;
     if (!lim.ok) {
       this.html(res, 429, page("Too many attempts", flash(`Try again in ${lim.retryAfterSeconds} seconds.`, true)), { "retry-after": String(lim.retryAfterSeconds) });
       return true;
