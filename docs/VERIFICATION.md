@@ -56,9 +56,9 @@ No Meta code exists yet beyond the platform OAuth flow, so there was nothing to 
 
 | Item | Result |
 |---|---|
-| Current spec | The site serves revision **2026-07-28**. The installed `@modelcontextprotocol/sdk` 1.32.2 (also the latest on npm) supports protocol versions up to **2025-11-25**. |
+| Current spec | The site serves revision **2026-07-28**. The server uses SDK v2 (`@modelcontextprotocol/server` 2.4, `@modelcontextprotocol/node` 2.1), which implements it. |
 | Authorization (confirmed) | Protected Resource Metadata (RFC 9728) MUST; token audience validation per RFC 8707 MUST; `resource` parameter in authorization and token requests; Client ID Metadata Documents SHOULD; **Dynamic Client Registration is deprecated** (MAY); RFC 9207 `iss` on authorization responses SHOULD; `WWW-Authenticate` with `resource_metadata` and `scope`; 403 `insufficient_scope` challenge. Our OAuth server advertises CIMD, DCR and `iss`; whether its 403 scope challenge matches was not checked. |
-| Transport (**gap**) | The 2026-07-28 revision removes the connection-scoped `initialize` session: every request carries protocol version and client capabilities in `_meta`, Streamable HTTP mirrors metadata into HTTP headers, and servers do not send requests to clients. Clients fall back to the old handshake for older servers, so our server should keep working with current clients, but **it does not implement the new revision**. Status of the TypeScript SDK for it was not verified (GitHub README fetched only via raw URL; not read). |
+| Transport | 2026-07-28 (per-request `_meta` envelope, no `initialize` session) is served natively by `createMcpHandler`; 2025-era clients get the SDK's stateless fallback from the same per-request server factory. Verified 2026-11-05 by `mcp-protocol.test.ts` ("protocol revisions"): a client pinned to 2026-07-28, an auto-negotiating client and a legacy client all list and call tools. Before this, SDK v1 answered ChatGPT's 2026-07-28 request with 400 "Unsupported protocol version". |
 
 ## Actions taken
 
