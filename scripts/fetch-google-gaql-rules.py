@@ -3,7 +3,7 @@
 Usage: python3 scripts/fetch-google-gaql-rules.py v26 campaign ad_group ...
 Source pages: https://developers.google.com/google-ads/api/fields/<version>/<resource>
 
-For each resource: the attributed resources (whose fields may be selected alongside it without segmenting) and, for the
+For each resource: the metrics and segments usable with it in FROM, the attributed resources (whose fields may be selected alongside it without segmenting) and, for the
 resource's own fields, whether each is selectable and filterable. Existing entries are kept; new resources are added.
 """
 import html, json, os, re, sys, urllib.error, urllib.request
@@ -12,9 +12,11 @@ version, resources = sys.argv[1], sys.argv[2:]
 path = f"inventory/google-ads-{version}-gaql.json"
 data = json.load(open(path)) if os.path.exists(path) else {"version": version, "resources": {}}
 
-def text(url):
+def fetch(url):
     with urllib.request.urlopen(url, timeout=120) as r:
-        s = r.read().decode("utf-8", "ignore")
+        return r.read().decode("utf-8", "ignore")
+
+def text(s):
     s = re.sub(r"<script.*?</script>|<style.*?</style>", " ", s, flags=re.S)
     t = html.unescape(re.sub(r"<[^>]+>", "\n", s))
     return [l.strip() for l in t.split("\n") if l.strip()]
@@ -23,7 +25,8 @@ for res in resources:
     if res in data["resources"]:
         continue
     try:
-        lines = text(f"https://developers.google.com/google-ads/api/fields/{version}/{res}")
+        raw = fetch(f"https://developers.google.com/google-ads/api/fields/{version}/{res}")
+        lines = text(raw)
     except urllib.error.HTTPError as e:
         print(res, "NOT FOUND", e.code)
         continue
@@ -42,6 +45,8 @@ for res in resources:
                         return block[j + 1] == "True"
                 return None
             fields[l] = {"selectable": flag("Selectable"), "filterable": flag("Filterable")}
-    data["resources"][res] = {"attributed": attributed, "fields": fields}
+    # Metrics and segments the page marks as usable when this resource is in the FROM clause ("Yes, it is").
+    from_ok = sorted(set(re.findall(r'#((?:metrics|segments)\.[a-z0-9_.]+)">[a-z0-9_.]+<!-- Yes, it is -->', raw)))
+    data["resources"][res] = {"attributed": attributed, "fields": fields, "from_metrics_segments": from_ok}
     print(res, len(attributed), "attributed,", len(fields), "fields", flush=True)
     json.dump(data, open(path, "w"), indent=0, sort_keys=True)  # saved after each resource

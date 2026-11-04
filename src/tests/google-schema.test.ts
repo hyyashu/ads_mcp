@@ -25,6 +25,7 @@ describe("Google Ads v26 schema checker", () => {
   it("checks which fields may be used with the FROM resource", () => {
     expect(checkGaql("SELECT ad_group.id, campaign.name, metrics.clicks FROM ad_group")).toEqual([]); // campaign is attributed to ad_group
     expect(checkGaql("SELECT campaign.id, ad_group.name FROM campaign")).toEqual(["ad_group.name cannot be used with FROM campaign"]);
+    expect(checkGaql("SELECT label.id, metrics.clicks FROM label")).toEqual(["metrics.clicks cannot be used with FROM label"]);
     expect(checkGaql("SELECT hotel_group_view.resource_name FROM hotel_group_view")).toEqual(["no GAQL rules recorded for hotel_group_view: run scripts/fetch-google-gaql-rules.py v26 hotel_group_view"]);
   });
 

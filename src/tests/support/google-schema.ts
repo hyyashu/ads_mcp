@@ -11,7 +11,7 @@ const index = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google
 export const SCHEMA_VERSION = index.version;
 /** Selection rules per FROM resource, from the v26 field reference pages (scripts/fetch-google-gaql-rules.py). */
 const rules = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google-ads-v26-gaql.json"), "utf8")) as {
-  resources: Record<string, { attributed: string[]; fields: Record<string, { selectable: boolean | null; filterable: boolean | null }> }>;
+  resources: Record<string, { attributed: string[]; fields: Record<string, { selectable: boolean | null; filterable: boolean | null }>; from_metrics_segments: string[] }>;
 };
 
 const camel = (s: string) => s.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
@@ -56,9 +56,12 @@ export function checkGaql(query: string): string[] {
     const select = /SELECT\s+(.*?)\s+FROM\s/is.exec(noStrings)?.[1] ?? "";
     const where = /\bWHERE\s+(.*?)(?:\s+ORDER BY\s|\s+LIMIT\s|$)/is.exec(noStrings)?.[1] ?? "";
     const fieldsIn = (part: string) => [...part.matchAll(/\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\b/g)].map((m) => m[1]!);
+    const metricsOk = new Set(r.from_metrics_segments);
     for (const f of [...fieldsIn(select), ...fieldsIn(where)]) {
       const owner = f.split(".")[0]!;
       if (!allowed.has(owner)) problems.push(`${f} cannot be used with FROM ${from}`);
+      // Only metrics and segments the field reference marks as usable with this FROM resource.
+      else if ((owner === "metrics" || owner === "segments") && !metricsOk.has(f)) problems.push(`${f} cannot be used with FROM ${from}`);
     }
     for (const f of fieldsIn(select)) if (r.fields[f]?.selectable === false) problems.push(`${f} is not selectable`);
     for (const f of fieldsIn(where)) if (r.fields[f]?.filterable === false) problems.push(`${f} is not filterable`);
