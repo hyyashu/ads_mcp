@@ -31,11 +31,18 @@ const base = {
 };
 
 interface Existing {
+  /** Only the live campaigns whose name matches the requested one (case-insensitively). */
   campaigns: { id: string; name: string }[];
 }
-async function readCampaignNames(ads: GoogleAdsClient): Promise<Existing> {
+/**
+ * Reads the campaigns that would clash with `name`. The result is the approval snapshot, so it holds only those: a snapshot of
+ * every campaign would make the approval fail as "account changed" whenever any unrelated campaign is added or renamed.
+ * GAQL has no case-insensitive comparison, so names are read and matched here.
+ */
+async function readNameClashes(ads: GoogleAdsClient, name: string): Promise<Existing> {
   const rows = await ads.query(new Gaql().select("campaign.id", "campaign.name").from("campaign").where("campaign.status != 'REMOVED'").orderBy("campaign.id"), { maxRows: 10_000 });
-  return { campaigns: rows.map((r) => ({ id: String(pick(r, "campaign.id")), name: str(r, "campaign.name") ?? "" })) };
+  const want = name.toLowerCase();
+  return { campaigns: rows.map((r) => ({ id: String(pick(r, "campaign.id")), name: str(r, "campaign.name") ?? "" })).filter((c) => c.name.toLowerCase() === want) };
 }
 const sameName = (s: Existing, name: string) => s.campaigns.find((c) => c.name.toLowerCase() === name.toLowerCase());
 
@@ -99,7 +106,7 @@ function createTool<I extends z.ZodObject>(o: { name: string; title: string; des
     description: o.description,
     input: o.input,
     output,
-    read: async (a, ads) => ({ ...(await readCampaignNames(ads)), ...(o.extraRead ? await o.extraRead(a, ads) : {}) }),
+    read: async (a, ads) => ({ ...(await readNameClashes(ads, (a as { name: string }).name)), ...(o.extraRead ? await o.extraRead(a, ads) : {}) }),
     build: (a, s, ads) => {
       const args = a as z.infer<I> & z.infer<z.ZodObject<typeof base>> & { bidding_strategy: string };
       if (sameName(s, args.name)) throw new ToolError("invalid_argument", `A campaign named "${args.name}" already exists.`);

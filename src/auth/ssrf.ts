@@ -72,6 +72,8 @@ export interface SafeFetchOptions {
   maxBytes?: number;
   /** Injectable for tests. Must return the addresses the name resolves to. */
   resolve?: (host: string) => Promise<string[]>;
+  /** Test seam only: replaces https.request (tests point it at a local plain-HTTP server). Never set in production. */
+  transport?: typeof request;
 }
 
 /**
@@ -82,16 +84,32 @@ export interface SafeFetchOptions {
 export async function safeFetchBytes(raw: string, opts: SafeFetchOptions & { accept: string; contentTypes: string[]; userAgent?: string }): Promise<{ bytes: Buffer; contentType: string }> {
   const url = assertSafeHttpsUrl(raw);
   const maxBytes = opts.maxBytes ?? 64 * 1024;
-  const resolve = opts.resolve ?? (async (h: string) => (await dnsLookup(h, { all: true })).map((a) => a.address));
-  return new Promise((resolve_, reject) => {
-    const req = request(
+  const resolveHost = opts.resolve ?? (async (h: string) => (await dnsLookup(h, { all: true })).map((a) => a.address));
+  const timeoutMs = opts.timeoutMs ?? 5000;
+  return new Promise((resolve_, reject_) => {
+    // One overall deadline for the whole exchange. The socket `timeout` below is only an idle timer: a server that sends a
+    // byte every few seconds, or one that closes the connection after the headers, would otherwise keep this pending forever.
+    let settled = false;
+    const finish = (fn: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(deadline);
+      fn();
+    };
+    const resolve = (v: { bytes: Buffer; contentType: string }) => finish(() => resolve_(v));
+    const reject = (e: unknown) => finish(() => reject_(e));
+    const deadline = setTimeout(() => {
+      reject(new UnsafeUrlError("timed out"));
+      req.destroy();
+    }, timeoutMs);
+    const req = (opts.transport ?? request)(
       url,
       {
         method: "GET",
         headers: { accept: opts.accept, "user-agent": opts.userAgent ?? "ads-mcp-fetcher" },
-        timeout: opts.timeoutMs ?? 5000,
+        timeout: timeoutMs,
         // Validate the address actually used for the connection.
-        lookup: safeLookup(resolve) as never,
+        lookup: safeLookup(resolveHost) as never,
       },
       (res) => {
         if (res.statusCode !== 200) {
@@ -108,15 +126,28 @@ export async function safeFetchBytes(raw: string, opts: SafeFetchOptions & { acc
         res.on("data", (c: Buffer) => {
           size += c.length;
           if (size > maxBytes) {
-            req.destroy(new UnsafeUrlError("document too large"));
+            // Reject first, then tear down without an error: destroy(err) emits that error where nothing listens (an uncaught
+            // exception), and if the body was already complete, "end" still fired and returned the truncated bytes as a success.
+            reject(new UnsafeUrlError("document too large"));
+            res.destroy();
+            req.destroy();
             return;
           }
           chunks.push(c);
         });
-        res.on("end", () => resolve_({ bytes: Buffer.concat(chunks), contentType: type }));
+        // A connection cut after the headers is reported on the response, not the request: without these the promise never settles.
+        res.on("error", reject);
+        res.on("aborted", () => reject(new UnsafeUrlError("connection closed before the document was complete")));
+        res.on("close", () => {
+          if (!res.complete) reject(new UnsafeUrlError("connection closed before the document was complete"));
+        });
+        res.on("end", () => resolve({ bytes: Buffer.concat(chunks), contentType: type }));
       },
     );
-    req.on("timeout", () => req.destroy(new UnsafeUrlError("timed out")));
+    req.on("timeout", () => {
+      reject(new UnsafeUrlError("timed out"));
+      req.destroy();
+    });
     req.on("error", reject);
     req.end();
   });
