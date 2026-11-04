@@ -7,7 +7,7 @@ import { type PipelineDeps, runTool } from "../mcp/pipeline";
 import { ToolRegistry, reconcile } from "../mcp/registry";
 import { GoogleAdsHttp } from "../platforms/google/http";
 import { Gaql, GaqlError, fromMicros, lit, pick } from "../platforms/google/gaql";
-import { createServicesFactory } from "../platforms/google/services";
+import { createServicesFactory } from "../platforms/services";
 import { googleTools } from "../platforms/google";
 import { ApprovalService } from "../security/approvals";
 import { RateLimiter } from "../security/rate-limit";

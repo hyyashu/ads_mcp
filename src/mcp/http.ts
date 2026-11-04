@@ -19,7 +19,8 @@ const json = (res: ServerResponse, status: number, body: unknown, headers: Recor
   res.end(JSON.stringify(body));
 };
 
-async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
+/** Reads a request body as text, refusing anything larger than `max` bytes. Shared by the MCP endpoint and the web routes. */
+export async function readText(req: IncomingMessage, max: number): Promise<string> {
   const chunks: Buffer[] = [];
   let size = 0;
   for await (const c of req) {
@@ -27,7 +28,11 @@ async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
     if (size > max) throw new ToolError("invalid_argument", "Request body too large.");
     chunks.push(c as Buffer);
   }
-  const text = Buffer.concat(chunks).toString("utf8");
+  return Buffer.concat(chunks).toString("utf8");
+}
+
+async function readBody(req: IncomingMessage, max: number): Promise<unknown> {
+  const text = await readText(req, max);
   return text ? JSON.parse(text) : undefined;
 }
 

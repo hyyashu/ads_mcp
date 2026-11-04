@@ -1,5 +1,6 @@
 import type { FetchLike } from "../../auth/token-providers";
 import { ToolError, redact } from "../../mcp/errors";
+import { type RetryOptions, sendWithRetry } from "../core/http-core";
 import { logger } from "../../obs/logger";
 
 /**
@@ -111,23 +112,15 @@ export function mapMetaError(status: number, body: MetaErrorBody, mutation: bool
 }
 
 export class MetaGraphHttp {
-  private f: FetchLike;
-  private sleep: (ms: number) => Promise<void>;
-  private random: () => number;
+  private retry: RetryOptions;
 
   constructor(private o: MetaHttpOptions) {
     if (!/^v\d+\.\d+$/.test(o.apiVersion)) throw new Error("META_API_VERSION must look like v26.0 and be set explicitly");
-    this.f = o.fetch ?? fetch;
-    this.sleep = o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms)));
-    this.random = o.random ?? Math.random;
+    this.retry = { fetch: o.fetch ?? fetch, sleep: o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), random: o.random ?? Math.random, timeoutMs: o.timeoutMs };
   }
 
   get apiVersion() {
     return this.o.apiVersion;
-  }
-
-  private backoff(attempt: number) {
-    return Math.floor(this.random() * 250 * 2 ** (attempt - 1));
   }
 
   async call<T = unknown>(c: MetaCall): Promise<T> {
@@ -135,40 +128,20 @@ export class MetaGraphHttp {
     const method = c.method ?? "GET";
     const params = new URLSearchParams({ ...(c.params ?? {}), appsecret_proof: c.appSecretProof });
     const base = `https://graph.facebook.com/${this.o.apiVersion}/${c.path}`;
-    const url = method === "GET" ? `${base}?${params}` : base;
     const headers: Record<string, string> = { authorization: `Bearer ${c.accessToken}` };
     if (method === "POST") headers["content-type"] = "application/x-www-form-urlencoded";
-    const attempts = c.idempotent ? 3 : 1;
-
-    for (let i = 1; ; i++) {
-      let res: Response;
-      try {
-        res = await this.f(url, { method, headers, body: method === "POST" ? params : undefined, signal: c.signal ?? AbortSignal.timeout(this.o.timeoutMs ?? 30_000) });
-      } catch {
-        if (c.idempotent && c.signal?.aborted) throw new ToolError("deadline_exceeded", "The Meta request was cancelled or ran past its time limit.");
-        if (!c.idempotent) throw new ToolError("unknown_outcome", "The connection failed while applying a change. It may or may not have been applied.");
-        if (i < attempts) {
-          await this.sleep(this.backoff(i));
-          continue;
-        }
-        throw new ToolError("transient", "Could not reach the Meta API.", { retryable: true });
-      }
-      const pct = usagePct(res.headers);
-      if (pct >= 80) logger.warn("meta.usage_high", { pct, path: c.path.split("/")[0]?.startsWith("act_") ? "ad_account" : "object" });
-      const text = await res.text();
-      let json: unknown;
-      try {
-        json = text ? JSON.parse(text) : undefined;
-      } catch {
-        /* non-JSON error page */
-      }
-      if (res.ok && !(json as MetaErrorBody | undefined)?.error) return json as T;
-      const err = mapMetaError(res.status, (json as MetaErrorBody) ?? {}, !c.idempotent, res.headers);
-      if (err.code === "transient" && c.idempotent && i < attempts) {
-        await this.sleep(this.backoff(i));
-        continue;
-      }
-      throw err;
-    }
+    return sendWithRetry<T>(this.retry, {
+      url: method === "GET" ? `${base}?${params}` : base,
+      init: { method, headers, body: method === "POST" ? params : undefined },
+      idempotent: c.idempotent,
+      signal: c.signal,
+      platform: "Meta",
+      isSuccess: (res, json) => res.ok && !(json as MetaErrorBody | undefined)?.error,
+      mapError: (res, json) => mapMetaError(res.status, (json as MetaErrorBody) ?? {}, !c.idempotent, res.headers),
+      onResponse: (res) => {
+        const pct = usagePct(res.headers);
+        if (pct >= 80) logger.warn("meta.usage_high", { pct, path: c.path.split("/")[0]?.startsWith("act_") ? "ad_account" : "object" });
+      },
+    });
   }
 }

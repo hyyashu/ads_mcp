@@ -5,7 +5,7 @@ import { loadInventory } from "../inventory";
 import { createExecutor, runTool, type PipelineDeps } from "../mcp/pipeline";
 import { ToolRegistry } from "../mcp/registry";
 import { allTools } from "../platforms";
-import { createServicesFactory } from "../platforms/google/services";
+import { createServicesFactory } from "../platforms/services";
 import { MetaAdsClient, currencyOffset, fromMinor, toMinor } from "../platforms/meta/client";
 import { MetaGraphHttp, mapMetaError, retryAfterFromHeaders } from "../platforms/meta/http";
 import { ApprovalService } from "../security/approvals";

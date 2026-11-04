@@ -9,7 +9,7 @@ import { MetaGraphHttp } from "./platforms/meta/http";
 import { YouTubeClient } from "./platforms/google/youtube";
 import { JobQueue } from "./jobs/queue";
 import { registerSystemJobs } from "./jobs/system";
-import { createServicesFactory } from "./platforms/google/services";
+import { createServicesFactory } from "./platforms/services";
 import { loadConfig } from "./config";
 import { createDb } from "./db";
 import { loadInventory, validateInventory } from "./inventory";

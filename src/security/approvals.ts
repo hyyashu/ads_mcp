@@ -10,7 +10,8 @@ import { audit } from "./audit";
 import { canonicalJson, hashArgs, sha256 } from "./canonical";
 
 type ApprovalRow = typeof approvalRequest.$inferSelect;
-export type WriteRisk = Exclude<Risk, "read">;
+export type { WriteRisk } from "../policy/risk";
+import type { WriteRisk } from "../policy/risk";
 
 export interface ApprovalOptions {
   now?: () => Date;

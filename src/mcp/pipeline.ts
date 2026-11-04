@@ -22,12 +22,12 @@ export interface PipelineDeps {
   approvals: ApprovalService;
   tenantLimiter: Limiter;
   accountLimiter: Limiter;
+  /** Overrides for the default deadlines (operator configuration; tests use short ones). */
+  timeouts?: Partial<{ call: number; execute: number; verify: number }>;
   /**
    * Builds the platform clients for one account (decrypts credentials server-side; handlers never see tokens).
    * `signal` aborts upstream requests when the call is cancelled or runs past its deadline.
    */
-  /** Overrides for the default deadlines (operator configuration; tests use short ones). */
-  timeouts?: Partial<{ call: number; execute: number; verify: number }>;
   createServices(o: { tenantId: string; account: { id: string; platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null }; signal?: AbortSignal }): Promise<unknown>;
 }
 
@@ -212,7 +212,9 @@ export function createExecutor(deps: PipelineDeps): Executor {
     const dl = withDeadline(new AbortController().signal, tool.timeoutMs ? Math.max(tool.timeoutMs, executeMs) : executeMs);
     // Platform clients count the changes they actually send. While that count is zero, any failure is a definite failure:
     // nothing reached the ad platform, so it must not be recorded as "unknown outcome" (which blocks re-requesting).
-    const nothingSent = () => (ctx?.services as { mutationsSent?: () => number } | undefined)?.mutationsSent?.() === 0;
+    // Before the context (and so the platform client) exists, nothing can have been sent either: stored arguments that no
+    // longer parse, or a database error while resolving the account, are definite failures.
+    const nothingSent = () => !ctx || (ctx.services as { mutationsSent?: () => number } | undefined)?.mutationsSent?.() === 0;
     try {
       const args = tool.input.parse(row.args) as Record<string, unknown>;
       ctx = await buildContext(deps, tool, args, { tenantId: row.tenantId, userId: row.requestedBy ?? row.decidedBy ?? "" }, dl.signal);
