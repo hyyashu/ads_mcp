@@ -19,6 +19,9 @@ export interface ResolvedAccount {
   externalId: string;
   loginCustomerId: string | null;
   access: "read" | "write";
+  /** Reporting units as the platform reports them. Null when not yet known (backfilled on first use). */
+  currencyCode: string | null;
+  timeZone: string | null;
 }
 
 /** What tenant-level tools (accountScope "none") receive as `ctx.services`. */

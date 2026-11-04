@@ -55,8 +55,8 @@ const fakeFetch: FetchLike = async (url, init) => {
     if (url.endsWith("customers:listAccessibleCustomers")) return J({ resourceNames: ["customers/111", "customers/222"] });
     const q = JSON.parse(call.body).query as string;
     const id = url.match(/customers\/(\d+)\//)![1];
-    if (q.includes("FROM customer LIMIT 1")) return J([{ results: [{ customer: { id, descriptiveName: id === "111" ? "Agency MCC" : "Solo Shop", manager: id === "111" } }] }]);
-    if (q.includes("FROM customer_client")) return J([{ results: [{ customerClient: { id: "333", descriptiveName: "Client Three", manager: false } }, { customerClient: { id: "444", descriptiveName: "Sub MCC", manager: true } }] }]);
+    if (q.includes("FROM customer LIMIT 1")) return J([{ results: [{ customer: { id, descriptiveName: id === "111" ? "Agency MCC" : "Solo Shop", manager: id === "111", currencyCode: "EUR", timeZone: "Europe/Berlin" } }] }]);
+    if (q.includes("FROM customer_client")) return J([{ results: [{ customerClient: { id: "333", descriptiveName: "Client Three", manager: false, currencyCode: "GBP", timeZone: "Europe/London" } }, { customerClient: { id: "444", descriptiveName: "Sub MCC", manager: true } }] }]);
   }
 
   // ---- Meta
@@ -67,7 +67,7 @@ const fakeFetch: FetchLike = async (url, init) => {
       return body.get("grant_type") === "fb_exchange_token" ? J({ access_token: "EAAlonglivedtokenvalue1234567890", expires_in: 5184000 }) : J({ access_token: "EAAshorttokenvalue1234567890" });
     }
     if (path === "debug_token") return J({ data: { is_valid: b.metaValid !== false, scopes: b.metaScopes ?? ["ads_read", "ads_management", "business_management"], user_id: "meta-user-1", expires_at: FUTURE } });
-    if (path === "me/adaccounts") return J({ data: [{ account_id: "1001", name: "Shop A", account_status: 1 }, { account_id: "1002", name: "Shop B", account_status: 1 }, { account_id: "1003", name: "Closed", account_status: 2 }] });
+    if (path === "me/adaccounts") return J({ data: [{ account_id: "1001", name: "Shop A", account_status: 1, currency: "INR", timezone_name: "Asia/Kolkata" }, { account_id: "1002", name: "Shop B", account_status: 1 }, { account_id: "1003", name: "Closed", account_status: 2 }] });
     if (path === "me/permissions") return b.revokeOk === false ? J({}, 400) : J({ success: true });
   }
   return J({ error: "unexpected request: " + url }, 500);
@@ -360,5 +360,46 @@ describe("token providers", () => {
     await expect(late.getToken(tenantId, r.connectionId)).rejects.toMatchObject({ code: "auth_expired" });
     expect((await db.select().from(schema.platformConnection).where(eq(schema.platformConnection.id, r.connectionId)))[0]!.status).toBe("needs_reauth");
     await expect(resolveAccount(db, tenantId, (await accountsOf(r.connectionId))[0]!.id, "meta_ads", false)).rejects.toMatchObject({ code: "auth_expired" });
+  });
+});
+
+describe("reporting units are stored at connect time", () => {
+  it("Google: each account keeps the currency and time zone Google reports for it (direct and manager-linked)", async () => {
+    const fresh = await seedTenant(db, "U1", "owner");
+    const who: Actor = { tenantId: fresh.tenant.id, userId: fresh.user.id, role: "owner" };
+    const r = await oauth.finish("google_ads", who, cb(stateFrom(await oauth.start("google_ads", who, "read"))));
+    const accs = (await accountsOf(r.connectionId)).sort((x, y) => x.externalId.localeCompare(y.externalId));
+    expect(accs.map((a) => [a.externalId, a.currencyCode, a.timeZone])).toEqual([
+      ["222", "EUR", "Europe/Berlin"],
+      ["333", "GBP", "Europe/London"], // from customer_client, not from the manager
+    ]);
+    const queries = calls.filter((c) => c.url.includes("searchStream")).map((c) => JSON.parse(c.body).query as string);
+    expect(queries.some((q) => q.includes("customer.currency_code") && q.includes("customer.time_zone"))).toBe(true);
+    expect(queries.some((q) => q.includes("customer_client.currency_code") && q.includes("customer_client.time_zone"))).toBe(true);
+  });
+
+  it("Meta: currency and timezone_name are requested and stored; an account that omits them stays null, not guessed", async () => {
+    const fresh = await seedTenant(db, "U2", "owner");
+    const who: Actor = { tenantId: fresh.tenant.id, userId: fresh.user.id, role: "owner" };
+    const r = await oauth.finish("meta_ads", who, cb(stateFrom(await oauth.start("meta_ads", who, "read"))));
+    const accs = (await accountsOf(r.connectionId)).sort((x, y) => x.externalId.localeCompare(y.externalId));
+    expect(accs.map((a) => [a.externalId, a.currencyCode, a.timeZone])).toEqual([
+      ["act_1001", "INR", "Asia/Kolkata"],
+      ["act_1002", null, null],
+    ]);
+    const list = calls.find((c) => c.url.includes("me/adaccounts"))!;
+    expect(new URL(list.url).searchParams.get("fields")).toBe("account_id,name,account_status,currency,timezone_name");
+  });
+
+  it("reconnecting refreshes units, but a value missing from the new response keeps what was stored", async () => {
+    const fresh = await seedTenant(db, "U3", "owner");
+    const who: Actor = { tenantId: fresh.tenant.id, userId: fresh.user.id, role: "owner" };
+    const first = await oauth.finish("meta_ads", who, cb(stateFrom(await oauth.start("meta_ads", who, "read"))));
+    const [b2] = (await accountsOf(first.connectionId)).filter((a) => a.externalId === "act_1002");
+    await db.update(schema.connectedAccount).set({ currencyCode: "CAD", timeZone: "America/Toronto" }).where(eq(schema.connectedAccount.id, b2!.id));
+    const again = await oauth.finish("meta_ads", who, cb(stateFrom(await oauth.start("meta_ads", who, "read"))));
+    const accs = await accountsOf(again.connectionId);
+    expect(accs.find((a) => a.externalId === "act_1001")).toMatchObject({ currencyCode: "INR", timeZone: "Asia/Kolkata" });
+    expect(accs.find((a) => a.externalId === "act_1002")).toMatchObject({ currencyCode: "CAD", timeZone: "America/Toronto" });
   });
 });

@@ -41,11 +41,20 @@ export async function addUser(db: Db, tenantId: string, label: string, role: "ow
   return user!;
 }
 
-export async function seedAccount(db: Db, tenantId: string, platform: "google_ads" | "meta_ads", access: "read" | "write" = "write", status = "active", externalId?: string) {
+/** Units default to known values so ordinary tests issue no backfill query; pass `units: null` to leave them unknown. */
+export async function seedAccount(
+  db: Db,
+  tenantId: string,
+  platform: "google_ads" | "meta_ads",
+  access: "read" | "write" = "write",
+  status = "active",
+  externalId?: string,
+  units: { currencyCode: string | null; timeZone: string | null } | null = { currencyCode: "USD", timeZone: "America/New_York" },
+) {
   const [conn] = await db.insert(schema.platformConnection).values({ tenantId, platform, credentialsEnc: "test-not-real", status }).returning();
   const [acc] = await db
     .insert(schema.connectedAccount)
-    .values({ tenantId, connectionId: conn!.id, platform, externalId: externalId ?? (platform === "google_ads" ? "1234567890" : "act_987"), access, loginCustomerId: platform === "google_ads" ? "5550001111" : null })
+    .values({ tenantId, connectionId: conn!.id, platform, externalId: externalId ?? (platform === "google_ads" ? "1234567890" : "act_987"), access, loginCustomerId: platform === "google_ads" ? "5550001111" : null, currencyCode: units?.currencyCode ?? null, timeZone: units?.timeZone ?? null })
     .returning();
   return acc!;
 }

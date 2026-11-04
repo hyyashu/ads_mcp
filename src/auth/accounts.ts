@@ -23,6 +23,8 @@ export async function resolveAccount(
       externalId: connectedAccount.externalId,
       loginCustomerId: connectedAccount.loginCustomerId,
       access: connectedAccount.access,
+      currencyCode: connectedAccount.currencyCode,
+      timeZone: connectedAccount.timeZone,
       connectionId: connectedAccount.connectionId,
       connStatus: platformConnection.status,
     })
@@ -37,5 +39,5 @@ export async function resolveAccount(
   if (needWrite && row.access !== "write") {
     throw new ToolError("permission_denied", "This account is connected read-only. Reconnect it with write access to make changes.");
   }
-  return { id: row.id, platform, externalId: row.externalId, loginCustomerId: row.loginCustomerId, access: row.access as "read" | "write", connectionId: row.connectionId };
+  return { id: row.id, platform, externalId: row.externalId, loginCustomerId: row.loginCustomerId, access: row.access as "read" | "write", currencyCode: row.currencyCode, timeZone: row.timeZone, connectionId: row.connectionId };
 }

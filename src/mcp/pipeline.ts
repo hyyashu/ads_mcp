@@ -1,7 +1,9 @@
 import type { z } from "zod";
 import { resolveAccount } from "../auth/accounts";
+import { and, eq } from "drizzle-orm";
 import type { AuthContext } from "../auth/context";
 import type { Db } from "../db";
+import { connectedAccount } from "../db/schema";
 import { recordExecution, type ExecutionOutcome } from "../obs/executions";
 import { logger } from "../obs/logger";
 import { audit, recordUsage } from "../security/audit";
@@ -11,7 +13,7 @@ import type { Limiter } from "../security/rate-limit";
 import { type Envelope, approvalEnvelope, errorEnvelope, okEnvelope } from "./envelope";
 import { ToolError, toToolError } from "./errors";
 import type { ToolRegistry } from "./registry";
-import { type AnyTool, type ToolContext, type VerifyResult, riskOf } from "./tool";
+import { type AnyTool, type ResolvedAccount, type ToolContext, type VerifyResult, riskOf } from "./tool";
 
 export interface PipelineDeps {
   db: Db;
@@ -66,8 +68,35 @@ async function buildContext(deps: PipelineDeps, tool: AnyTool, args: Record<stri
   const lim = await deps.accountLimiter.take(`${auth.tenantId}:${account.id}`);
   if (!lim.ok) throw new ToolError("quota_exceeded", "Too many requests for this ad account. Slow down and retry.", { retryAfterSeconds: lim.retryAfterSeconds });
   const services = await deps.createServices({ tenantId: auth.tenantId, account, signal });
+  if (account.currencyCode === null || account.timeZone === null) await backfillUnits(deps.db, auth.tenantId, account, services);
   return { tenantId: auth.tenantId, userId: auth.userId, account, services, signal };
 }
+
+/**
+ * Accounts connected before reporting units were stored (or whose platform did not report them at connect time)
+ * get them read once from the platform. Best effort: a failure here never fails the call, the units stay null.
+ */
+async function backfillUnits(db: Db, tenantId: string, account: ResolvedAccount, services: unknown): Promise<void> {
+  const describe = (services as { describeAccount?: () => Promise<{ currencyCode: string | null; timeZone: string | null }> } | null)?.describeAccount;
+  if (typeof describe !== "function") return;
+  try {
+    const u = await describe();
+    const currencyCode = account.currencyCode ?? u.currencyCode;
+    const timeZone = account.timeZone ?? u.timeZone;
+    if (currencyCode === account.currencyCode && timeZone === account.timeZone) return;
+    account.currencyCode = currencyCode;
+    account.timeZone = timeZone;
+    await db
+      .update(connectedAccount)
+      .set({ currencyCode, timeZone })
+      .where(and(eq(connectedAccount.id, account.id), eq(connectedAccount.tenantId, tenantId)));
+  } catch (e) {
+    logger.warn("account.units_backfill_failed", { accountId: account.id, code: toToolError(e).code });
+  }
+}
+
+/** The units block of the response envelope, for account-scoped tools. */
+const unitsOf = (a: ResolvedAccount) => ({ id: a.id, currency_code: a.currencyCode, time_zone: a.timeZone });
 
 /**
  * The single path every MCP tool call takes. Never throws: failures come back as structured error envelopes.
@@ -78,6 +107,7 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
   let outcome: ExecutionOutcome = "error";
   let errorCode: string | null = null;
   let accountId: string | null = null;
+  let resolved: ResolvedAccount | null = null;
   let env: Envelope;
   const dl = withDeadline(signal, tool.timeoutMs ?? deps.timeouts?.call ?? DEFAULT_TIMEOUT_MS.call);
   try {
@@ -94,6 +124,7 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
     // 4-5. resolve the authorized account, then run the read-only part under the deadline
     const ctx = await raceAbort(buildContext(deps, tool, args, auth, dl.signal), dl.signal, dl.timedOut);
     accountId = ctx.account?.id ?? null;
+    resolved = ctx.account;
 
     if (tool.kind === "read") {
       const raw = await raceAbort(Promise.resolve(tool.handler(args, ctx)), dl.signal, dl.timedOut);
@@ -144,6 +175,7 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
     env = errorEnvelope(err, tool.platform);
   }
   if (requestId) env.meta.request_id = requestId;
+  if (resolved) env.meta.account = unitsOf(resolved);
   const durationMs = performance.now() - started;
   // Counters and execution records: a failure to record must never fail the call.
   recordUsage(deps.db, auth.tenantId, tool.name, outcome === "error").catch(() => {});

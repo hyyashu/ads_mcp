@@ -9,6 +9,14 @@ export interface GoogleServices {
   ads: GoogleAdsClient;
   /** Changes attempted so far through this account's client. Zero means nothing has reached Google Ads. */
   mutationsSent(): number;
+  /** Reads the account's reporting units live. Used once to backfill accounts connected before units were stored. */
+  describeAccount(): Promise<AccountUnits>;
+}
+
+/** Reporting units of an ad account, as the platform reports them. Null when the platform did not say. */
+export interface AccountUnits {
+  currencyCode: string | null;
+  timeZone: string | null;
 }
 
 export interface ServiceFactoryDeps {
@@ -29,7 +37,12 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         getAccessToken: () => tokens.getAccessToken(o.tenantId, o.account.connectionId),
         signal: o.signal, // cancellation and deadlines reach the upstream requests
       });
-      return { ads, mutationsSent: () => ads.mutationsSent } satisfies GoogleServices;
+      const describeAccount = async (): Promise<AccountUnits> => {
+        const [row] = await ads.query("SELECT customer.currency_code, customer.time_zone FROM customer LIMIT 1", { maxRows: 1 });
+        const c = row?.customer as { currencyCode?: string; timeZone?: string } | undefined;
+        return { currencyCode: c?.currencyCode ?? null, timeZone: c?.timeZone ?? null };
+      };
+      return { ads, mutationsSent: () => ads.mutationsSent, describeAccount } satisfies GoogleServices;
     }
     throw new ToolError("unsupported", `Platform ${o.account.platform} is not available yet.`);
   };

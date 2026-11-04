@@ -1,5 +1,5 @@
 import { createHash, createHmac, randomBytes, randomUUID } from "node:crypto";
-import { and, eq, gt, isNull } from "drizzle-orm";
+import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { connectedAccount, platformConnection, platformOauthState } from "../db/schema";
 import { ToolError } from "../mcp/errors";
@@ -26,6 +26,8 @@ export type Access = "read" | "write";
 export type PlatformKey = "google_ads" | "meta_ads";
 const STATE_TTL_MS = 10 * 60_000;
 const MAX_ACCOUNTS = 500;
+/** Meta ad account fields read at connect time. `currency` and `timezone_name` are the reporting units of every insight. */
+const META_ACCOUNT_FIELDS = "account_id,name,account_status,currency,timezone_name";
 
 export interface PlatformOAuthConfig {
   publicUrl: string;
@@ -202,15 +204,15 @@ export class PlatformOAuth {
   private async discoverGoogleAccounts(http: GoogleAdsHttp, accessToken: string) {
     const list = await http.call<{ resourceNames?: string[] }>({ accessToken, path: "customers:listAccessibleCustomers", method: "GET", idempotent: true });
     const roots = (list.resourceNames ?? []).map((r) => r.replace("customers/", ""));
-    const out = new Map<string, { externalId: string; displayName: string; loginCustomerId: string | null }>();
+    const out = new Map<string, { externalId: string; displayName: string; loginCustomerId: string | null; currencyCode: string | null; timeZone: string | null }>();
     let skipped = 0;
 
     for (const id of roots) {
       try {
-        const rows = await this.gaql(http, accessToken, id, null, "SELECT customer.id, customer.descriptive_name, customer.manager FROM customer LIMIT 1");
-        const me = rows[0]?.customer as { descriptiveName?: string; manager?: boolean } | undefined;
+        const rows = await this.gaql(http, accessToken, id, null, "SELECT customer.id, customer.descriptive_name, customer.manager, customer.currency_code, customer.time_zone FROM customer LIMIT 1");
+        const me = rows[0]?.customer as { descriptiveName?: string; manager?: boolean; currencyCode?: string; timeZone?: string } | undefined;
         if (!me?.manager) {
-          out.set(id, { externalId: id, displayName: me?.descriptiveName ?? "", loginCustomerId: null });
+          out.set(id, { externalId: id, displayName: me?.descriptiveName ?? "", loginCustomerId: null, currencyCode: me?.currencyCode ?? null, timeZone: me?.timeZone ?? null });
           continue;
         }
         const kids = await this.gaql(
@@ -218,11 +220,13 @@ export class PlatformOAuth {
           accessToken,
           id,
           id,
-          "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager FROM customer_client WHERE customer_client.level > 0 AND customer_client.status = 'ENABLED' AND customer_client.hidden = FALSE",
+          "SELECT customer_client.id, customer_client.descriptive_name, customer_client.manager, customer_client.currency_code, customer_client.time_zone FROM customer_client WHERE customer_client.level > 0 AND customer_client.status = 'ENABLED' AND customer_client.hidden = FALSE",
         );
         for (const k of kids) {
-          const c = k.customerClient as { id?: string; descriptiveName?: string; manager?: boolean };
-          if (c?.id && !c.manager && !out.has(c.id)) out.set(c.id, { externalId: c.id, displayName: c.descriptiveName ?? "", loginCustomerId: id });
+          const c = k.customerClient as { id?: string; descriptiveName?: string; manager?: boolean; currencyCode?: string; timeZone?: string };
+          if (c?.id && !c.manager && !out.has(c.id)) {
+            out.set(c.id, { externalId: c.id, displayName: c.descriptiveName ?? "", loginCustomerId: id, currencyCode: c.currencyCode ?? null, timeZone: c.timeZone ?? null });
+          }
         }
       } catch {
         skipped++; // cancelled/suspended/no-access accounts are skipped, not fatal
@@ -267,20 +271,22 @@ export class PlatformOAuth {
     if (!(info.scopes ?? []).includes("ads_read")) throw new ToolError("permission_denied", "The ads_read permission was not granted.");
     if (access === "write" && !(info.scopes ?? []).includes("ads_management")) throw new ToolError("permission_denied", "Write access needs the ads_management permission, which was not granted.");
 
-    const accounts: { externalId: string; displayName: string; loginCustomerId: null }[] = [];
+    const accounts: { externalId: string; displayName: string; loginCustomerId: null; currencyCode: string | null; timeZone: string | null }[] = [];
     let skipped = 0;
     let next: string | null = "me/adaccounts";
-    let params: Record<string, string> = { fields: "account_id,name,account_status", limit: "100" };
+    let params: Record<string, string> = { fields: META_ACCOUNT_FIELDS, limit: "100" };
     while (next && accounts.length < MAX_ACCOUNTS) {
       const page = await get(next, params);
       if (!page.ok) throw new ToolError("permission_denied", "Meta would not list your ad accounts.");
-      for (const a of (page.body.data ?? []) as { account_id: string; name?: string; account_status?: number }[]) {
-        if (a.account_status === 1) accounts.push({ externalId: `act_${a.account_id}`, displayName: a.name ?? "", loginCustomerId: null });
+      for (const a of (page.body.data ?? []) as { account_id: string; name?: string; account_status?: number; currency?: string; timezone_name?: string }[]) {
+        if (a.account_status === 1) {
+          accounts.push({ externalId: `act_${a.account_id}`, displayName: a.name ?? "", loginCustomerId: null, currencyCode: a.currency ?? null, timeZone: a.timezone_name ?? null });
+        }
         else skipped++; // disabled / unsettled / closed accounts
       }
       const after = page.body.paging?.cursors?.after as string | undefined;
       next = page.body.paging?.next && after ? "me/adaccounts" : null;
-      params = { fields: "account_id,name,account_status", limit: "100", ...(after ? { after } : {}) };
+      params = { fields: META_ACCOUNT_FIELDS, limit: "100", ...(after ? { after } : {}) };
     }
 
     const connectionId = randomUUID();
@@ -303,15 +309,22 @@ export class PlatformOAuth {
   }
 
   // ------------------------------------------------------------------ shared ----
-  private async saveAccounts(tenantId: string, connectionId: string, platform: PlatformKey, access: Access, accounts: { externalId: string; displayName: string; loginCustomerId: string | null }[]) {
+  private async saveAccounts(tenantId: string, connectionId: string, platform: PlatformKey, access: Access, accounts: { externalId: string; displayName: string; loginCustomerId: string | null; currencyCode: string | null; timeZone: string | null }[]) {
     for (const a of accounts) {
       // Reconnecting an account re-points it at the new connection but never silently widens its access level.
       await this.db
         .insert(connectedAccount)
-        .values({ tenantId, connectionId, platform, externalId: a.externalId, displayName: a.displayName, loginCustomerId: a.loginCustomerId, access })
+        .values({ tenantId, connectionId, platform, externalId: a.externalId, displayName: a.displayName, loginCustomerId: a.loginCustomerId, access, currencyCode: a.currencyCode, timeZone: a.timeZone })
         .onConflictDoUpdate({
           target: [connectedAccount.tenantId, connectedAccount.platform, connectedAccount.externalId],
-          set: { connectionId, displayName: a.displayName, loginCustomerId: a.loginCustomerId },
+          // Units refresh on reconnect; a value the platform did not report this time keeps what we had.
+          set: {
+            connectionId,
+            displayName: a.displayName,
+            loginCustomerId: a.loginCustomerId,
+            currencyCode: sql`coalesce(excluded.currency_code, ${connectedAccount.currencyCode})`,
+            timeZone: sql`coalesce(excluded.time_zone, ${connectedAccount.timeZone})`,
+          },
         });
     }
   }

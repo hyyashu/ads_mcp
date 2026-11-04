@@ -87,6 +87,10 @@ export const connectedAccount = pgTable(
     /** Google: the manager (MCC) account to send as login-customer-id. Per account, never global. */
     loginCustomerId: text("login_customer_id"),
     access: text("access").notNull().default("read"), // read | write
+    /** ISO 4217 code the platform reports money in (Google customer.currency_code, Meta account currency). Null until known. */
+    currencyCode: text("currency_code"),
+    /** IANA time zone the platform uses for dates and named periods (Google customer.time_zone, Meta timezone_name). */
+    timeZone: text("time_zone"),
     createdAt: created(),
   },
   (t) => [uniqueIndex("account_uq").on(t.tenantId, t.platform, t.externalId), index("account_tenant_idx").on(t.tenantId)],

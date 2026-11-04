@@ -114,6 +114,17 @@ export function pick(row: Record<string, unknown>, field: string): unknown {
   return cur;
 }
 
+/*
+ * Zero, missing and unavailable (M2 output convention):
+ * - Counter metrics (impressions, clicks, cost_micros, conversions, ...) absent from a row are 0. Google Ads JSON is proto3,
+ *   which omits fields at their default value, so an absent counter on a returned row means zero activity
+ *   [inferred from proto3 JSON mapping; not stated for each metric in the Google Ads docs]. num() and fromMicros() do this.
+ * - Attributes (names, statuses, bids, quality scores) absent from a row are null: unknown, never 0. Use str() or an
+ *   explicit undefined check, not num().
+ * - Derived ratios with a zero denominator (CTR without impressions, CPA without conversions) are null, via ratio().
+ * - A row that does not exist at all (an entity with no activity in the period) is not reported, rather than reported as 0.
+ */
+
 /** Micros (1/1,000,000 of a currency unit) to units. Google returns 64-bit integers as strings in JSON. */
 export const fromMicros = (v: unknown): number => (v === undefined || v === null ? 0 : Number(v) / 1_000_000);
 export const num = (v: unknown): number => (v === undefined || v === null || v === "" ? 0 : Number(v));

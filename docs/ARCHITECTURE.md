@@ -268,7 +268,15 @@ stuck-row sweep and enters the same path.
 Each milestone is one reviewable branch with tests.
 
 1. **M1 Execution envelope**: request ids, structured redacting logger, per-tool deadlines, cancellation reaching the upstream client, jittered backoff, execution records. *(in progress)*
-2. **M2 Reporting units**: store and return currency and time zone; distinguish zero, missing and unavailable in outputs.
+2. **M2 Reporting units** (done): store and return currency and time zone; distinguish zero, missing and unavailable in outputs.
+   - `connected_account.currency_code` / `time_zone` (migration 0005), filled at connect time from Google
+     `customer[_client].currency_code` / `time_zone` and Meta `currency` / `timezone_name`; refreshed on reconnect
+     without erasing a value the platform omitted.
+   - Accounts connected earlier are backfilled once on first use (`SELECT customer.currency_code, customer.time_zone FROM customer`);
+     a failed backfill never fails the call and leaves the units null.
+   - Every account-scoped response carries `meta.account = {id, currency_code, time_zone}`; tenant-level tools carry none.
+   - Output convention, documented in `platforms/google/gaql.ts`: absent counter metric = 0 (proto3 omits defaults;
+     inferred, not verified per metric), absent attribute = null, ratio with zero denominator = null.
 3. **M3 Change sets and policy**: structured change set, direction-aware risk, tenant automation rules (off by default).
 4. **M4 Catalog exposure**: per-caller `tools/list` filtering by connection and scope; tenant bundles.
 5. **M5 Adapter contract and Meta core**: extract the adapter interface from Google; Meta transport, error mapping, first read tools, each endpoint checked against the official reference first.

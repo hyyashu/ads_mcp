@@ -25,6 +25,18 @@ export const MetaSchema = z.object({
   /** Correlates this response with server logs and execution records. Quote it when reporting a problem. */
   request_id: z.string().optional(),
   api_version: z.string().optional(),
+  /** Reporting units of the account this call used. Absent for tools that use no ad account. */
+  account: z
+    .object({
+      id: z.string(),
+      currency_code: z.string().nullable(),
+      time_zone: z.string().nullable(),
+    })
+    .describe(
+      "Reporting units of the ad account used. Money values in data are in currency_code (already converted from micros or minor units); " +
+        "dates and named periods such as LAST_7_DAYS are in time_zone. null means the platform has not reported it yet.",
+    )
+    .optional(),
 });
 
 /**
