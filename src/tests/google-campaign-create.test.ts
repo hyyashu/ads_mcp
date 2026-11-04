@@ -89,4 +89,17 @@ describe("campaign creation", () => {
     expect((await approve(r.approval!.approval_id)).status).toBe("unknown_outcome");
     expect(kit.deps.registry.get("create_youtube_campaign")).toBeUndefined();
   });
+
+  it("the approval snapshot holds only same-name campaigns: unrelated campaign changes do not block it, a new clash does", async () => {
+    const r = await run("create_search_campaign", { ...common, name: "Generic", bidding_strategy: "MANUAL_CPC" });
+    camps.push({ id: "12", name: "Unrelated", status: "ENABLED" });
+    camps[0]!.name = "Brand renamed";
+    expect((await approve(r.approval!.approval_id)).status).toBe("executed");
+
+    const r2 = await run("create_search_campaign", { ...common, name: "Second", bidding_strategy: "MANUAL_CPC" });
+    camps.push({ id: "13", name: "SECOND", status: "ENABLED" }); // a case-insensitive clash created after the request
+    const done = await approve(r2.approval!.approval_id);
+    expect(done.status).toBe("failed");
+    expect(mutates).toHaveLength(1);
+  });
 });
