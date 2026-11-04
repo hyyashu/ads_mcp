@@ -1,3 +1,4 @@
+import { moneyChange, statusChange } from "../../../policy/change-set";
 import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
@@ -164,7 +165,7 @@ export const updateKeyword = googleWrite({
   name: "update_keyword",
   title: "Update keyword",
   risk: "write",
-  description: "Pauses or enables a keyword and/or changes its max CPC bid, after approval. Keyword text and match type are immutable in Google Ads: to change them, remove the keyword and add a new one. Confirmed by re-reading the keyword.",
+  description: "Pauses or enables a keyword and/or changes its max CPC bid, after approval. Enabling it or raising the bid needs a second approver. Keyword text and match type are immutable in Google Ads: to change them, remove the keyword and add a new one. Confirmed by re-reading the keyword.",
   input: z.object({ account_id: accountId, ad_group_id: id, criterion_id: id, status: z.enum(["ENABLED", "PAUSED"]).optional(), cpc_bid: z.number().positive().max(10_000).optional() }).refine((v) => v.status !== undefined || v.cpc_bid !== undefined, "give status and/or cpc_bid"),
   output: z.object({ criterion_id: z.string(), text: z.string(), match_type: z.string(), status: z.string(), cpc_bid: Money.nullable() }),
   plan: async (a, ctx) => {
@@ -176,7 +177,12 @@ export const updateKeyword = googleWrite({
     if (a.status !== undefined && a.status !== c.status) parts.push(`status ${c.status} -> ${a.status}`);
     if (a.cpc_bid !== undefined && toMicros(a.cpc_bid) !== c.cpcMicros) parts.push(`max CPC ${c.cpcMicros === null ? "unset" : c.cpcMicros / 1e6} -> ${a.cpc_bid}`);
     if (!parts.length) throw new ToolError("invalid_argument", "Nothing would change.");
-    return { summary: `Keyword "${c.text}" [${c.matchType}] in ad group ${a.ad_group_id}: ${parts.join("; ")}`, snapshot: { status: c.status, cpc: c.cpcMicros } };
+    const ref = { resource: "keyword", id: `${a.ad_group_id}~${a.criterion_id}`, name: c.text };
+    const changes = [
+      ...(a.status !== undefined && a.status !== c.status ? [statusChange(ref, c.status, a.status)] : []),
+      ...(a.cpc_bid !== undefined && toMicros(a.cpc_bid) !== c.cpcMicros ? [moneyChange(ref, "cpc_bid", c.cpcMicros, toMicros(a.cpc_bid))] : []),
+    ];
+    return { summary: `Keyword "${c.text}" [${c.matchType}] in ad group ${a.ad_group_id}: ${parts.join("; ")}`, snapshot: { status: c.status, cpc: c.cpcMicros }, changes };
   },
   verify: async (a, ctx, run) => {
     const c = (await listCriteria(ctx.services.ads, { level: "ad_group", id: a.ad_group_id, negative: false }, [a.criterion_id])).find((x) => x.id === a.criterion_id);
@@ -221,7 +227,7 @@ export const bulkUpdateKeywordStatus = googleWrite({
   name: "bulk_update_keyword_status",
   title: "Pause or enable keywords in bulk",
   risk: "high_impact",
-  description: "Pauses or enables several keywords in one ad group after approval from a second person. Keywords already in the requested status are left alone. Enabling can start spend. Applied in one atomic request and confirmed by re-reading.",
+  description: "Pauses or enables several keywords in one ad group after approval. Enabling keywords, or changing more than 20, needs a second approver. Keywords already in the requested status are left alone. Enabling can start spend. Applied in one atomic request and confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: id, criterion_ids: z.array(id).min(1).max(50), status: z.enum(["ENABLED", "PAUSED"]) }),
   output: z.object({ updated: z.number(), criterion_ids: z.array(z.string()), status: z.string() }),
   plan: async (a, ctx) => {
@@ -233,7 +239,7 @@ export const bulkUpdateKeywordStatus = googleWrite({
     if (missing.length) throw new ToolError("invalid_argument", `Not found in this ad group (or not a keyword): ${missing.slice(0, 10).join(", ")}`);
     const changing = ids.filter((i) => have.get(i)!.status !== a.status);
     if (!changing.length) throw new ToolError("invalid_argument", `All of these keywords are already ${a.status.toLowerCase()}.`);
-    return { summary: `Set ${changing.length} keyword(s) in ad group ${a.ad_group_id} to ${a.status}${changing.length < ids.length ? ` (${ids.length - changing.length} already ${a.status.toLowerCase()})` : ""}: ${changing.slice(0, 10).map((i) => have.get(i)!.text).join(", ")}${changing.length > 10 ? ", …" : ""}`, snapshot: { changing } };
+    return { summary: `Set ${changing.length} keyword(s) in ad group ${a.ad_group_id} to ${a.status}${changing.length < ids.length ? ` (${ids.length - changing.length} already ${a.status.toLowerCase()})` : ""}: ${changing.slice(0, 10).map((i) => have.get(i)!.text).join(", ")}${changing.length > 10 ? ", …" : ""}`, snapshot: { changing }, changes: changing.map((i) => statusChange({ resource: "keyword", id: `${a.ad_group_id}~${i}`, name: have.get(i)!.text }, have.get(i)!.status, a.status)) };
   },
   verify: async (a, ctx, run) => {
     const { changing } = run.snapshot as { changing: string[] };

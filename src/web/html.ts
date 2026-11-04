@@ -12,7 +12,7 @@ export const SECURITY_HEADERS: Record<string, string> = {
 };
 
 const CSS = `body{font:15px/1.5 system-ui,sans-serif;max-width:640px;margin:40px auto;padding:0 16px;color:#16202a}
-h1{font-size:20px}h2{font-size:16px;margin-top:28px}.card{border:1px solid #d6dde4;border-radius:8px;padding:14px 16px;margin:12px 0}
+h1{font-size:20px}h2{font-size:16px;margin-top:28px}.card{border:1px solid #d6dde4;border-radius:8px;padding:14px 16px;margin:12px 0}table.changes{border-collapse:collapse;font-size:13px;margin:8px 0;display:block;overflow-x:auto}table.changes th,table.changes td{border-bottom:1px solid #e3e8ed;padding:4px 8px;text-align:left}
 button{font:inherit;padding:7px 14px;border-radius:6px;border:1px solid #9aa7b4;background:#fff;cursor:pointer}
 button.primary{background:#1f4fd8;color:#fff;border-color:#1f4fd8}button.danger{color:#b3261e;border-color:#b3261e}
 input{font:inherit;padding:7px 9px;border:1px solid #9aa7b4;border-radius:6px;width:100%;box-sizing:border-box;margin:4px 0 12px}

@@ -1,3 +1,4 @@
+import { statusChange } from "../../../policy/change-set";
 import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
@@ -60,7 +61,7 @@ function statusTool(name: string, title: string, to: "ENABLED" | "PAUSED", risk:
     plan: async (a, ctx) => {
       const [ad] = await requireLive(ctx.services.ads, [a]);
       if (ad!.status === to) throw new ToolError("invalid_argument", `The ad is already ${to.toLowerCase()}.`);
-      return { summary: `${verb} ad ${a.ad_id} in ad group ${a.ad_group_id}: ${ad!.status} -> ${to}${to === "ENABLED" ? policyNote(ad!) : ""}`, snapshot: { status: ad!.status } };
+      return { summary: `${verb} ad ${a.ad_id} in ad group ${a.ad_group_id}: ${ad!.status} -> ${to}${to === "ENABLED" ? policyNote(ad!) : ""}`, snapshot: { status: ad!.status }, changes: [statusChange({ resource: "ad", id: adKey(a.ad_group_id, a.ad_id) }, ad!.status, to)] };
     },
     verify: async (a, ctx, run) => {
       const cur = (await readAds(ctx.services.ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
@@ -93,7 +94,7 @@ export const removeAd = googleWrite({
   output: z.object({ ad_group_id: z.string(), ad_id: z.string(), removed: z.literal(true) }),
   plan: async (a, ctx) => {
     const [ad] = await requireLive(ctx.services.ads, [a]);
-    return { summary: `Permanently remove ad ${a.ad_id} from ad group ${a.ad_group_id} (currently ${ad!.status}). This cannot be undone.`, snapshot: { status: ad!.status } };
+    return { summary: `Permanently remove ad ${a.ad_id} from ad group ${a.ad_group_id} (currently ${ad!.status}). This cannot be undone.`, snapshot: { status: ad!.status }, changes: [statusChange({ resource: "ad", id: adKey(a.ad_group_id, a.ad_id) }, ad!.status, "REMOVED")] };
   },
   verify: async (a, ctx, run) => {
     const cur = (await readAds(ctx.services.ads, [a])).get(adKey(a.ad_group_id, a.ad_id));
@@ -115,7 +116,7 @@ export const bulkUpdateAdStatus = googleWrite({
   name: "bulk_update_ad_status",
   title: "Pause or enable ads in bulk",
   risk: "high_impact",
-  description: "Pauses or enables several ads (each identified by ad group id and ad id) after approval from a second person. Ads already in the requested status are left alone. Enabling can start spend. Applied in one atomic request and confirmed by re-reading.",
+  description: "Pauses or enables several ads (each identified by ad group id and ad id) after approval. Enabling ads, or changing more than 20, needs a second approver. Ads already in the requested status are left alone. Enabling can start spend. Applied in one atomic request and confirmed by re-reading.",
   input: z.object({ account_id: accountId, ads: z.array(adRef).min(1).max(50), status: z.enum(["ENABLED", "PAUSED"]) }),
   output: z.object({ updated: z.number(), ads: z.array(adRef), status: z.string() }),
   plan: async (a, ctx) => {
@@ -124,7 +125,7 @@ export const bulkUpdateAdStatus = googleWrite({
     const changing = live.filter((x) => x.status !== a.status);
     if (!changing.length) throw new ToolError("invalid_argument", `All of these ads are already ${a.status.toLowerCase()}.`);
     const warn = a.status === "ENABLED" ? changing.filter((x) => x.approval && x.approval !== "APPROVED").length : 0;
-    return { summary: `Set ${changing.length} ad(s) to ${a.status}${changing.length < pairs.length ? ` (${pairs.length - changing.length} already ${a.status.toLowerCase()})` : ""}: ${changing.slice(0, 10).map((x) => adKey(x.adGroupId, x.adId)).join(", ")}${changing.length > 10 ? ", …" : ""}${warn ? `. ${warn} of them are not policy-approved and will not serve until approved` : ""}`, snapshot: { changing: changing.map((x) => adKey(x.adGroupId, x.adId)).sort() } };
+    return { summary: `Set ${changing.length} ad(s) to ${a.status}${changing.length < pairs.length ? ` (${pairs.length - changing.length} already ${a.status.toLowerCase()})` : ""}: ${changing.slice(0, 10).map((x) => adKey(x.adGroupId, x.adId)).join(", ")}${changing.length > 10 ? ", …" : ""}${warn ? `. ${warn} of them are not policy-approved and will not serve until approved` : ""}`, snapshot: { changing: changing.map((x) => adKey(x.adGroupId, x.adId)).sort() }, changes: changing.map((x) => statusChange({ resource: "ad", id: adKey(x.adGroupId, x.adId) }, x.status, a.status)) };
   },
   verify: async (a, ctx, run) => {
     const { changing } = run.snapshot as { changing: string[] };

@@ -1,3 +1,4 @@
+import type { ChangeSet } from "../policy/change-set";
 import { and, eq, lt, sql } from "drizzle-orm";
 import type { VerifyResult } from "../mcp/tool";
 import type { Role } from "../auth/context";
@@ -64,6 +65,7 @@ export class ApprovalService {
     args: unknown;
     summary: string;
     snapshot?: unknown;
+    changeSet?: ChangeSet | null;
     requestedBy: string;
   }): Promise<{ row: ApprovalRow; deduplicated: boolean }> {
     const argsHash = hashArgs(o.args);
@@ -106,6 +108,7 @@ export class ApprovalService {
           argsHash,
           summary: o.summary,
           planSnapshot: (o.snapshot ?? null) as object | null,
+          changeSet: o.changeSet ?? null,
           idempotencyKey: key,
           requestedBy: o.requestedBy,
           // One clock for every comparison (age, expiry): never mix the app clock with the database clock.

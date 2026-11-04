@@ -277,6 +277,16 @@ Each milestone is one reviewable branch with tests.
    - Output convention, documented in `platforms/google/gaql.ts`: absent counter metric = 0 (proto3 omits defaults;
      inferred, not verified per metric), absent attribute = null, ratio with zero denominator = null.
 3. **M3 Change sets and policy**: structured change set, direction-aware risk, tenant automation rules (off by default).
+   - M3a (done): `plan()` may return `changes` (`policy/change-set.ts`: resource, id, field, before, after, unit,
+     effect). `policy/risk.ts` derives the approval's risk: remove = destructive; increase_spend, enable, create =
+     high_impact; decrease_spend, pause, neutral = write; more than 20 resources = at least high_impact. It can lower a
+     declared high_impact to write but never lowers a destructive tool. The change set (with account currency, time zone
+     and the risk reason) is stored in `approval_request.change_set` (migration 0006), returned in the approval
+     envelope and shown as a before/after table on the approvals page. At execution, a fresh plan that assesses
+     riskier than the approved level is refused. Adopted by pause/resume campaign and ad group, pause/resume/remove
+     ad, bulk ad status, update_campaign, update_ad_group_settings, update_keyword, bulk keyword status. Other write
+     tools keep their declared risk until they report changes.
+   - M3b (next): tenant automation policy.
 4. **M4 Catalog exposure**: per-caller `tools/list` filtering by connection and scope; tenant bundles.
 5. **M5 Adapter contract and Meta core**: extract the adapter interface from Google; Meta transport, error mapping, first read tools, each endpoint checked against the official reference first.
 6. **M6 Jobs**: Postgres job table for async reports and reconciliation; remove per-process intervals.

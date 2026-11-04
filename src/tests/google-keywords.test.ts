@@ -159,9 +159,11 @@ describe("add_keywords", () => {
 });
 
 describe("update_keyword", () => {
-  it("pauses and changes the bid with the right mask", async () => {
+  it("pauses and changes the bid with the right mask (a bid increase needs a second approver)", async () => {
     const r = await run("update_keyword", { ad_group_id: "21", criterion_id: "1", status: "PAUSED", cpc_bid: 3 + n });
-    const done = await approve(r.approval!.approval_id);
+    expect(r.approval?.risk).toBe("high_impact");
+    expect(r.approval?.change_set?.changes.map((c) => [c.field, c.effect])).toEqual([["status", "pause"], ["cpc_bid", "increase_spend"]]);
+    const done = await approve(r.approval!.approval_id, second);
     expect(done.status).toBe("executed");
     expect(calls[0]!.body.operations[0]).toEqual({ update: { resourceName: `${C}/adGroupCriteria/21~1`, status: "PAUSED", cpcBidMicros: String((3 + n) * 1e6) }, updateMask: "status,cpc_bid_micros" });
     expect(done.result).toMatchObject({ criterion_id: "1", text: "Running Shoes", status: "PAUSED", cpc_bid: 3 + n });
@@ -206,12 +208,12 @@ describe("remove_keywords", () => {
 });
 
 describe("bulk_update_keyword_status", () => {
-  it("changes only keywords not already in the target status, with a second approver", async () => {
+  it("changes only keywords not already in the target status; pausing a few needs only one approver", async () => {
     const r = await run("bulk_update_keyword_status", { ad_group_id: "21", criterion_ids: ["1", "2", "3"], status: "PAUSED" });
-    expect(r.approval?.risk).toBe("high_impact");
+    expect(r.approval?.risk).toBe("write"); // direction-aware: pausing stops spend
+    expect(r.approval?.change_set?.changes).toHaveLength(2);
     expect(r.approval?.summary).toContain("Set 2 keyword(s)");
-    await expect(approve(r.approval!.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
-    const done = await approve(r.approval!.approval_id, second);
+    const done = await approve(r.approval!.approval_id, owner);
     expect(done.status).toBe("executed");
     expect(calls[0]!.body.operations).toEqual([
       { update: { resourceName: `${C}/adGroupCriteria/21~1`, status: "PAUSED" }, updateMask: "status" },

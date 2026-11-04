@@ -110,6 +110,8 @@ export const approvalRequest = pgTable(
     summary: text("summary").notNull(),
     /** Live state captured when the request was made, so we can detect drift before executing. */
     planSnapshot: jsonb("plan_snapshot"),
+    /** Structured before/after of every field the change touches, with units and the reason for `risk` (M3). Null for tools without one. */
+    changeSet: jsonb("change_set"),
     /** Same tenant + account + tool + arguments => same key => the mutation can only exist once. */
     idempotencyKey: text("idempotency_key").notNull(),
     status: text("status").notNull().default("pending"), // pending|rejected|executing|executed|failed|expired|unknown_outcome

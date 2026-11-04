@@ -4,6 +4,8 @@ import type { AuthContext } from "../auth/context";
 import type { Db } from "../db";
 import { recordExecution, type ExecutionOutcome } from "../obs/executions";
 import { logger } from "../obs/logger";
+import type { Change, ChangeSet } from "../policy/change-set";
+import { effectiveRisk, riskRank, type WriteRisk } from "../policy/risk";
 import { audit, recordUsage } from "../security/audit";
 import type { ApprovalService, Executor } from "../security/approvals";
 import { canonicalJson } from "../security/canonical";
@@ -69,6 +71,13 @@ async function buildContext(deps: PipelineDeps, tool: AnyTool, args: Record<stri
   return { tenantId: auth.tenantId, userId: auth.userId, account, services, signal };
 }
 
+/** Risk and stored change set of a planned write: direction-aware when the tool reports its changes. */
+function assess(declared: WriteRisk, changes: Change[] | undefined, account: ResolvedAccount): { risk: WriteRisk; changeSet: ChangeSet | null } {
+  const { risk, reason } = effectiveRisk(declared, changes);
+  if (!changes?.length) return { risk, changeSet: null };
+  return { risk, changeSet: { currency_code: account.currencyCode, time_zone: account.timeZone, operations: changes.length, changes, risk_reason: reason } };
+}
+
 /** The units block of the response envelope, for account-scoped tools. */
 const unitsOf = (a: ResolvedAccount) => ({ id: a.id, currency_code: a.currencyCode, time_zone: a.timeZone });
 
@@ -113,14 +122,16 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
       // Write: plan against live state (read-only, under the deadline), then queue. Queueing is NOT raced: once started it
       // completes, so the caller is never told "timed out" for a request that was in fact queued.
       const plan = await raceAbort(tool.plan(args, ctx), dl.signal, dl.timedOut);
+      const { risk, changeSet } = assess(tool.risk, plan.changes, ctx.account!);
       const { row, deduplicated } = await deps.approvals.request({
         tenantId: auth.tenantId,
         accountId: ctx.account!.id,
         tool: tool.name,
-        risk: riskOf(tool) as Exclude<ReturnType<typeof riskOf>, "read">,
+        risk,
         args,
         summary: plan.summary,
         snapshot: plan.snapshot,
+        changeSet,
         requestedBy: auth.userId,
       });
       await audit(deps.db, { tenantId: auth.tenantId, userId: auth.userId, event: deduplicated ? "approval.deduplicated" : "approval.requested", tool: tool.name, accountId: ctx.account!.id, refId: row.id });
@@ -137,6 +148,7 @@ export async function runTool(deps: PipelineDeps, tool: AnyTool, rawArgs: unknow
           risk: row.risk,
           summary: row.summary,
           expires_at: row.expiresAt.toISOString(),
+          ...(row.changeSet ? { change_set: row.changeSet as ChangeSet } : {}),
           message: "Nothing has been changed. An owner or admin must approve this request outside this conversation.",
         },
         tool.platform,
@@ -180,6 +192,11 @@ export function createExecutor(deps: PipelineDeps): Executor {
       const fresh = await tool.plan(args, ctx);
       if (canonicalJson(fresh.snapshot ?? null) !== canonicalJson(row.planSnapshot ?? null)) {
         throw new ToolError("conflict", "The ad account changed since this was requested. Nothing was applied; request the change again.");
+      }
+      // Belt and braces: the approval was granted for a risk level. If the same change now assesses higher (it should not
+      // while the snapshot is unchanged), the approval does not cover it.
+      if (riskRank(assess(tool.risk, fresh.changes, ctx.account!).risk) > riskRank(row.risk as WriteRisk)) {
+        throw new ToolError("conflict", "This change is now riskier than when it was approved. Nothing was applied; request it again.");
       }
       const raw = await tool.execute(args, ctx, { idempotencyKey: row.idempotencyKey, snapshot: row.planSnapshot });
       const out = (tool.output as z.ZodType).safeParse(raw);

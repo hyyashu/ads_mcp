@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ChangeSetSchema } from "../policy/change-set";
 import { ERROR_CODES, type ToolError } from "./errors";
 
 export const ErrorSchema = z.object({
@@ -15,6 +16,7 @@ export const ApprovalSchema = z.object({
   risk: z.string(),
   summary: z.string(),
   expires_at: z.string(),
+  change_set: ChangeSetSchema.optional().describe("Every field that would change, read live, with units. Present when the tool reports its changes."),
   message: z.string(),
 });
 

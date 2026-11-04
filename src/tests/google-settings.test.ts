@@ -158,10 +158,11 @@ describe("ad group settings", () => {
     expect((await run("get_ad_group_settings", { ad_group_ids: ["1 OR 1=1"] })).error?.code).toBe("invalid_argument");
   });
 
-  it("updates name, CPC bid and target CPA after approval (single approver is enough)", async () => {
+  it("updates name, CPC bid and target CPA after approval (raising bids needs a second approver)", async () => {
     const r = await run("update_ad_group_settings", { ad_group_id: "21", name: `Core ${n}`, cpc_bid: 2 + n, target_cpa: 12 });
-    expect(r.approval?.risk).toBe("write");
-    const done = await approve(r.approval!.approval_id, owner);
+    expect(r.approval?.risk).toBe("high_impact");
+    await expect(approve(r.approval!.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
+    const done = await approve(r.approval!.approval_id, second);
     expect(done.status).toBe("executed");
     expect(calls[0]!.path).toBe("customers/1234567890/adGroups:mutate");
     expect(calls[0]!.body.operations[0]).toEqual({ update: { resourceName: `${C}/adGroups/21`, name: `Core ${n}`, cpcBidMicros: String((2 + n) * 1e6), targetCpaMicros: "12000000" }, updateMask: "name,cpc_bid_micros,target_cpa_micros" });
@@ -175,6 +176,6 @@ describe("ad group settings", () => {
     expect((await run("update_ad_group_settings", { ad_group_id: "21", cpc_bid: 1.5 })).error?.message).toContain("Nothing");
     const r = await run("update_ad_group_settings", { ad_group_id: "21", cpc_bid: 9 + n });
     dropWrites = true;
-    expect((await approve(r.approval!.approval_id, owner)).status).toBe("unknown_outcome");
+    expect((await approve(r.approval!.approval_id, second)).status).toBe("unknown_outcome");
   });
 });

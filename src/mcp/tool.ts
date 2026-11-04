@@ -1,3 +1,4 @@
+import type { Change } from "../policy/change-set";
 import type { z } from "zod";
 import type { Platform } from "../inventory";
 
@@ -67,7 +68,11 @@ export interface WriteTool<I extends z.ZodObject = z.ZodObject, O extends z.ZodT
    * Runs at request time, READ-ONLY: validates the arguments against live platform state and returns
    * the plain-language summary an approver will see, plus a snapshot used to detect drift before executing.
    */
-  plan(args: z.infer<I>, ctx: ToolContext<S>): Promise<{ summary: string; snapshot?: unknown }>;
+  /**
+   * Read-only. `changes` (M3) lists each field that would change, read live; when given, the approval's risk follows the
+   * direction of the change (see policy/risk.ts) and the change set is stored with the approval and shown to approvers.
+   */
+  plan(args: z.infer<I>, ctx: ToolContext<S>): Promise<{ summary: string; snapshot?: unknown; changes?: Change[] }>;
   /**
    * Crash recovery. After an ambiguous failure (timeout, 5xx, process crash) the outcome is unknown and the change is
    * NEVER retried blindly. The server calls verify() to read the platform's current state and decide: did the change

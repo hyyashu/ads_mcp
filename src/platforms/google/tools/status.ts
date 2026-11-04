@@ -1,3 +1,4 @@
+import { statusChange } from "../../../policy/change-set";
 import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient } from "../client";
@@ -42,7 +43,7 @@ function statusTool(k: Kind, to: Status, risk: "write" | "high_impact", name: st
       const cur = await current(ctx.services.ads, k, id);
       if (cur.status === "REMOVED") throw new ToolError("invalid_argument", `The ${k.label} is removed and cannot be changed.`);
       if (cur.status === to) throw new ToolError("invalid_argument", `The ${k.label} is already ${to.toLowerCase()}.`);
-      return { summary: `${verb} ${k.label} "${cur.name ?? id}" (${id}): ${cur.status} -> ${to}`, snapshot: { id, status: cur.status } };
+      return { summary: `${verb} ${k.label} "${cur.name ?? id}" (${id}): ${cur.status} -> ${to}`, snapshot: { id, status: cur.status }, changes: [statusChange({ resource: k.resource, id, name: cur.name }, cur.status, to)] };
     },
     verify: async (a, ctx, run) => {
       const cur = await current(ctx.services.ads, k, a[k.idField] as string);
