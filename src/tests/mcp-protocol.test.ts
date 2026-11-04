@@ -170,10 +170,13 @@ describe("read tools", () => {
     await c.close();
   });
 
-  it("a read-only token cannot call write tools and nothing executes", async () => {
+  it("a read-only token is not shown write tools, cannot call them, and nothing executes", async () => {
     const c = await client(env.base, env.A.tokens.readOnly);
-    const { env: e } = await call(c, "pause_campaign", { account_id: env.A.account, campaign_id: "9" });
-    expect(e.error.code).toBe("permission_denied");
+    const names = (await c.listTools()).tools.map((t) => t.name);
+    expect(names).toContain("list_campaigns");
+    expect(names).not.toContain("pause_campaign");
+    const r = await c.callTool({ name: "pause_campaign", arguments: { account_id: env.A.account, campaign_id: "9" } }).catch((e: Error) => ({ isError: true, thrown: e.message }));
+    expect(r.isError).toBe(true);
     expect(env.h.calls.execute).toBe(0);
     await c.close();
   });

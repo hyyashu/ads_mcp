@@ -75,7 +75,7 @@ export function createHttpServer(deps: PipelineDeps, authn: Authenticator, opts:
       }
       for (const [k, v] of Object.entries(cors)) res.setHeader(k, v);
       const body = await readBody(req, maxBody);
-      const server = createMcpServer(deps, auth, requestId);
+      const server = await createMcpServer(deps, auth, requestId);
       const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
       res.on("close", () => {
         void transport.close();

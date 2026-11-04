@@ -298,6 +298,13 @@ Each milestone is one reviewable branch with tests.
      `unknown_outcome`, never success. Only an owner edits rules, in the browser (session + CSRF + same origin); no
      MCP tool or bearer token can. A stored value that no longer validates fails closed (nothing automatic).
 4. **M4 Catalog exposure**: per-caller `tools/list` filtering by connection and scope; tenant bundles.
+   - Done (`mcp/catalog.ts`): each MCP request registers only the tools the caller can use. Hidden: tools whose scope the
+     token lacks; tools of a platform with no active connection in the workspace; write tools when no account on that
+     platform is connected with write access. Workspace-level tools are always listed. Server instructions say what is
+     connected and how to connect more. One query per MCP request. No `tools/list_changed` (stateless server): a client
+     sees new connections when it lists tools again. Hiding is for relevance; the pipeline still enforces every check.
+   - Deferred: tenant-selected bundles. The inventory has no categories, so bundles need a curated name-to-bundle map;
+     revisit once the Meta tools exist (M5), when the catalog is large enough to need it.
 5. **M5 Adapter contract and Meta core**: extract the adapter interface from Google; Meta transport, error mapping, first read tools, each endpoint checked against the official reference first.
 6. **M6 Jobs**: Postgres job table for async reports and reconciliation; remove per-process intervals.
 7. **M7 Remaining Google batches**, then Meta writes.
