@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 200,
+    "implemented": 204,
     "external_limitation": 1,
-    "pending": 31
+    "pending": 27
   },
   "rows": [
     {
@@ -3246,18 +3246,18 @@
       "platform": "meta_ads",
       "action": "Create",
       "domain": "campaigns",
-      "api": "POST /{campaign_id}/copies",
+      "api": "POST /{campaign_id}/copies (deep_copy, rename_options, status_option=PAUSED; returns copied_campaign_id) (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
-      "notes": "Large copies are asynchronous. Copies must be created PAUSED.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Synchronous only: deep copies are limited to 3 ads (Meta's synchronous limit); larger ones are refused. verify() finds the copy through source_campaign_id.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "explain_meta_anomaly",
@@ -3808,52 +3808,54 @@
       "platform": "meta_ads",
       "action": "Update",
       "domain": "ads",
-      "api": "POST /{ad_id}",
-      "risk": "write",
+      "api": "POST /{ad_id}: name, status (v27.0)",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
-      "notes": "Creative content is immutable once an ad is created: creative changes need a new creative.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Creative content is immutable once an ad is created: creative changes need a new creative and ad (creation tools).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_meta_ad_set",
       "platform": "meta_ads",
       "action": "Update",
       "domain": "ad_sets",
-      "api": "POST /{adset_id}",
+      "api": "POST /{adset_id}: name, status, daily_budget|lifetime_budget (ad set budget only), bid_amount, bid_strategy, end_time (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Targeting is not offered: the reference does not state whether a targeting update replaces or merges the spec. Never sends meta_moment_maker_spec.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_meta_campaign",
       "platform": "meta_ads",
       "action": "Update",
       "domain": "campaigns",
-      "api": "POST /{campaign_id}",
+      "api": "POST /{campaign_id}: name, status, daily_budget|lifetime_budget (campaign budget only), spend_cap (922337203685478 removes), bid_strategy=LOWEST_COST_WITHOUT_CAP (v27.0)",
       "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "ads_management"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "notes": "Campaign stop_time is read-only at campaign level; bid switches to cap strategies need adset_bid_amounts and are not offered.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "update_meta_catalog_ad",
