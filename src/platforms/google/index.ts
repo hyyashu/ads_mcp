@@ -12,6 +12,7 @@ import { pmaxReadTools } from "./tools/pmax-reads";
 import { assetWriteTools } from "./tools/asset-writes";
 import { campaignTargetingWriteTools } from "./tools/campaign-targeting-writes";
 import { adGroupCriteriaWriteTools } from "./tools/ad-group-criteria-writes";
+import { accountWriteTools } from "./tools/account-writes";
 
 /** Google Ads tools. A tool is added here only when it has a real handler, schemas and tests. */
-export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools] as AnyTool[];
+export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools] as AnyTool[];
