@@ -28,7 +28,7 @@ export interface PipelineDeps {
    */
   /** Overrides for the default deadlines (operator configuration; tests use short ones). */
   timeouts?: Partial<{ call: number; execute: number; verify: number }>;
-  createServices(o: { tenantId: string; account: { id: string; platform: string; externalId: string; loginCustomerId: string | null; connectionId: string }; signal?: AbortSignal }): Promise<unknown>;
+  createServices(o: { tenantId: string; account: { id: string; platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null }; signal?: AbortSignal }): Promise<unknown>;
 }
 
 /** Default deadlines. Reads and planning are bounded tightly; executing an approved change gets longer. */

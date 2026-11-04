@@ -32,9 +32,9 @@ export type ChangeSet = z.infer<typeof ChangeSetSchema>;
 
 type Ref = { resource: string; id: string; name?: string | null };
 
-/** A status change. ENABLED can start spend, PAUSED stops it, REMOVED cannot be undone. */
+/** A status change. Google ENABLED or Meta ACTIVE can start spend, PAUSED stops it, REMOVED cannot be undone. */
 export function statusChange(ref: Ref, before: string, after: string): Change {
-  const effect: Effect = after === "ENABLED" ? "enable" : after === "PAUSED" ? "pause" : after === "REMOVED" ? "remove" : "neutral";
+  const effect: Effect = after === "ENABLED" || after === "ACTIVE" ? "enable" : after === "PAUSED" ? "pause" : after === "REMOVED" ? "remove" : "neutral";
   return { ...ref, field: "status", before, after, unit: "status", effect };
 }
 

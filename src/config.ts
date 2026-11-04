@@ -52,7 +52,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     cfg.google = { clientId: e.GOOGLE_OAUTH_CLIENT_ID, clientSecret: e.GOOGLE_OAUTH_CLIENT_SECRET, apiVersion: e.GOOGLE_ADS_API_VERSION };
   }
   if (e.META_APP_ID && e.META_APP_SECRET) {
-    if (!e.META_API_VERSION) throw new Error("META_API_VERSION (e.g. v23.0) is required when Meta OAuth is configured. Check Meta's changelog for the current version.");
+    if (!e.META_API_VERSION) throw new Error("META_API_VERSION (e.g. v26.0) is required when Meta OAuth is configured. Check Meta's changelog for the current version.");
     cfg.meta = { appId: e.META_APP_ID, appSecret: e.META_APP_SECRET, apiVersion: e.META_API_VERSION };
   }
   return cfg;

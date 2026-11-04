@@ -26,6 +26,23 @@ Pages that were not reachable or did not contain the detail asked for: the GAQL 
 
 ## Meta Marketing API
 
+### Checked directly on developers.facebook.com, 2026-11-04 (M5)
+
+- **Version**: v26.0 is the latest (introduced 2026-07-29, Graph and Marketing API tables); v25.0 still available. The
+  server uses `META_API_VERSION=v26.0`. The earlier note below that v25.0 was latest is superseded.
+- **Errors**: `{error: {message, type, code, error_subcode, error_user_title, error_user_msg, fbtrace_id}}`. 190 / 102 /
+  OAuthException without subcode = token invalid; 1 and 2 = temporary; 10 and 200-299 = permission.
+- **Throttling codes**: 4 (app), 17 (user), 32 (pages), 613 (custom), 80000-80014 (business use case, "too many calls
+  from this ad-account").
+- **Usage headers**: `X-Business-Use-Case-Usage` (per business object; `estimated_time_to_regain_access` in minutes),
+  `X-Ad-Account-Usage` (`acc_id_util_pct`, `reset_time_duration` in seconds), `X-App-Usage` (percentages).
+- **Money**: amounts are in the currency's minor unit given by its offset. Offset 1: CLP, COP, CRC, HUF, IDR, ISK, JPY,
+  KRW, PYG, TWD, VND; every other listed currency (66 total) has offset 100. This settles the "cents" question: cents
+  for USD, but whole yen for JPY.
+- **Official Node SDK**: `facebook-nodejs-business-sdk` 24.0.1 on npm targets v24 and passes the token as a query
+  parameter, so it is not used; the server has its own thin client pinned to the configured version.
+- **Not found** in the pages checked: an idempotency key for Marketing API writes.
+
 No Meta code exists yet beyond the platform OAuth flow, so there was nothing to verify against beyond that and the plan.
 
 - **Versions**: the changelog page says Graph API v26.0 (scheduled 2026-07-29) and Marketing API **v25.0** (2026-02-18); v24.0 expires 2026-10-06. This repo's `.env.example` and tests use `v23.0`, which is stale. The page's own wording was ambiguous about dates, so confirm the current version before setting `META_API_VERSION`.

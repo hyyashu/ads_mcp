@@ -306,6 +306,15 @@ Each milestone is one reviewable branch with tests.
    - Deferred: tenant-selected bundles. The inventory has no categories, so bundles need a curated name-to-bundle map;
      revisit once the Meta tools exist (M5), when the catalog is large enough to need it.
 5. **M5 Adapter contract and Meta core**: extract the adapter interface from Google; Meta transport, error mapping, first read tools, each endpoint checked against the official reference first.
+   - Done: `platforms/meta/http.ts` (Graph v26.0 transport: token only in the Authorization header, `appsecret_proof`
+     as a parameter, documented error and throttle mapping, retry-after from usage headers, reads retried with jitter,
+     writes sent once), `platforms/meta/client.ts` (one ad account; cursor pagination that never follows the raw
+     `paging.next` URL; `getOwned` refuses objects of other ad accounts the same token can reach; minor-unit currency
+     conversion from the documented offset table; `mutationsSent`). The services factory is the adapter seam: one
+     branch per platform builds that platform's client from the resolved account. First Meta tools:
+     `list_meta_campaigns`, `pause_meta_campaign` (write), `resume_meta_campaign` (high impact), with change sets.
+   - Not done: a formal `PlatformAdapter` interface. With two platforms the factory branch is the whole contract;
+     extract an interface when a third platform arrives rather than guess at it now.
 6. **M6 Jobs**: Postgres job table for async reports and reconciliation; remove per-process intervals.
 7. **M7 Remaining Google batches**, then Meta writes.
 8. **M8 Live verification** on test accounts (Google Test/Basic, Meta test ad account).

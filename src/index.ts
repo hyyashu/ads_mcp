@@ -3,8 +3,9 @@ import { fileURLToPath } from "node:url";
 import { ApiTokenAuthenticator } from "./auth/api-token";
 import { CompositeAuthenticator, OAuthServer } from "./auth/oauth-server";
 import { PlatformOAuth } from "./auth/platform-oauth";
-import { GoogleTokenProvider } from "./auth/token-providers";
+import { GoogleTokenProvider, MetaTokenProvider } from "./auth/token-providers";
 import { GoogleAdsHttp } from "./platforms/google/http";
+import { MetaGraphHttp } from "./platforms/meta/http";
 import { createServicesFactory } from "./platforms/google/services";
 import { loadConfig } from "./config";
 import { createDb } from "./db";
@@ -52,12 +53,13 @@ function main() {
     approvals,
     tenantLimiter: limiter("tenant", num("TENANT_RATE_BURST", 60), num("TENANT_RATE_PER_SEC", 5)),
     accountLimiter: limiter("account", num("ACCOUNT_RATE_BURST", 20), num("ACCOUNT_RATE_PER_SEC", 2)),
-    // Builds a per-account platform client; handlers never see credentials. Meta joins in the Meta phase.
+    // Builds a per-account platform client; handlers never see credentials.
     createServices: createServicesFactory({
       db,
       google: config.google
         ? { tokens: googleTokens!, http: new GoogleAdsHttp({ apiVersion: config.google.apiVersion }) }
         : undefined,
+      meta: config.meta ? { tokens: new MetaTokenProvider({ db, cipher, appSecret: config.meta.appSecret }), http: new MetaGraphHttp({ apiVersion: config.meta.apiVersion }) } : undefined,
     }),
   };
   const web = new WebRoutes({
