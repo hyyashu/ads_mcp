@@ -57,7 +57,7 @@ export const toApiFilter = (f: FilterInput): SaFilter => ({ dimension: f.dimensi
 export const filterGroups = (filters: FilterInput[]): Pick<SaRequest, "dimensionFilterGroups"> => (filters.length ? { dimensionFilterGroups: [{ groupType: "and", filters: filters.map(toApiFilter) }] } : {});
 
 export const periodFields = {
-  period: z.enum(PERIODS).default("last_28_days").describe("Named period ending on the latest day with final data, in Pacific Time. Ignored when start_date and end_date are given."),
+  period: z.enum(PERIODS).default("last_28_days").describe("Named period in Pacific Time, ending on the latest day with final data (or on today when data_state includes fresh data). Ignored when start_date and end_date are given."),
   start_date: ymd.optional().describe("YYYY-MM-DD in Pacific Time (Search Console's time zone). Give with end_date; overrides period."),
   end_date: ymd.optional().describe("YYYY-MM-DD in Pacific Time, inclusive."),
 };
@@ -69,7 +69,7 @@ export const MetricsSchema = z.object({
   position: z.number().nullable().describe("Average position (1 is the top). null when Google reports none."),
 });
 export type Metrics = z.infer<typeof MetricsSchema>;
-export const END_BASIS = ["explicit", "latest_final_data", "fallback_today_minus_3"] as const;
+export const END_BASIS = ["explicit", "latest_final_data", "fallback_today_minus_3", "today_fresh_data"] as const;
 export const PeriodSchema = z.object({ start_date: z.string(), end_date: z.string(), time_zone: z.literal(PT), end_basis: z.enum(END_BASIS) });
 export type Period = z.infer<typeof PeriodSchema>;
 
@@ -120,15 +120,28 @@ export interface PeriodArgs {
   end_date?: string;
 }
 
-/** Explicit dates are checked and used as given; a named period ends on the latest day with final data. */
-export async function resolvePeriod(gsc: GscClient, a: PeriodArgs, type: SearchType, now = new Date()): Promise<{ period: Period; notes: string[] }> {
+/**
+ * Explicit dates are checked and used as given. A named period ends on the latest day with final data, or, when the query
+ * asks for fresh data (data_state all or hourly_all), on today in Pacific Time so the fresh days are included.
+ */
+export async function resolvePeriod(gsc: GscClient, a: PeriodArgs, type: SearchType, now = new Date(), dataState: (typeof DATA_STATES)[number] = "final"): Promise<{ period: Period; notes: string[] }> {
   const today = pacificToday(now);
   if (a.start_date !== undefined || a.end_date !== undefined) {
     if (a.start_date === undefined || a.end_date === undefined) throw new ToolError("invalid_argument", "Give both start_date and end_date, or neither (then period is used).");
     checkDates(a.start_date, a.end_date, today);
     return { period: { start_date: a.start_date, end_date: a.end_date, time_zone: PT, end_basis: "explicit" }, notes: [] };
   }
+  if (dataState !== "final") return { period: periodEnding(a.period, today, today, "today_fresh_data"), notes: [] };
   return presetPeriod(gsc, a.period, type, today);
+}
+
+/** A named period ending on `end`, never starting before the 16-month retention limit. */
+function periodEnding(preset: (typeof PERIODS)[number], end: string, today: string, basis: Period["end_basis"]): Period {
+  const days = PERIOD_DAYS[preset];
+  const oldest = oldestAllowed(today);
+  let start = days === null ? oldest : addDays(end, -(days - 1));
+  if (start < oldest) start = oldest;
+  return { start_date: start, end_date: end, time_zone: PT, end_basis: basis };
 }
 
 export async function presetPeriod(gsc: GscClient, preset: (typeof PERIODS)[number], type: SearchType, today: string): Promise<{ period: Period; notes: string[] }> {
@@ -136,11 +149,7 @@ export async function presetPeriod(gsc: GscClient, preset: (typeof PERIODS)[numb
   const notes: string[] = [];
   const end = latest ?? addDays(today, -3);
   if (!latest) notes.push(`Search Console returned no final data for the last 10 days, so the period ends on ${end} (3 days ago; data is typically available after 2-3 days).`);
-  const days = PERIOD_DAYS[preset];
-  const oldest = oldestAllowed(today);
-  let start = days === null ? oldest : addDays(end, -(days - 1));
-  if (start < oldest) start = oldest;
-  return { period: { start_date: start, end_date: end, time_zone: PT, end_basis: latest ? "latest_final_data" : "fallback_today_minus_3" }, notes };
+  return { period: periodEnding(preset, end, today, latest ? "latest_final_data" : "fallback_today_minus_3"), notes };
 }
 
 // ------------------------------------------------------------------------------------------ query validation
@@ -153,6 +162,13 @@ export interface QueryShape {
   dataState: (typeof DATA_STATES)[number];
 }
 
+/**
+ * Discover (Google's 2021 blog post) and Google News (Search Console Help, answer 10083653) report no queries and no
+ * position.
+ */
+export const noQueries = (type: SearchType): boolean => type === "discover" || type === "googleNews";
+const TYPE_LABEL: Record<SearchType, string> = { web: "Web", image: "Image", video: "Video", news: "News", discover: "Discover", googleNews: "Google News" };
+
 /** Google's documented rules for one query, checked before anything is sent. */
 export function validateQuery(q: QueryShape): void {
   const bad = (m: string) => {
@@ -161,7 +177,7 @@ export function validateQuery(q: QueryShape): void {
   if (new Set(q.dimensions).size !== q.dimensions.length) bad("Each dimension may appear only once.");
   if (q.dimensions.includes("searchAppearance") && q.dimensions.length > 1) bad("searchAppearance cannot be grouped with other dimensions (Google's rule). Group by it alone, or use get_search_appearance with a breakdown.");
   if (q.dimensions.includes("hour") && q.dataState !== "hourly_all") bad('Grouping by hour needs data_state "hourly_all".');
-  if (q.type === "discover" && (q.dimensions.includes("query") || q.filters.some((f) => f.dimension === "query"))) bad("Discover data has no queries: drop the query dimension or filter, or use another type.");
+  if (noQueries(q.type) && (q.dimensions.includes("query") || q.filters.some((f) => f.dimension === "query"))) bad(`${TYPE_LABEL[q.type]} data has no queries: drop the query dimension or filter, or use another type.`);
   const pageUsed = q.dimensions.includes("page") || q.filters.some((f) => f.dimension === "page");
   if (q.aggregation === "byProperty" && pageUsed) bad('aggregation_type "byProperty" cannot be used when grouping or filtering by page; use "auto".');
   if (q.aggregation === "byProperty" && (q.type === "discover" || q.type === "googleNews")) bad('aggregation_type "byProperty" is not supported for discover or googleNews.');
@@ -179,14 +195,19 @@ export const NOTE_PT = "Dates are in Pacific Time (Search Console's time zone)."
 export const NOTE_ANONYMIZED = "Anonymized queries are left out of rows but counted in totals (unless a filter is set), so rows can sum to less than totals.";
 export const NOTE_ROW_LIMIT = "Google returns at most 50,000 rows per day per search type and may drop rows when grouping by page or query, so long tails can be missing.";
 export const NOTE_DISCOVER = "Discover reports no queries, and position is not reported for Discover.";
+export const NOTE_GOOGLE_NEWS = "Google News reports no queries, and position is not reported for Google News.";
 export const NOTE_FRESH = "data_state includes fresh data that is still being collected; recent numbers can change.";
 export function analyticsNotes(type: SearchType, dataState: string, extra: string[] = []): string[] {
-  return [NOTE_PT, NOTE_ANONYMIZED, NOTE_ROW_LIMIT, ...(type === "discover" ? [NOTE_DISCOVER] : []), ...(dataState !== "final" ? [NOTE_FRESH] : []), ...extra];
+  return [NOTE_PT, NOTE_ANONYMIZED, NOTE_ROW_LIMIT, ...(type === "discover" ? [NOTE_DISCOVER] : type === "googleNews" ? [NOTE_GOOGLE_NEWS] : []), ...(dataState !== "final" ? [NOTE_FRESH] : []), ...extra];
 }
 
 // ------------------------------------------------------------------------------------------ URLs and sites
 
-/** Whether `url` falls under the property: URL-prefix by prefix, Domain property by host (any subdomain, http or https). */
+/**
+ * Whether `url` falls under the property: URL-prefix by prefix, Domain property by host (any subdomain, http or https).
+ * Both sides are normalised by the URL parser first (host lower-cased, "." and ".." segments resolved), so
+ * https://example.com/blog/../admin is not inside https://example.com/blog/.
+ */
 export function withinProperty(siteUrl: string, url: string): boolean {
   let u: URL;
   try {
@@ -200,7 +221,13 @@ export function withinProperty(siteUrl: string, url: string): boolean {
     const h = u.hostname.toLowerCase();
     return h === d || h.endsWith(`.${d}`);
   }
-  return url.startsWith(siteUrl);
+  let site: URL;
+  try {
+    site = new URL(siteUrl);
+  } catch {
+    return false;
+  }
+  return u.href.startsWith(site.href);
 }
 
 export const httpUrl = z

@@ -94,6 +94,18 @@ describe("submit_sitemap", () => {
     expect((done.result as any).error.message).toContain("does not read back");
   });
 
+  it("a read-back GET that fails with 403 or 429 after a successful PUT is an unknown outcome, never a failure", async () => {
+    for (const err of [() => gErr(403, "User does not have sufficient permission", "forbidden"), () => gErr(429, "Rate limit exceeded", "rateLimitExceeded")]) {
+      fake.reset();
+      const r = await kit.run("submit_sitemap", { sitemap_url: url() });
+      fake.fail = (c) => (c.method === "GET" && writes().length > 0 ? err() : undefined);
+      const done = await kit.approveAs(r.approval!.approval_id, kit.owner);
+      expect(done.status).toBe("unknown_outcome");
+      expect((done.result as any).error.message).toContain("reading it back failed");
+      expect(writes()).toHaveLength(1);
+    }
+  });
+
   it("verify: applied, not_applied, indeterminate", async () => {
     const u = url();
     expect(await verify("submit_sitemap", { sitemap_url: u }, { existing: null })).toEqual({ outcome: "not_applied" });
@@ -139,6 +151,20 @@ describe("delete_sitemap", () => {
     fake.ignoreWrites = true;
     const done = await kit.approveAs(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("unknown_outcome");
+  });
+
+  it("a read-back GET that fails with 403 or 429 after a successful DELETE is an unknown outcome, never a failure", async () => {
+    for (const err of [() => gErr(403, "User does not have sufficient permission", "forbidden"), () => gErr(429, "Rate limit exceeded", "rateLimitExceeded")]) {
+      fake.reset();
+      const u = url();
+      seed(u);
+      const r = await kit.run("delete_sitemap", { sitemap_url: u });
+      fake.fail = (c) => (c.method === "GET" && writes().length > 0 ? err() : undefined);
+      const done = await kit.approveAs(r.approval!.approval_id, kit.second);
+      expect(done.status).toBe("unknown_outcome");
+      expect((done.result as any).error.message).toContain("reading it back failed");
+      expect(writes()).toHaveLength(1);
+    }
   });
 
   it("a resubmission between request and approval is a conflict; already gone is not_found; nothing is sent", async () => {

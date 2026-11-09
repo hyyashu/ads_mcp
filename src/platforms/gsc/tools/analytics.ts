@@ -20,6 +20,7 @@ import {
   filterSchema,
   gscRead,
   metrics,
+  noQueries,
   periodFields,
   resolvePeriod,
   rowObject,
@@ -56,7 +57,7 @@ export interface AnalyticsResult {
  */
 export async function runAnalytics(gsc: GscClient, a: AnalyticsArgs): Promise<AnalyticsResult> {
   validateQuery({ dimensions: a.dimensions, type: a.type, filters: a.filters, aggregation: a.aggregation, dataState: a.dataState });
-  const { period, notes } = await resolvePeriod(gsc, a, a.type);
+  const { period, notes } = await resolvePeriod(gsc, a, a.type, new Date(), a.dataState);
   const base: SaRequest = { startDate: period.start_date, endDate: period.end_date, type: a.type, ...filterGroups(a.filters), aggregationType: a.aggregation, dataState: a.dataState };
   const main = await gsc.searchAnalytics({ ...base, dimensions: a.dimensions }, { maxRows: a.limit, startRow: a.startRow, partial: true });
   const totalsRow = a.dimensions.length === 0 ? main.rows[0] : (await gsc.searchAnalytics({ ...base, dimensions: [] }, { maxRows: 1, partial: true })).rows[0];
@@ -91,7 +92,7 @@ export const getSearchPerformance = gscRead({
     type: typeField,
     filters: z.array(filterSchema).max(10).default([]).describe("All filters must match (AND)."),
     aggregation_type: z.enum(AGGREGATIONS).default("auto"),
-    data_state: z.enum(DATA_STATES).default("final").describe("final (default), all (adds fresh data) or hourly_all (needed to group by hour)."),
+    data_state: z.enum(DATA_STATES).default("final").describe("final (default), all (adds fresh data) or hourly_all (needed to group by hour). With all or hourly_all a named period ends on today (Pacific Time)."),
     limit: z.number().int().min(1).max(5000).default(100),
     start_row: z.number().int().min(0).max(50_000).default(0).describe("Skip this many rows (continue from next_start_row)."),
   }),
@@ -139,11 +140,11 @@ export const getTopQueries = gscRead({
   name: "get_top_queries",
   title: "Top search queries",
   description:
-    "The search queries that brought the most clicks from Google Search to a site in a period, with impressions, CTR and average position, plus Google's totals. Optional filters by page, country, device and query text. Discover is not offered because it reports no queries. Dates are Pacific Time.",
+    "The search queries that brought the most clicks from Google Search to a site in a period, with impressions, CTR and average position, plus Google's totals. Optional filters by page, country, device and query text. Discover and Google News are not offered because they report no queries. Dates are Pacific Time.",
   input: z.object({
     account_id: accountId,
     ...periodFields,
-    type: z.enum(["web", "image", "video", "news", "googleNews"]).default("web"),
+    type: z.enum(["web", "image", "video", "news"]).default("web"),
     page_filter: text("Only pages whose URL contains this."),
     country: countryField,
     device: deviceField,
@@ -187,7 +188,7 @@ export const getTopPages = gscRead({
     page_contains: text("Only pages whose URL contains this."),
     country: countryField,
     device: deviceField,
-    query_contains: text("Only clicks from queries containing this (not for Discover)."),
+    query_contains: text("Only clicks from queries containing this (not for Discover or Google News)."),
     limit: z.number().int().min(1).max(1000).default(25),
   }),
   output: z.object({ site_url: z.string(), type: z.string(), period: PeriodSchema, pages: z.array(MetricsSchema.extend({ page: z.string() })), totals: TotalsSchema, returned: z.number(), truncated: z.boolean(), notes: z.array(z.string()) }),
@@ -275,7 +276,7 @@ export const getSearchAppearance = gscRead({
   handler: async (a, ctx) => {
     const gsc = ctx.services.gsc;
     if (a.breakdown !== "none" && !a.appearance) throw new ToolError("invalid_argument", "A breakdown needs appearance (one API value, e.g. PRODUCT_SNIPPETS).");
-    if (a.breakdown === "query" && a.type === "discover") throw new ToolError("invalid_argument", "Discover data has no queries: use breakdown page.");
+    if (a.breakdown === "query" && noQueries(a.type)) throw new ToolError("invalid_argument", `${a.type === "discover" ? "Discover" : "Google News"} data has no queries: use breakdown page.`);
     const r = await runAnalytics(gsc, { ...a, dimensions: ["searchAppearance"], filters: [], aggregation: "auto", dataState: "final", limit: APPEARANCE_CAP, startRow: 0 });
     let breakdown: { appearance: string; dimension: string; rows: (Metrics & { key: string })[]; truncated: boolean } | null = null;
     if (a.appearance && a.breakdown !== "none") {

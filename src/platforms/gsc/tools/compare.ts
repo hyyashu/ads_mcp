@@ -29,6 +29,8 @@ import {
 // Two searchAnalytics.query calls per period (rows by query or page, and Google's totals), joined by key. Keys past the
 // scan limit in one period are unknown there, never zero.
 
+/** Named periods whose default previous period (same length, immediately before) cannot fit in 16 months. */
+const LONG_PERIODS = new Set<string>(["last_365_days", "last_16_months"]);
 const days = (p: { start_date: string; end_date: string }) => Math.round((Date.parse(`${p.end_date}T00:00:00Z`) - Date.parse(`${p.start_date}T00:00:00Z`)) / 86_400_000) + 1;
 const diff = (a: number | null, b: number | null, d = 4) => (a === null || b === null ? null : Math.round((a - b) * 10 ** d) / 10 ** d);
 
@@ -66,7 +68,7 @@ export const compareSearchPeriods = gscRead({
     account_id: accountId,
     dimension: z.enum(["query", "page"]),
     type: z.enum(SEARCH_TYPES).default("web"),
-    period: z.enum(PERIODS).default("last_28_days").describe("The current period, ending on the latest day with final data. Ignored when start_date and end_date are given."),
+    period: z.enum(PERIODS).default("last_28_days").describe("The current period, ending on the latest day with final data. Ignored when start_date and end_date are given. last_365_days and last_16_months need explicit previous_start_date and previous_end_date: two such periods do not fit in Search Console's 16 months."),
     start_date: ymd.optional().describe("Current period start, YYYY-MM-DD Pacific Time (with end_date)."),
     end_date: ymd.optional(),
     previous_start_date: ymd.optional().describe("Previous period start (with previous_end_date). Default: same length immediately before the current period."),
@@ -98,6 +100,9 @@ export const compareSearchPeriods = gscRead({
     validateQuery({ dimensions: [a.dimension], type, filters: a.filters as FilterInput[], aggregation: "auto", dataState: "final" });
     const today = pacificToday();
     const prevGiven = a.previous_start_date !== undefined || a.previous_end_date !== undefined;
+    const curGiven = a.start_date !== undefined || a.end_date !== undefined;
+    if (!curGiven && !prevGiven && LONG_PERIODS.has(a.period))
+      throw new ToolError("invalid_argument", `period ${a.period} with the default previous period (the same length before it) needs more than the 16 months of data Search Console keeps. Give previous_start_date and previous_end_date, or use last_180_days or shorter.`);
     if (prevGiven) {
       if (a.previous_start_date === undefined || a.previous_end_date === undefined) throw new ToolError("invalid_argument", "Give both previous_start_date and previous_end_date, or neither.");
       checkDates(a.previous_start_date, a.previous_end_date, today, "previous period");
