@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { canonicalJson } from "../../security/canonical";
-import { diffVersions } from "../../platforms/gtm/diff";
+import { CELL_MAX, diffVersions, longestFieldValue } from "../../platforms/gtm/diff";
 import { SERVER_WS_DESCRIPTION } from "../../platforms/gtm/client";
 import type { GtmTag, GtmVersion } from "../../platforms/gtm/types";
 import type { ChangeSet } from "../../policy/change-set";
@@ -119,6 +119,13 @@ describe("diffVersions", () => {
       ["5", "parameter.html", "create"],
     ]);
     expect(d.rows.find((r) => r.field === "parameter.html")!.after).toBe(html);
+  });
+
+  it("a value too long to show in full is measured, so publish can refuse it (lead review follow-up)", () => {
+    const longUrl = `https://evil.example/c?${"q".repeat(CELL_MAX)}`;
+    const d = diffVersions(V("1", []), V("2", [T({ tagId: "7", parameter: [{ type: "template", key: "url", value: longUrl }] })]));
+    expect(longestFieldValue(d)).toBeGreaterThan(CELL_MAX);
+    expect(longestFieldValue(diffVersions(V("1", []), V("2", [T({ tagId: "7", parameter: [{ type: "template", key: "url", value: "https://a.example/" }] })])))).toBeLessThanOrEqual(CELL_MAX);
   });
 
   it("fingerprint-only differences are not changes; list/map params as canonical JSON; long cells capped; sha stable across key order", () => {

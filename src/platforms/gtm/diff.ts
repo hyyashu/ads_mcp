@@ -46,7 +46,7 @@ export interface Diff {
   sha256: string;
 }
 
-const CELL_MAX = 2_000;
+export const CELL_MAX = 2_000;
 const cell = (s: string | null) => (s === null ? null : cut(s, CELL_MAX).text);
 const KIND_ORDER: DiffKind[] = ["tag", "trigger", "variable", "built_in_variable"];
 const COARSE: [CoarseKind, keyof GtmVersion][] = [
@@ -217,3 +217,9 @@ function coarseParts(kind: CoarseKind, x: Row): { field: string; text: string }[
  */
 export const longestCode = (d: Diff) =>
   Math.max(0, ...d.entries.flatMap((e) => [e.code?.before?.length ?? 0, e.code?.after?.length ?? 0]), ...d.coarse.flatMap((c) => c.parts.flatMap((p) => [p.before?.length ?? 0, p.after?.length ?? 0])));
+
+/**
+ * Longest non-code value in the diff. Such values are cut at CELL_MAX on the approval page, so publish_gtm_version refuses
+ * when this is above CELL_MAX: an approver must never approve a value they could not read in full (e.g. a long beacon URL).
+ */
+export const longestFieldValue = (d: Diff) => Math.max(0, ...d.entries.flatMap((e) => e.fields.flatMap((f) => [f.before?.length ?? 0, f.after?.length ?? 0])));

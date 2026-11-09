@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import { canonicalJson } from "../../../security/canonical";
 import { type GtmClient, SERVER_WS_NAME, gtmIdOrFail } from "../client";
-import { type Diff, diffVersions, longestCode } from "../diff";
+import { CELL_MAX, type Diff, diffVersions, longestCode, longestFieldValue } from "../diff";
 import { hostsNote, stripVolatile } from "../model";
 import { GTM_EDIT_VERSIONS, GTM_PUBLISH, accountId, entityName, gtmId, notesText } from "./common";
 import { entityInfo } from "./reads";
@@ -159,6 +159,7 @@ export const publishGtmVersion = gtmStateWrite({
     if (!s.target_fingerprint) throw new ToolError("internal", "Tag Manager returned the version without a fingerprint, so the publish could not be guarded. Nothing was changed.");
     if (diff.rows.length > PUBLISH_MAX_ROWS) throw new ToolError("invalid_argument", `This publish changes ${diff.rows.length} settings, more than one approval page can show (${PUBLISH_MAX_ROWS}). Publish it in Tag Manager, or split it.`);
     if (longestCode(diff) > PUBLISH_MAX_CODE) throw new ToolError("invalid_argument", `Code in this publish (a custom HTML tag, Custom JavaScript variable or custom template) is longer than ${PUBLISH_MAX_CODE.toLocaleString("en-US")} characters, too large to show to approvers. Publish it in Tag Manager.`);
+    if (longestFieldValue(diff) > CELL_MAX) throw new ToolError("invalid_argument", `A setting in this publish is longer than ${CELL_MAX.toLocaleString("en-US")} characters, so approvers would only see part of it. Publish it in Tag Manager.`);
     const older = s.live_version_id !== null && Number(a.version_id) < Number(s.live_version_id);
     const where = [container.publicId, (container.domainName ?? []).join(", "), (container.usageContext ?? []).join(", ")].filter(Boolean).join(", ");
     const coarse = diff.coarse.length ? ` Also changed: ${diff.coarse.map((c) => `${c.kind.replace(/_/g, " ")} ${q(c.name)} (${c.status}${c.detail ? `, ${c.detail}` : ""})`).join("; ")}.` : "";
