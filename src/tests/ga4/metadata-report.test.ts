@@ -187,6 +187,12 @@ describe("run_ga4_report", () => {
     expect(f.dataCalls(":runReport")[0]!.body).toMatchObject({ limit: 2, offset: 100 });
   });
 
+  it("the last page (offset + returned = rowCount) is not truncated and has no next_offset", async () => {
+    f.report = ok(["country"], ["sessions"], [[["DE"], ["10"]], [["FR"], ["5"]]], { rowCount: 250 });
+    const r = await kit.run("run_ga4_report", { dimensions: ["country"], metrics: ["sessions"], limit: 100, offset: 248 });
+    expect(r.data).toMatchObject({ row_count: 250, returned: 2, offset: 248, truncated: false, next_offset: null });
+  });
+
   it("GA4 quota exhaustion is quota_exceeded with GA4's message and retry-after, and is not retried", async () => {
     f.fail[":runReport"] = { status: 429, body: quotaError };
     const r = await kit.run("run_ga4_report", { metrics: ["sessions"] });

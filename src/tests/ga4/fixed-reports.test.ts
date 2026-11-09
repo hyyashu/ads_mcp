@@ -144,6 +144,24 @@ describe("get_google_ads_traffic_in_ga4", () => {
 });
 
 describe("get_conversion_events", () => {
+  it("a key event created after the period ended is created_after_period, not created_during_period", async () => {
+    f.keyEvents = [
+      { name: "properties/123/keyEvents/1", eventName: "purchase", createTime: "2025-01-01T00:00:00Z" },
+      { name: "properties/123/keyEvents/2", eventName: "lead", createTime: "2026-10-20T12:00:00Z" },
+      { name: "properties/123/keyEvents/3", eventName: "sign_up", createTime: "2026-11-05T12:00:00Z" },
+    ];
+    f.report = () => reportOf(["eventName"], ["eventCount", "keyEvents"], [[["purchase"], ["40", "40"]], [["sign_up"], ["9", "0"]]], { metadata: { timeZone: "Europe/Berlin", currencyCode: "EUR" } });
+    const r = await kit.run("get_conversion_events", { date_range: "LAST_MONTH" });
+    expect(r.data).toMatchObject({
+      period: { start_date: "2026-10-01", end_date: "2026-10-31" },
+      key_events: [
+        { event_name: "lead", status: "created_during_period" },
+        { event_name: "purchase", status: "recorded" },
+        { event_name: "sign_up", status: "created_after_period", event_count: 9 },
+      ],
+    });
+  });
+
   it("statuses per key event: recorded, no events, created during the period; one inList report", async () => {
     f.keyEvents = [
       { name: "properties/123/keyEvents/1", eventName: "purchase", countingMethod: "ONCE_PER_EVENT", defaultValue: { numericValue: 10, currencyCode: "EUR" }, custom: true, deletable: true, createTime: "2025-01-01T00:00:00Z" },

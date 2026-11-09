@@ -73,7 +73,7 @@ describe("get_ga4_change_history", () => {
           userActorEmail: "admin@shop.example",
           changesFiltered: false,
           changes: [
-            { resource: "properties/123/customDimensions/4", action: "CREATED", resourceAfterChange: { customDimension: { parameterName: "plan_type", displayName: "Plan" } } },
+            { resource: "properties/123/dataStreams/4", action: "CREATED", resourceAfterChange: { dataStream: { displayName: "Web", type: "WEB_DATA_STREAM" } } },
             { resource: "properties/123/conversionEvents/9", action: "DELETED", resourceBeforeChange: { conversionEvent: { eventName: big } } },
           ],
         },
@@ -87,9 +87,53 @@ describe("get_ga4_change_history", () => {
     expect(c.body).toEqual({ property: "properties/123", earliestChangeTime: "2026-11-03T11:30:00.000Z", resourceType: ["CUSTOM_DIMENSION", "CONVERSION_EVENT"], action: ["CREATED", "DELETED"], pageSize: 1 });
     const d = r.data as any;
     expect(d).toMatchObject({ account: "accounts/77", returned: 1, truncated: true, events: [{ id: "e1", actor_type: "USER", actor_email: "admin@shop.example" }] });
-    expect(d.events[0].changes[0]).toEqual({ resource: "properties/123/customDimensions/4", action: "CREATED", resource_kind: "customDimension", before: null, after: '{"parameterName":"plan_type","displayName":"Plan"}' });
+    expect(d.events[0].changes[0]).toEqual({ resource: "properties/123/dataStreams/4", action: "CREATED", resource_kind: "dataStream", before: null, after: '{"displayName":"Web","type":"WEB_DATA_STREAM"}' });
     expect(d.events[0].changes[1]).toMatchObject({ resource_kind: "conversionEvent", after: null });
     expect(d.events[0].changes[1].before).toHaveLength(1001);
+  });
+
+  it("before/after only for documented union members; other kinds give resource and action only", async () => {
+    f.history = () => ({
+      changeHistoryEvents: [
+        {
+          id: "e2",
+          changes: [
+            // Not a documented ChangeHistoryResource member: must not be passed through even if Google sent it.
+            { resource: "properties/123/customDimensions/4", action: "UPDATED", resourceAfterChange: { customDimension: { parameterName: "plan_type" } } as any },
+            { resource: "properties/123/attributionSettings", action: "UPDATED" },
+            { resource: "properties/123", action: "UPDATED", resourceBeforeChange: { property: { displayName: "Old" } }, resourceAfterChange: { property: { displayName: "New" } } },
+          ],
+        },
+      ],
+    });
+    const d = (await kit.run("get_ga4_change_history", {})).data as any;
+    expect(d.events[0].changes).toEqual([
+      { resource: "properties/123/customDimensions/4", action: "UPDATED", resource_kind: null, before: null, after: null },
+      { resource: "properties/123/attributionSettings", action: "UPDATED", resource_kind: null, before: null, after: null },
+      { resource: "properties/123", action: "UPDATED", resource_kind: "property", before: '{"displayName":"Old"}', after: '{"displayName":"New"}' },
+    ]);
+  });
+
+  it("strips creator email addresses from resource bodies but keeps the acting user's email", async () => {
+    f.history = () => ({
+      changeHistoryEvents: [
+        {
+          id: "e3",
+          userActorEmail: "admin@shop.example",
+          changes: [
+            {
+              resource: "properties/123/googleAdsLinks/55",
+              action: "CREATED",
+              resourceAfterChange: { googleAdsLink: { name: "properties/123/googleAdsLinks/55", customerId: "1234567890", creatorEmailAddress: "creator@example.com", nested: [{ ownerEmailAddress: "deep@example.com", keep: 1 }] } },
+            },
+          ],
+        },
+      ],
+    });
+    const d = (await kit.run("get_ga4_change_history", {})).data as any;
+    expect(d.events[0].actor_email).toBe("admin@shop.example");
+    expect(JSON.parse(d.events[0].changes[0].after)).toEqual({ name: "properties/123/googleAdsLinks/55", customerId: "1234567890", nested: [{ keep: 1 }] });
+    expect(JSON.stringify(d)).not.toMatch(/creator@example\.com|deep@example\.com/);
   });
 
   it("a property without a readable account is unsupported", async () => {

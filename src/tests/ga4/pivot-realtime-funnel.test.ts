@@ -101,7 +101,13 @@ describe("run_ga4_funnel_report (v1alpha)", () => {
         dimensionHeaders: [{ name: "funnelStepName" }, { name: "deviceCategory" }],
         // deliberately not in the order the tool asks for
         metricHeaders: [{ name: "funnelStepAbandonmentRate" }, { name: "activeUsers" }, { name: "funnelStepAbandonments" }, { name: "funnelStepCompletionRate" }],
-        rows: [row(["1. View", "mobile"], ["0.6", "100", "60", "0.4"]), row(["2. Cart", "mobile"], ["0.5", "40", "20", "0.5"])],
+        // With funnelBreakdown, GA4 returns each step's total as an extra row whose breakdown value is RESERVED_TOTAL.
+        rows: [
+          row(["1. View", "RESERVED_TOTAL"], ["0.6", "250", "150", "0.4"]),
+          row(["1. View", "mobile"], ["0.6", "100", "60", "0.4"]),
+          row(["2. Cart", "RESERVED_TOTAL"], ["0.5", "100", "50", "0.5"]),
+          row(["2. Cart", "mobile"], ["0.5", "40", "20", "0.5"]),
+        ],
         metadata: { samplingMetadatas: [{ samplesReadCount: "100", samplingSpaceSize: "400" }] },
       },
       funnelVisualization: { rows: [] },
@@ -130,11 +136,41 @@ describe("run_ga4_funnel_report (v1alpha)", () => {
       breakdown_dimension: "deviceCategory",
       steps: [
         { step: "1. View", breakdown: "mobile", active_users: 100, completion_rate: 0.4, abandonments: 60, abandonment_rate: 0.6 },
-        { step: "2. Cart", active_users: 40, completion_rate: 0.5 },
+        { step: "2. Cart", breakdown: "mobile", active_users: 40, completion_rate: 0.5 },
+      ],
+      step_totals: [
+        { step: "1. View", active_users: 250, completion_rate: 0.4, abandonments: 150, abandonment_rate: 0.6 },
+        { step: "2. Cart", active_users: 100, completion_rate: 0.5, abandonments: 50, abandonment_rate: 0.5 },
       ],
       data_quality: { sampled: true, sampling: [{ percent_of_events: 25 }] },
       quota: { tokens_per_day_remaining: 100 },
     });
+    const d = r.data as any;
+    expect(d.steps).toHaveLength(2);
+    expect(d.steps.some((x: any) => x.breakdown === "RESERVED_TOTAL")).toBe(false);
+    expect(d.step_totals[0]).not.toHaveProperty("breakdown");
+    // One breakdown value returned, limit 3: nothing was cut, so no note.
+    expect(d.data_quality.notes.join(" ")).not.toContain("breakdown_limit");
+  });
+
+  it("notes that only the first breakdown_limit values are shown when GA4 returns that many", async () => {
+    f.funnel = () => ({
+      funnelTable: {
+        dimensionHeaders: [{ name: "funnelStepName" }, { name: "deviceCategory" }],
+        metricHeaders: [{ name: "activeUsers" }],
+        rows: [row(["1. View", "RESERVED_TOTAL"], ["300"]), row(["1. View", "mobile"], ["100"]), row(["1. View", "desktop"], ["90"])],
+      },
+    });
+    const d = (await kit.run("run_ga4_funnel_report", { steps, breakdown_dimension: "deviceCategory", breakdown_limit: 2 })).data as any;
+    expect(d.steps.map((x: any) => x.breakdown)).toEqual(["mobile", "desktop"]);
+    expect(d.step_totals).toEqual([{ step: "1. View", active_users: 300, completion_rate: null, abandonments: null, abandonment_rate: null }]);
+    expect(d.data_quality.notes.join(" ")).toContain("Only the first 2 values of deviceCategory are shown (breakdown_limit)");
+  });
+
+  it("without a breakdown, rows stay in steps and step_totals is empty", async () => {
+    f.funnel = () => ({ funnelTable: { dimensionHeaders: [{ name: "funnelStepName" }], metricHeaders: [{ name: "activeUsers" }], rows: [row(["1. View"], ["300"]), row(["2. Cart"], ["120"])] } });
+    const d = (await kit.run("run_ga4_funnel_report", { steps })).data as any;
+    expect(d).toMatchObject({ breakdown_dimension: null, steps: [{ step: "1. View", breakdown: null, active_users: 300 }, { step: "2. Cart", active_users: 120 }], step_totals: [] });
   });
 
   it("refuses a duration on step 1 and an unknown breakdown dimension", async () => {

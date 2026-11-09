@@ -301,11 +301,25 @@ export interface ChangeHistoryQuery {
   earliestChangeTime?: string;
   latestChangeTime?: string;
 }
+/**
+ * Admin API v1beta ChangeHistoryResource: a union with exactly these members (checked 2026-11-10). Other resource types
+ * (custom dimensions, attribution settings, ...) appear in change history with only their resource name and action.
+ */
+export interface ChangeHistoryResource {
+  account?: Record<string, unknown>;
+  property?: Record<string, unknown>;
+  firebaseLink?: Record<string, unknown>;
+  googleAdsLink?: Record<string, unknown>;
+  conversionEvent?: Record<string, unknown>;
+  measurementProtocolSecret?: Record<string, unknown>;
+  dataRetentionSettings?: Record<string, unknown>;
+  dataStream?: Record<string, unknown>;
+}
 export interface ChangeHistoryEvent {
   id?: string;
   changeTime?: string;
   actorType?: string;
   userActorEmail?: string;
   changesFiltered?: boolean;
-  changes?: { resource?: string; action?: string; resourceBeforeChange?: Record<string, unknown>; resourceAfterChange?: Record<string, unknown> }[];
+  changes?: { resource?: string; action?: string; resourceBeforeChange?: ChangeHistoryResource; resourceAfterChange?: ChangeHistoryResource }[];
 }
