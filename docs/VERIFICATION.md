@@ -228,3 +228,91 @@ facts. Confirm the exact Search Console and URL Inspection quota responses on th
 
 **Not confirmed (do not depend on them):** the internal fields of `sites` entries beyond `siteUrl` / `permissionLevel`; whether
 `webmasters/v3/sites` pages (assumed not, as documented); how Google reports the URL Inspection daily limit.
+
+## Tag Manager tools (2026-11-10)
+
+The 12 Tag Manager tools (`src/platforms/gtm/`). Facts from the plan's table (`docs/superpowers/plans/2026-11-10-gtm-plan.md` §1),
+checked on developers.google.com on 2026-11-10; `create_version`, `versions.publish` and `tags.update` were fetched again while
+building (same date). `R` = `https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2`; requests go to
+`https://tagmanager.googleapis.com/tagmanager/v2`. Tested against a fake API only (`src/tests/gtm/`), not a live container.
+
+**Methods used (method, path, scope)**
+- `accounts.containers.list` `GET {account}/containers` (`pageToken`, items `container`); `containers.get` `GET {container}`;
+  read scope `tagmanager.readonly` (R/accounts.containers/list, /get). Container fields used: `path, containerId, name, publicId,
+  domainName[], usageContext[]` (enum `web, android, ios, androidSdk5, iosSdk5, amp, server`), `tagIds[]` ("All Tag IDs that refer
+  to this Container") (R/accounts.containers).
+- `workspaces.list` `GET {container}/workspaces` (`pageToken`, items `workspace`); `workspaces.create` `POST {container}/workspaces`,
+  scope `tagmanager.edit.containers`; `workspaces.getStatus` `GET {workspace}/status` → `workspaceChange: Entity[]`,
+  `mergeConflict: MergeConflict[]` (R/accounts.containers.workspaces/list, /create, /getStatus). Entity: `changeStatus`
+  (`none, added, deleted, updated`) plus one of `tag, trigger, variable, folder, client, transformation, zone, customTemplate,
+  builtInVariable, gtagConfig` (R/Entity). MergeConflict: `entityInWorkspace`, `entityInBaseVersion` (absent: "the workspace
+  entity is deleted from the base version") (R/MergeConflict).
+- `workspaces.create_version` `POST {workspace}:create_version`, body VersionOptions `{ name, notes }`; response
+  `containerVersion`, `syncStatus` ("Whether version creation failed when syncing the workspace to the latest container version"),
+  `compilerError`, `newWorkspacePath` ("Auto generated workspace path created as a result of version creation"); scope
+  `tagmanager.edit.containerversions`; the method "deletes the workspace" (R/accounts.containers.workspaces/create_version).
+- `tags.list` / `tags.get` / `tags.create` (`POST {workspace}/tags`) / `tags.update` (`PUT {tag}`, body the whole Tag, query
+  `fingerprint`: "When provided, this fingerprint must match the fingerprint of the tag in storage."), create/update scope
+  `tagmanager.edit.containers` (R/accounts.containers.workspaces.tags/*).
+- `triggers.list` / `get` / `create` (`POST {workspace}/triggers`, scope `edit.containers`); `variables.list`;
+  `built_in_variables.list` ("Lists all the enabled Built-In Variables", items `builtInVariable`).
+- `versions.live` `GET {container}/versions:live` ("the live (i.e. published) container version"); `versions.get`;
+  `version_headers.latest` `GET {container}/version_headers:latest`; `versions.publish` `POST {version}:publish`, empty body,
+  query `fingerprint` ("must match the fingerprint of the container version in storage"), response `{ containerVersion,
+  compilerError }`, scope `tagmanager.publish` only (R/accounts.containers.versions/live, /get, /publish,
+  R/accounts.containers.version_headers/latest).
+- No list method takes a page size: only `pageToken` / `nextPageToken`.
+- Quota: "0.25 queries per second (QPS) per project", "25 requests per 100 seconds", "10,000 requests per project per day"; over
+  quota is HTTP 403 (https://developers.google.com/tag-platform/tag-manager/api/v2/limits-quotas). Enforced by the foundation's
+  server-wide limiter (`beforeCall`), per request.
+- "When performing destructive operations using the API there will be no warnings, no confirmations, and no undo."
+  (https://developers.google.com/tag-platform/tag-manager/api/v2/devguide) — publish is `destructive` and shows the full diff.
+
+**Resource fields used**
+- Tag: `tagId, name, type, parameter[], firingTriggerId[]` ("A tag will fire when any of the listed triggers are true and all of
+  its blockingTriggerIds (if any specified) are false"), `blockingTriggerId[]`, `paused`, `liveOnly`, `tagFiringOption`
+  (`unlimited, oncePerEvent, oncePerLoad`), `consentSettings { consentStatus: notSet | notNeeded | needed, consentType }`
+  (consentType "must be of type LIST where each list item is of type STRING"), `scheduleStartMs`, `scheduleEndMs`,
+  `setupTag[].tagName`, `teardownTag[].tagName`, `notes`, `fingerprint`, `monitoringMetadata` (R/accounts.containers.workspaces.tags).
+- Parameter: `type` (`template, integer, boolean, list, map, triggerReference, tagReference`), `key`, `value`, `list`, `map`
+  (R/Parameter). Callers may only set `template`, `boolean` ("true"/"false") and `integer` (base 10) values.
+- Trigger: `triggerId, name, type, filter[]` ("fire iff all Conditions are true"), `customEventFilter[]`, `autoEventFilter[]`,
+  `waitForTags`, `checkValidation`, `waitForTagsTimeout` ("Only valid for Form Submission and Link Click triggers"), `parameter[]`,
+  `notes`. EventType values offered: `pageview, domReady, windowLoaded, customEvent, click, linkClick, formSubmission,
+  historyChange` (R/accounts.containers.workspaces.triggers).
+- Condition: `{ type, parameter[] }` with `arg0` (left operand, "must be a reference to a variable"), `arg1`, booleans `negate`
+  and `ignore_case`; ConditionType offered: `equals, contains, startsWith, endsWith, matchRegex, greater, greaterOrEquals, less,
+  lessOrEquals, cssSelector` (`urlMatches` left out: its operands are not documented) (R/Condition).
+- Variable `variableId, name, type, parameter[], formatValue, notes`; BuiltInVariable `{ type, name }` with `name` "to be used to
+  refer to the built-in variable" (types used: `event`) (R/accounts.containers.workspaces.variables, R/accounts.containers.versions).
+- ContainerVersion `containerVersionId, name, description, deleted, fingerprint, tag[], trigger[], variable[], builtInVariable[],
+  folder[], customTemplate[], client[], zone[], gtagConfig[], transformation[]`; CustomTemplate `templateId, name, templateData,
+  galleryReference { owner, repository, version, isModified }`; GtagConfig `gtagConfigId, type, parameter[]` (R/accounts.containers.versions,
+  R/accounts.containers.workspaces.templates, R/accounts.containers.workspaces.gtag_config).
+- Workspaces per container: standard accounts "can add up to 2 additional workspaces" beside the Default Workspace
+  (https://support.google.com/tagmanager/answer/7059647).
+
+**Archived (Google removed these pages; read from the Wayback Machine copy of the official page)**
+- Tag dictionary (https://web.archive.org/web/20250123113525/https://developers.google.com/tag-platform/tag-manager/api/v2/tag-dictionary-reference):
+  type codes `html` (Custom HTML, parameter `html`), `img`, `awct` (Google Ads Conversion Tracking, keys `googleConversionId`,
+  `googleConversionLabel`, listed only under Mobile Tags), `sp` (Google Ads Remarketing), `flc`/`fls`, `ga`, listeners
+  `lcl, fsl, cl, tl, jel, hl`. Used only for `type_label`, Custom HTML creation (`html` / key `html`) and audit recognition.
+- Parameter reference (https://web.archive.org/web/20250122235607/https://developers.google.com/tag-platform/tag-manager/api/v2/parameter-reference):
+  template values may hold variable references like `foo{{bar}}`.
+
+**Recognition outside the API reference**
+- Destination IDs: Measurement ID `G-12345`, Google Ads conversion ID `AW-98765` (https://support.google.com/tagmanager/answer/12324787).
+- Meta pixel base code: loader `connect.facebook.net/en_US/fbevents.js`, `fbq('init', '{pixel-id}')`, `fbq('track', 'PageView')`
+  (https://developers.facebook.com/docs/meta-pixel/get-started).
+- GA4 / Google tag type codes (`googtag`, `gaawc`, `gaawe`) are on **no** official page: GA4 is recognised by Measurement ID only, and
+  GA4 / Google Ads tags are created only by copying an existing tag of the customer's container (`like_existing`).
+
+**Not confirmed (handled defensively)**
+- The status of a fingerprint mismatch (412 assumed; mapped to a definite `conflict` by the foundation). What `versions:live` and
+  `version_headers:latest` return for a container without one (404 assumed → treated as none). Whether a new workspace starts from the
+  latest version (execute re-reads the new workspace and refuses on any difference before sending). Whether workspace entity
+  fingerprints equal the version's (drift is compared on content without location and fingerprint). Enum spelling on the wire
+  (lower camel sent, read case-insensitively). Whether `publish` with `compilerError` leaves live unchanged (confirmed by reading live
+  back). Name length limits and name uniqueness (the server refuses case-insensitive clashes itself). The id of built-in triggers
+  such as All Pages (never invented; ids already on a tag are kept). Id fields of folders, clients, zones and transformations
+  (the publish diff matches them by name).
