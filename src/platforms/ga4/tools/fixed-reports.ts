@@ -183,7 +183,7 @@ export const getGoogleAdsTrafficInGa4 = ga4Read({
 export const getConversionEvents = ga4Read({
   name: "get_conversion_events",
   title: "GA4 key events and how often they fired",
-  description: `Fetched live from Google Analytics (Admin keyEvents.list, Data API runReport). Every key event (GA4's name for conversions) of the property with its counting method and default value, and how many times it fired in the period, so you can see which key events are recorded and which never fire. Key events count from the moment they were marked, not before: ones created during the period are flagged. ${UNTRUSTED}`,
+  description: `Fetched live from Google Analytics (Admin keyEvents.list, Data API runReport). Every key event (GA4's name for conversions) of the property with its counting method and default value, and how many times it fired in the period, so you can see which key events are recorded and which never fire. Key events count from the moment they were marked, not before: ones created during the period (created_during_period) or after it ended (created_after_period) are flagged. ${UNTRUSTED}`,
   input: z.object({ account_id: accountId, ...periodFields }).refine(datesOk, datesMsg),
   output: z.object({
     ...reportHeaderShape,
@@ -199,7 +199,7 @@ export const getConversionEvents = ga4Read({
         create_time: z.string().nullable(),
         event_count: nn,
         key_event_count: nn,
-        status: z.enum(["recorded", "no_events_in_period", "created_during_period"]),
+        status: z.enum(["recorded", "no_events_in_period", "created_during_period", "created_after_period"]).describe("created_during_period: marked as a key event during the period, so counts are partial; created_after_period: marked after the period ended, so key_event_count does not reflect it."),
       }),
     ),
     summary: z.object({ total: z.number().int(), recorded: z.number().int(), not_recorded: z.number().int() }),

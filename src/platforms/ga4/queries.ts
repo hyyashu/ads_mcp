@@ -336,7 +336,8 @@ export async function fetchGoogleAdsTraffic(ga4: Ga4Client, o: AdsTrafficQuery, 
 export interface KeyEventCount extends KeyEventOut {
   event_count: number | null;
   key_event_count: number | null;
-  status: "recorded" | "no_events_in_period" | "created_during_period";
+  /** created_during_period / created_after_period: the key event was created after the period started, so counts are partial or describe the event before it became a key event. */
+  status: "recorded" | "no_events_in_period" | "created_during_period" | "created_after_period";
 }
 export interface KeyEventCounts extends ReportHeader {
   key_events: KeyEventCount[];
@@ -363,7 +364,9 @@ export async function fetchKeyEventCounts(ga4: Ga4Client, o: { period: PeriodInp
       counts.set(name, { events: v(ie), keys: v(ik) });
     }
   }
-  const explicitStart = /^\d{4}-\d{2}-\d{2}$/.test(period.start_date) ? period.start_date : null;
+  const isDate = (d: string) => /^\d{4}-\d{2}-\d{2}$/.test(d);
+  const explicitStart = isDate(period.start_date) ? period.start_date : null;
+  const explicitEnd = isDate(period.end_date) ? period.end_date : null;
   const key_events = list
     .map((k): KeyEventCount => {
       const c = counts.get(k.eventName!);
@@ -373,7 +376,14 @@ export async function fetchKeyEventCounts(ga4: Ga4Client, o: { period: PeriodInp
         ...keyEventOut(k),
         event_count: c ? c.events : 0,
         key_event_count: c ? c.keys : 0,
-        status: created && created > explicitStart! ? "created_during_period" : recorded ? "recorded" : "no_events_in_period",
+        status:
+          created && explicitEnd && created > explicitEnd
+            ? "created_after_period"
+            : created && created > explicitStart!
+              ? "created_during_period"
+              : recorded
+                ? "recorded"
+                : "no_events_in_period",
       };
     })
     .sort((a, b) => a.event_name.localeCompare(b.event_name));

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import { formatCustomerId, idOf } from "../admin";
+import type { ChangeHistoryResource } from "../types";
 import { GA4_EDIT, accountId, ga4Read } from "./common";
 import { UNTRUSTED } from "./properties";
 
@@ -63,15 +64,27 @@ const compact = (v: unknown): string | null => {
   const s = JSON.stringify(v);
   return s.length > CUT ? `${s.slice(0, CUT)}…` : s;
 };
-/** A ChangeHistoryResource is a oneof: its single key names the kind of resource (e.g. "customDimension"). */
-const kindOf = (r: Record<string, unknown> | undefined) => (r ? (Object.keys(r)[0] ?? null) : null);
+/**
+ * The documented members of the v1beta ChangeHistoryResource union (checked 2026-11-10). Only these carry before/after
+ * values; any other key Google might add is ignored rather than passed through unchecked.
+ */
+const RESOURCE_KINDS = ["account", "property", "firebaseLink", "googleAdsLink", "conversionEvent", "measurementProtocolSecret", "dataRetentionSettings", "dataStream"] as const satisfies readonly (keyof ChangeHistoryResource)[];
+type ResourceKind = (typeof RESOURCE_KINDS)[number];
+const kindOf = (r: ChangeHistoryResource | undefined): ResourceKind | null => (r ? (RESOURCE_KINDS.find((k) => r[k] !== undefined && r[k] !== null) ?? null) : null);
+/** Drops every *EmailAddress key (e.g. a Google Ads link's output-only creatorEmailAddress) at any depth. */
+const withoutEmails = (v: unknown): unknown => {
+  if (Array.isArray(v)) return v.map(withoutEmails);
+  if (v && typeof v === "object") return Object.fromEntries(Object.entries(v).filter(([k]) => !/emailaddress$/i.test(k)).map(([k, x]) => [k, withoutEmails(x)]));
+  return v;
+};
+const bodyOf = (r: ChangeHistoryResource | undefined, kind: ResourceKind | null) => (kind && r ? withoutEmails(r[kind]) : undefined);
 
 export const READ_ONLY_HISTORY = "Google only allows reading GA4 change history with a connection that may make changes. Reconnect Google Analytics with changes allowed to use this tool.";
 
 export const getGa4ChangeHistory = ga4Read({
   name: "get_ga4_change_history",
   title: "GA4 property change history",
-  description: `Fetched live from Google Analytics (Admin API v1beta accounts:searchChangeHistoryEvents). Who changed what on this property in the last N days (key events, custom dimensions, data streams, Google Ads links, attribution settings, ...), with before and after values. Google requires a connection with changes allowed (analytics.edit) even to read this, so it fails on read-only connections. Only changes the API supports are returned; the GA4 UI can show more. ${UNTRUSTED}`,
+  description: `Fetched live from Google Analytics (Admin API v1beta accounts:searchChangeHistoryEvents). Who changed what on this property in the last N days. Before and after values are given only for the resource kinds Google's API documents: account, property, Firebase links, Google Ads links, key (conversion) events, Measurement Protocol secrets, data retention settings and data streams; changes to other resources (custom dimensions, attribution settings, ...) return only the resource name and action. Creator email addresses inside resources are removed; the acting user's email is kept. Google requires a connection with changes allowed (analytics.edit) even to read this, so it fails on read-only connections. Only changes the API supports are returned; the GA4 UI can show more. ${UNTRUSTED}`,
   permissions: { platformPermissions: [GA4_EDIT], notes: "Google requires the edit scope even to read change history (searchChangeHistoryEvents accepts only analytics.edit)." },
   input: z.object({
     account_id: accountId,
@@ -91,7 +104,7 @@ export const getGa4ChangeHistory = ga4Read({
         actor_type: z.string().nullable().describe("USER, SYSTEM or SUPPORT."),
         actor_email: z.string().nullable(),
         changes_filtered: z.boolean(),
-        changes: z.array(z.object({ resource: z.string(), action: z.string().nullable(), resource_kind: z.string().nullable(), before: z.string().nullable(), after: z.string().nullable() })),
+        changes: z.array(z.object({ resource: z.string(), action: z.string().nullable(), resource_kind: z.string().nullable().describe("The documented resource kind (e.g. googleAdsLink); null for kinds without before/after values."), before: z.string().nullable(), after: z.string().nullable() })),
       }),
     ),
     returned: z.number().int(),
@@ -122,11 +135,11 @@ export const getGa4ChangeHistory = ga4Read({
           resource: c.resource ?? "",
           action: c.action ?? null,
           resource_kind: kind,
-          before: compact(kind ? c.resourceBeforeChange?.[kind] : undefined),
-          after: compact(kind ? c.resourceAfterChange?.[kind] : undefined),
+          before: compact(bodyOf(c.resourceBeforeChange, kind)),
+          after: compact(bodyOf(c.resourceAfterChange, kind)),
         };
       }),
     }));
-    return { property: ga4.property, account: acct, since, events, returned: events.length, truncated, note: "Only changes the API supports are returned; the GA4 UI can show more. Before/after values are compact JSON cut to 1,000 characters." };
+    return { property: ga4.property, account: acct, since, events, returned: events.length, truncated, note: "Only changes the API supports are returned; the GA4 UI can show more. Before/after values exist only for account, property, Firebase link, Google Ads link, key event, Measurement Protocol secret, data retention and data stream changes, as compact JSON cut to 1,000 characters, without creator email addresses." };
   },
 });
