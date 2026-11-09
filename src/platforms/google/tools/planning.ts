@@ -160,7 +160,11 @@ export const explainPerformanceAnomaly = googleRead({
     let events: Row[] = [];
     let note = `Change history from ${from} to ${a.current.end_date}.`;
     if (from <= a.current.end_date) {
-      events = await ads.query(new Gaql().select("change_event.change_date_time", "change_event.change_resource_type", "change_event.resource_change_operation", "change_event.campaign", "change_event.changed_fields", "change_event.client_type").from("change_event").where(`change_event.change_date_time >= ${lit.str(`${from} 00:00:00`)}`).where(`change_event.change_date_time <= ${lit.str(`${a.current.end_date} 23:59:59`)}`).orderBy("change_event.change_date_time", "DESC").limit(200), { maxRows: 200 });
+      events = await ads.query(new Gaql().select("change_event.change_date_time", "change_event.change_resource_type", "change_event.resource_change_operation", "change_event.campaign", "change_event.changed_fields", "change_event.client_type").from("change_event").where(`change_event.change_date_time >= ${lit.str(`${from} 00:00:00`)}`).where(`change_event.change_date_time <= ${lit.str(`${a.current.end_date} 23:59:59`)}`).orderBy("change_event.change_date_time", "DESC").limit(201), { maxRows: 201, partial: true });
+      if (events.length > 200) {
+        events = events.slice(0, 200);
+        note += " Only the 200 most recent changes are listed; there were more.";
+      }
     } else note = "The current period is older than 30 days, so Google keeps no change history for it.";
     return {
       current: c,

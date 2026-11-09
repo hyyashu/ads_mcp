@@ -1,23 +1,24 @@
 # ads-mcp
 
-A remote MCP server (Streamable HTTP) for Google Ads and Meta Ads. Target: 227 tools (167 Google, 60 Meta) from
+A remote MCP server (Streamable HTTP) for Google Ads and Meta Ads: 232 tools (172 Google, 60 Meta) from
 `inventory/tool-registry.json`, implemented against the official platform APIs. Advertising data is fetched on demand
 and never stored.
 
 ## Status (read this first)
 
-**39 of 227 tools are implemented** (all Google Ads: 16 read-only, 23 approval-gated writes). `docs/TRACKING.md` (generated) lists every tool, its
-plan and its status. A tool is exposed only when it has a real handler, input and output schemas, documented
-permissions and tests; there are no stub or fake-success tools.
+**231 of 232 tools are implemented** (171 Google, 60 Meta). The remaining one, `create_youtube_campaign`, is a documented
+external limitation. `docs/TRACKING.md` (generated) lists every tool, its plan and its status. A tool is exposed only
+when it has a real handler, input and output schemas, documented permissions and tests; there are no stub or
+fake-success tools.
 
-**"Implemented" currently means tested against crafted API responses, not against a real account.** No ad-platform
-credentials or test accounts were available, and the official documentation sites (Google, Meta, the MCP spec) were
-partly unreachable from the build environment (the key pages were later checked: see `docs/VERIFICATION.md`), so field names, endpoints and the MCP authorization details were written from
-knowledge and are **not verified against current official documentation**. The matrix marks every tool
-`mocked-api only` until it is proven live (`inventory/live-verified.json`).
+**"Implemented" means tested against crafted API responses, not against a real account.** Google tools are checked
+against Google's published v26 schema ("schema-checked (v26), not live"); Meta tools were built from Meta's reference
+docs ("docs-checked, not live"). Nothing has run against a live ad account yet (`inventory/live-verified.json` is
+empty). See `docs/VERIFICATION.md` for what was checked against which page.
 
-Built and tested (288 tests): MCP transport, tool registry with enforced rules, MCP-client OAuth server, Google/Meta
-connection flows, human approvals, crash reconciliation, shared rate limiting, GAQL builder and Google client layer.
+Tests (`npm test`) cover the MCP transport (2026-07-28 and 2025-era clients), the tool registry and its rules, the
+MCP-client OAuth server, Google/Meta connection flows, human approvals, crash reconciliation, shared rate limiting,
+the GAQL builder, both platform clients and every tool.
 
 ## Architecture
 
@@ -126,9 +127,13 @@ Back up the Postgres service (Dokploy → Backups): it holds the encrypted platf
 
 ## Known gaps and limitations
 
-- 188 tools pending. See `docs/TRACKING.md`. Three need platform support verified before they can be built honestly: `get_benchmark_context` (competitive metrics availability), `validate_video` (YouTube Data API key and what Google Ads exposes), `get_meta_audience_insights` (only officially supported capabilities; explicit unsupported errors otherwise).
-- No live verification of any tool, OAuth flow or API mapping (see Status).
-- MCP: the published spec is now revision 2026-07-28 (stateless, no `initialize`); the installed SDK (1.32.2) supports up to 2025-11-25, so the new transport revision is not implemented. The authorization requirements checked match (see `docs/VERIFICATION.md`).
+- No live verification of any tool, OAuth flow or API mapping (see Status). This needs a Test- and a Basic-level Google
+  Ads account and a Meta test ad account.
+- Lists are read up to a fixed size per call (for example 5,000 rows). Past that, a tool either says `truncated`
+  (when it shows a page) or refuses with `unsupported` (when it needs the whole list, as duplicate checks and totals
+  do). It never works from a silently cut list.
+- Each write makes several API calls (plan, re-check at approval time, execute, read back). That is the price of the
+  approval and conflict checks and is intended.
+- A few Meta fields could not be confirmed in Meta's docs and are deliberately not used (see `docs/VERIFICATION.md`).
 - Meta `debug_token` is called with POST (token kept out of the URL); confirm on the first live run.
 - Web UI is deliberately minimal (login, consent, approvals, connections). No self-serve signup: tenants are created with `tenant:create`.
-- The Meta platform client and all Meta tools are not started.

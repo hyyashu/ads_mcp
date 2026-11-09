@@ -33,9 +33,9 @@ export const getCampaignStructure = googleRead({
     const campaign = await requireCampaign(ads, a.campaign_id);
     const inCampaign = `campaign.id = ${lit.id(a.campaign_id)}`;
     const [groups, adRows, kwRows] = await Promise.all([
-      ads.query(new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status", "ad_group.type").from("ad_group").where(inCampaign).where("ad_group.status != 'REMOVED'").orderBy("ad_group.id").limit(1000), { maxRows: 1000 }),
-      ads.query(new Gaql().select("ad_group.id", "ad_group_ad.ad.id").from("ad_group_ad").where(inCampaign).where("ad_group_ad.status != 'REMOVED'"), { maxRows: 10_000 }),
-      ads.query(new Gaql().select("ad_group.id", "ad_group_criterion.criterion_id").from("ad_group_criterion").where(inCampaign).where("ad_group_criterion.type = 'KEYWORD'").where("ad_group_criterion.negative = FALSE").where("ad_group_criterion.status != 'REMOVED'"), { maxRows: 10_000 }),
+      ads.query(new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status", "ad_group.type").from("ad_group").where(inCampaign).where("ad_group.status != 'REMOVED'").orderBy("ad_group.id"), { maxRows: 1000 }),
+      ads.query(new Gaql().select("ad_group.id", "ad_group_ad.ad.id").from("ad_group_ad").where(inCampaign).where("ad_group_ad.status != 'REMOVED'"), { maxRows: 10_000, partial: true }),
+      ads.query(new Gaql().select("ad_group.id", "ad_group_criterion.criterion_id").from("ad_group_criterion").where(inCampaign).where("ad_group_criterion.type = 'KEYWORD'").where("ad_group_criterion.negative = FALSE").where("ad_group_criterion.status != 'REMOVED'"), { maxRows: 10_000, partial: true }),
     ]);
     const count = (rows: Row[]) => rows.reduce((m, r) => m.set(String(pick(r, "ad_group.id")), (m.get(String(pick(r, "ad_group.id"))) ?? 0) + 1), new Map<string, number>());
     const adCount = count(adRows);
@@ -149,8 +149,8 @@ export const getCampaignLabels = googleRead({
   handler: async (a, ctx) => {
     const ads = ctx.services.ads;
     const [links, labels] = await Promise.all([
-      ads.query(new Gaql().select("campaign.id", "campaign.name", "label.id", "label.name").from("campaign_label").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined).limit(10_000), { maxRows: 10_000 }),
-      ads.query(new Gaql().select("label.id", "label.name", "label.status", "label.text_label.description").from("label").where("label.status != 'REMOVED'").orderBy("label.name").limit(1000), { maxRows: 1000 }),
+      ads.query(new Gaql().select("campaign.id", "campaign.name", "label.id", "label.name").from("campaign_label").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined), { maxRows: 10_000 }),
+      ads.query(new Gaql().select("label.id", "label.name", "label.status", "label.text_label.description").from("label").where("label.status != 'REMOVED'").orderBy("label.name"), { maxRows: 1000 }),
     ]);
     return {
       campaign_labels: links.map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), campaign_name: str(r, "campaign.name"), label_id: String(pick(r, "label.id") ?? ""), label_name: str(r, "label.name") })),
@@ -177,7 +177,7 @@ export const getCampaignFrequencyCaps = googleRead({
   output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), channel_type: z.string().nullable(), frequency_caps: z.array(capSchema) })) }),
   handler: async (a, ctx) => {
     const rows = await ctx.services.ads.query(
-      new Gaql().select("campaign.id", "campaign.name", "campaign.advertising_channel_type", "campaign.frequency_caps").from("campaign").where("campaign.status != 'REMOVED'").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined).limit(1000),
+      new Gaql().select("campaign.id", "campaign.name", "campaign.advertising_channel_type", "campaign.frequency_caps").from("campaign").where("campaign.status != 'REMOVED'").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined),
       { maxRows: 1000 },
     );
     return { campaigns: rows.map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name"), channel_type: str(r, "campaign.advertising_channel_type"), frequency_caps: mapCaps(pick(r, "campaign.frequency_caps")) })) };
@@ -343,7 +343,7 @@ export const getPlacementPerformance = googleRead({
         .where(a.min_impressions > 0 && `metrics.impressions >= ${lit.int(a.min_impressions)}`)
         .orderBy("metrics.cost_micros", "DESC")
         .limit(a.limit + 1),
-      { maxRows: a.limit + 1 },
+      { maxRows: a.limit + 1, partial: true },
     );
     const shown = rows.slice(0, a.limit).map((r) => {
       const imp = num(pick(r, "metrics.impressions")), clicks = num(pick(r, "metrics.clicks")), cost = fromMicros(pick(r, "metrics.cost_micros")), conv = num(pick(r, "metrics.conversions"));
@@ -380,8 +380,7 @@ export const getShoppingSettings = googleRead({
         .from("campaign")
         .where("campaign.advertising_channel_type IN ('SHOPPING', 'PERFORMANCE_MAX')")
         .where("campaign.status != 'REMOVED'")
-        .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined)
-        .limit(1000),
+        .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined),
       { maxRows: 1000 },
     );
     const b = (r: Row, f: string) => (pick(r, f) === undefined ? null : pick(r, f) === true);
@@ -450,7 +449,7 @@ export const discoverExistingAssets = googleRead({
         .where(a.name_contains && `asset.name LIKE ${lit.str(`%${a.name_contains}%`)}`)
         .orderBy("asset.id", "DESC")
         .limit(a.limit + 1),
-      { maxRows: a.limit + 1 },
+      { maxRows: a.limit + 1, partial: true },
     );
     const shown = rows.slice(0, a.limit).map((r) => ({
       asset_id: String(pick(r, "asset.id") ?? ""),

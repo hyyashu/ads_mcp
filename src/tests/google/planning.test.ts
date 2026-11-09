@@ -56,7 +56,7 @@ describe("analysis", () => {
     expect(d.change.conversions).toBe(round(13 / 15 - 1));
     expect(d.campaigns[0]).toMatchObject({ campaign_id: "12", cost_delta: 100, conversions_delta: -2 });
     expect(d.changes_in_period[0]).toEqual({ at: "2026-11-02 10:00:00", resource_type: "CAMPAIGN_BUDGET", operation: "UPDATE", campaign_id: "12", changed_fields: "amount_micros", client: "GOOGLE_ADS_WEB_CLIENT" });
-    expect(g.queries.find((q) => q.includes("FROM change_event"))).toContain("LIMIT 200");
+    expect(g.queries.find((q) => q.includes("FROM change_event"))).toContain("LIMIT 201");
   });
 
   it("optimize_budget_allocation: budget-limited efficient campaigns vs unconstrained inefficient ones, plus Google's recommendations", async () => {

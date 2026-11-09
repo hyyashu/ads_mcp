@@ -69,7 +69,7 @@ No Meta code exists yet beyond the platform OAuth flow, so there was nothing to 
 
 1. Read the Google RPC reference for each resource a tool touches (field names, enums, required fields) when that tool is built.
 2. Fetch the Meta reference pages for each endpoint when its tool is built (audiences, catalog, insights parameters, lead forms, pixels).
-3. Upgrade or evaluate the MCP SDK for the 2026-07-28 revision.
+3. ~~Upgrade or evaluate the MCP SDK for the 2026-07-28 revision.~~ Done: SDK v2 (see the MCP table above).
 4. Run everything once against a Test-level and a Basic-level Google account and a Meta test ad account.
 
 ## Defects found by checking against the docs (2026-11-02, batch 2)
@@ -167,6 +167,37 @@ regression test that fails without it.
 - **Reconciliation could starve.** `reconcileUnknown` now skips rows that used up their checks and checks never-checked, then least-recently-checked rows first.
 - **Risk tiers are cross-checked**: a test asserts every implemented tool's tier equals the inventory plan (a mis-tiered `resume_*` could otherwise be self-approved).
 
-Reported by the review but not yet fixed (open): performance "totals" sum only the rows returned, which is misleading when `truncated` is true (R8); list reads silently cap at
-fixed sizes such as 5,000 keywords or 500 attached campaigns (R6); each write costs several API calls (R7); two simultaneous identical requests can surface as `internal` through the
-unique index (R9, not reproduced). The review's line counts and savings estimates were not checked.
+The four items the review left open were closed on 2026-11-10:
+
+- **R8, totals over the returned rows only.** The Google campaign and ad performance reports already read every matching row for their
+  totals (`totals_scope`). The remaining cases are fixed: PMax search category shares are now of every category, not only the
+  returned ones (all rows are read, the top `limit` shown, `truncated` added). The PMax search term costs and the Meta app and catalog
+  totals now say in their schema which rows they cover. Regression test: `src/tests/regressions/row-caps.test.ts`.
+- **R6, silent fixed-size caps.** Fixed at the source. `GoogleAdsClient.query` and `MetaAdsClient.list` now fail with `unsupported`
+  (`details.reason = "row_cap"`, "Nothing was changed") when a read matches more rows than its cap, unless the caller passes
+  `partial` because it shows a page and reports `truncated` itself. Fixed GAQL `LIMIT`s on lists that must be complete (duplicate
+  checks before writes, negative list members and attached campaigns, label links, ad groups, frequency caps, shopping settings, PMax
+  asset groups, the language list) were removed, because a LIMIT hides the overflow from the client. Paged reads that had no
+  `truncated` flag got one (`get_campaign_dates`, `get_ad_group_settings`, `list_conversion_actions`, `list_labels`,
+  `list_negative_keyword_lists`, `get_campaign_tracking`, `search_audiences`, `analyze_pmax_search_categories`), and the change history
+  in `explain_performance_anomaly` notes when it lists only the latest 200 changes. Regression tests in `row-caps.test.ts`.
+- **R7, several API calls per write.** Kept by design: plan, re-check at approval time, execute and read back are what make approvals
+  and conflict detection safe. Documented in the README.
+- **R9, simultaneous identical requests.** Already fixed in code (`onConflictDoNothing` on the idempotency key, then the winner is read
+  back). It had no test; `src/tests/core/reliability.test.ts` now simulates the race through the `afterExistingRead` seam and checks
+  that the second request gets the first one back.
+
+The review's line counts and savings estimates were not checked.
+
+## Meta fields still unconfirmed (checked again 2026-11-10 with Meta's docs search)
+
+- **Confirmed:** campaign copies (`POST /{campaign}/copies`) copy at most 3 child ads in a synchronous call and 51 in an asynchronous
+  one. `duplicate_meta_campaign` already refuses above 3 and never starts asynchronous copies.
+- **Partly confirmed:** insights `filtering` exists (dot notation, e.g. `ad.impressions` with `GREATER_THAN`, and `IN` recommended),
+  but `campaign.id` / `adset.id` with `IN` appears only on the Marketing Mix Modeling page (asynchronous CSV exports). The tools keep
+  filtering by choosing the endpoint (`/{campaign_id}/insights`) or locally.
+- **Still unconfirmed, so not used:** `omni_*` action types (only `catalog_segment_value_omni_purchase_roas` and
+  `converted_promoted_product_omni_*` fields are documented); the fields of `AdsPixelStatsResult` (the stats page confirms
+  `aggregation=event_total_counts`, the seven-day window and a `data` list of `AdsPixelStatsResult`, not its fields, so
+  `get_meta_pixel_stats` still reads both shapes seen); video `length` on ad videos; whether a targeting update replaces or merges
+  (targeting edits are not offered); and an objective-to-optimization-goal table.

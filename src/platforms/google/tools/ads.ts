@@ -21,7 +21,7 @@ async function readAds(ads: GoogleAdsClient, pairs: { ad_group_id: string; ad_id
     .from("ad_group_ad")
     .where(`ad_group.id IN ${lit.list([...new Set(pairs.map((p) => lit.id(p.ad_group_id)))])}`)
     .where(`ad_group_ad.ad.id IN ${lit.list([...new Set(pairs.map((p) => lit.id(p.ad_id)))])}`)
-    .limit(5000);
+    ;
   const rows = await ads.query(q, { maxRows: 5000 });
   const wanted = new Set(pairs.map((p) => adKey(p.ad_group_id, p.ad_id)));
   const out = new Map<string, AdInfo>();
@@ -170,7 +170,7 @@ export const getAdCreative = googleRead({
       .where(a.ad_ids?.length ? `ad_group_ad.ad.id IN ${lit.list(a.ad_ids.map(lit.id))}` : undefined)
       .orderBy("ad_group_ad.ad.id")
       .limit(a.limit + 1);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1 });
+    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
     const assets = (v: unknown) => ((v as { text?: string; pinnedField?: string }[] | undefined) ?? []).filter((x) => typeof x.text === "string").map((x) => ({ text: String(x.text), pinned_field: x.pinnedField ? String(x.pinnedField) : null }));
     return {
       ads: rows.slice(0, a.limit).map((r) => ({
@@ -205,7 +205,7 @@ export const getAdPerformance = googleRead({
       .where(a.ad_group_id && `ad_group.id = ${lit.id(a.ad_group_id)}`)
       .orderBy(order, "DESC")
       .limit(a.limit + 1);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1 });
+    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
     const shown = rows.slice(0, a.limit).map((r) => ({ ad_group_id: str(r, "ad_group.id"), ad_id: String(pick(r, "ad_group_ad.ad.id") ?? ""), status: str(r, "ad_group_ad.status"), ...calc(num(pick(r, "metrics.impressions")), num(pick(r, "metrics.clicks")), fromMicros(pick(r, "metrics.cost_micros")), num(pick(r, "metrics.conversions")), num(pick(r, "metrics.conversions_value"))) }));
     const truncated = rows.length > a.limit;
     // Totals cover every matching ad, not only the page shown (up to the client's 10,000-row cap).

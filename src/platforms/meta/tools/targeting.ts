@@ -42,7 +42,7 @@ export const browseMetaTargeting = metaRead({
   output: out,
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const rows = await m.list(`${m.adAccountId}/targetingbrowse`, { ...(a.limit_type ? { limit_type: a.limit_type } : {}), ...(a.locale ? { locale: a.locale } : {}) }, a.limit + 1);
+    const rows = await m.list(`${m.adAccountId}/targetingbrowse`, { ...(a.limit_type ? { limit_type: a.limit_type } : {}), ...(a.locale ? { locale: a.locale } : {}) }, a.limit + 1, { partial: true });
     const results = rows.slice(0, a.limit).filter((r) => r.id !== undefined).map(toItem);
     return { results, returned: results.length, truncated: rows.length > a.limit };
   },
@@ -57,7 +57,7 @@ export const searchMetaTargeting = metaRead({
   output: out,
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const rows = await m.list(`${m.adAccountId}/targetingsearch`, { q: a.q, ...(a.limit_type ? { limit_type: a.limit_type } : {}), ...(a.locale ? { locale: a.locale } : {}) }, a.limit + 1);
+    const rows = await m.list(`${m.adAccountId}/targetingsearch`, { q: a.q, ...(a.limit_type ? { limit_type: a.limit_type } : {}), ...(a.locale ? { locale: a.locale } : {}) }, a.limit + 1, { partial: true });
     const results = rows.slice(0, a.limit).filter((r) => r.id !== undefined).map(toItem);
     return { results, returned: results.length, truncated: rows.length > a.limit };
   },

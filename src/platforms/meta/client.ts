@@ -4,6 +4,12 @@ import type { MetaGraphHttp } from "./http";
 export type MetaRow = Record<string, unknown>;
 const HARD_ROW_CAP = 5_000;
 
+/** The error for an edge that holds more rows than the tool can safely work with. Nothing was changed. */
+function tooManyRows(cap: number, path: string): ToolError {
+  const edge = path.split("/").pop() ?? "rows";
+  return new ToolError("unsupported", `This needs more than ${cap.toLocaleString("en-US")} ${edge} rows, which is more than this tool reads in one call, so it stopped rather than work from a partial list. Narrow the request (for example to one campaign) and try again. Nothing was changed.`, { definite: true, details: { reason: "row_cap", cap, edge } });
+}
+
 /**
  * Currencies whose Marketing API offset is 1 (amounts are whole units). Every other supported currency has offset 100
  * (amounts are in 1/100 of the unit). Source: Marketing API "Currencies" reference, checked 2026-11-04.
@@ -66,8 +72,15 @@ export class MetaAdsClient {
     return this.o.http.call<T>({ ...t, path, params, idempotent: true, signal: this.o.signal });
   }
 
-  /** Reads an edge and follows cursor pagination (never the raw `paging.next` URL) up to maxRows. */
-  async list(path: string, params: Record<string, string> = {}, maxRows = 500): Promise<MetaRow[]> {
+  /**
+   * Reads an edge and follows cursor pagination (never the raw `paging.next` URL) up to maxRows.
+   *
+   * Rows are never dropped silently: when the edge holds more than maxRows rows the call fails with `unsupported`, because a
+   * caller that treats the rows as the whole edge (existence and duplicate checks, totals, the state a change is planned on)
+   * would otherwise be wrong without knowing it. A caller that shows a page and reports `truncated` itself passes
+   * `{ partial: true }` to get the first maxRows rows.
+   */
+  async list(path: string, params: Record<string, string> = {}, maxRows = 500, opts: { partial?: boolean } = {}): Promise<MetaRow[]> {
     const cap = Math.min(maxRows, HARD_ROW_CAP);
     const rows: MetaRow[] = [];
     let after: string | undefined;
@@ -75,7 +88,8 @@ export class MetaAdsClient {
       const page = await this.get<{ data?: MetaRow[]; paging?: { cursors?: { after?: string }; next?: string } }>(path, { limit: String(Math.min(100, cap)), ...params, ...(after ? { after } : {}) });
       rows.push(...(page.data ?? []));
       after = page.paging?.next ? page.paging.cursors?.after : undefined;
-    } while (after && rows.length < cap);
+    } while (after && rows.length <= cap);
+    if (!opts.partial && (rows.length > cap || after)) throw tooManyRows(cap, path);
     return rows.slice(0, cap);
   }
 
@@ -83,7 +97,7 @@ export class MetaAdsClient {
    * Reads a Page edge with that Page's access token. The token never leaves the client: handlers only get the rows. Callers
    * must first check the Page is one this ad account can promote (requirePromotablePage in tools/common.ts).
    */
-  async listAsPage(pageId: string, path: string, params: Record<string, string> = {}, maxRows = 500): Promise<MetaRow[]> {
+  async listAsPage(pageId: string, path: string, params: Record<string, string> = {}, maxRows = 500, opts: { partial?: boolean } = {}): Promise<MetaRow[]> {
     if (!/^\d{1,25}$/.test(pageId)) throw new ToolError("invalid_argument", "Page id must be numeric.");
     if (!this.o.getPageToken) throw new ToolError("unsupported", "Page access is not configured on this server.");
     const t = await this.o.getPageToken(pageId);
@@ -94,7 +108,8 @@ export class MetaAdsClient {
       const page = await this.o.http.call<{ data?: MetaRow[]; paging?: { cursors?: { after?: string }; next?: string } }>({ ...t, path, params: { limit: String(Math.min(100, cap)), ...params, ...(after ? { after } : {}) }, idempotent: true, signal: this.o.signal });
       rows.push(...(page.data ?? []));
       after = page.paging?.next ? page.paging.cursors?.after : undefined;
-    } while (after && rows.length < cap);
+    } while (after && rows.length <= cap);
+    if (!opts.partial && (rows.length > cap || after)) throw tooManyRows(cap, path);
     return rows.slice(0, cap);
   }
 
