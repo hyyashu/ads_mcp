@@ -459,3 +459,28 @@ against a live property; mocked-API tests only.
 - Quota cost of getMetadata and checkCompatibility (not stated).
 - The stored format of `sessionGoogleAdsCustomerId` (with or without hyphens): filtered with digits only, and the empty-result note says so.
 - Whether `customDimensions.list` includes archived dimensions (not stated).
+
+## Combined tools (2026-11-10)
+
+The 11 combined tools (`src/platforms/cross/`, plan `docs/superpowers/plans/2026-11-10-cross-plan.md`). They reuse the GSC,
+GA4, GTM, Google Ads and Meta helpers, whose facts are recorded in the sections above. Only the fields below were new; each was
+checked on the official page on 2026-11-10 (WebFetch). Every GAQL query the tools send is also checked against the v26 schema
+and field-selection rules by the test guard (`src/tests/support/schema-guard.ts`). Tested against fakes only, not live accounts.
+
+| Field / fact | Result | Source |
+|---|---|---|
+| `metrics.conversions` | "The number of conversions. This only includes conversion actions which include_in_conversions_metric attribute is set to true." | developers.google.com/google-ads/api/reference/rpc/v26/Metrics |
+| `metrics.conversions_by_conversion_date` | Same set of actions; "When this column is selected with date, the values in date column means the conversion date." Used by compare_conversion_tracking to date conversions like GA4 (event date) | same |
+| `metrics.all_conversions` | "includes all conversions regardless of the value of include_in_conversions_metric" (not used; recorded for the gap reasons) | same |
+| Conversions reported on the click date | "Imported conversions are reflected in reports for the impression date of the original click", not the conversion date (offline-import page; the click-date wording in the gap reasons rests on this and on the conversions_by_conversion_date note) | developers.google.com/google-ads/api/docs/conversions/upload-clicks |
+| `conversion_action.tag_snippets` | TagSnippet fields `type`, `page_format`, `global_site_tag`, `event_snippet` ("The event snippet that works with the site tag to track actions that should be counted as conversions"). The page gives **no example of `send_to`**: the `AW-<id>/<label>` form read from the snippet is Google's gtag convention, not stated on this page | developers.google.com/google-ads/api/reference/rpc/v26/TagSnippet |
+| `customer.conversion_tracking_setting.conversion_tracking_id`, `.cross_account_conversion_tracking_id` | "The conversion tracking id used for this account" (does not indicate whether tracking is used); cross-account id "overrides conversion_tracking_id" when set | developers.google.com/google-ads/api/reference/rpc/v26/ConversionTrackingSetting (served the Customer field list) |
+| `customer.auto_tagging_enabled`, `customer.tracking_url_template`, `customer.final_url_suffix`, `campaign.tracking_url_template`, `campaign.final_url_suffix`, `ad_group_ad.ad.final_urls` | Already used by other tools; selectable on these resources per the v26 schema index | inventory/google-ads-v26-schema.json |
+| Meta AdCreative `url_tags` | "A set of query string parameters which will replace or be appended to urls clicked from page post ads" → url_tags win over the link's own parameters | developers.facebook.com/docs/marketing-api/reference/ad-creative/ |
+| Meta AdCreative `asset_feed_spec` | "Used for Dynamic Creative…"; `link_urls[].website_url` is the shape create_meta_dynamic_creative_ad already writes | same; src/platforms/meta/tools/create.ts |
+| Meta dynamic URL parameters (`{{campaign.name}}` …) | **Not confirmed**: the AdCreative reference does not document them, the Business Help page returned no body and the guessed developer page was 404. The tools therefore never resolve them: such campaigns are reported as unmatched (`dynamic_parameter`) with the raw template | (none) |
+| Search Console regex filters | `includingRegex` uses RE2 (recorded in "Search Console tools"); brand patterns use character classes (`[aA]`) instead of the `(?i)` flag so no RE2 flag syntax is relied on | — |
+
+**Not confirmed (not relied on):** how GA4 stores `sessionGoogleAdsCustomerId` (so compare_conversion_tracking joins on campaign
+id and lists GA4 campaigns not in the compared accounts instead of filtering by customer id); whether GA4's `landingPage` ever
+contains a query string (the join strips one if present).

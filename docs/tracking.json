@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 274,
+    "implemented": 285,
     "external_limitation": 1,
-    "pending": 11
+    "pending": 0
   },
   "rows": [
     {
@@ -4805,10 +4805,10 @@
       ],
       "accountScope": "required",
       "notes": "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "find_organic_keyword_gaps",
@@ -4823,10 +4823,10 @@
         "https://www.googleapis.com/auth/webmasters.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "audit_ad_landing_pages",
@@ -4843,10 +4843,10 @@
       ],
       "accountScope": "required",
       "notes": "URL inspection is quota-limited, so it samples and says so.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "compare_conversion_tracking",
@@ -4862,10 +4862,10 @@
       ],
       "accountScope": "required",
       "notes": "Reports the gap and the known reasons a gap is normal (attribution model, window, time zone); never claims one side is right.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_meta_traffic_quality",
@@ -4881,10 +4881,10 @@
       ],
       "accountScope": "required",
       "notes": "GA4 has no Meta dimensions: matched through UTM tags only, with a list of campaigns it could not match.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_channel_mix",
@@ -4898,10 +4898,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "check_utm_tagging",
@@ -4917,10 +4917,10 @@
         "ads_read"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_brand_search_trend",
@@ -4935,10 +4935,10 @@
       ],
       "accountScope": "required",
       "notes": "A trend next to spend only: no causal claim.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "find_converting_terms_without_content",
@@ -4953,10 +4953,10 @@
         "https://www.googleapis.com/auth/webmasters.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "audit_tracking_setup",
@@ -4973,10 +4973,10 @@
       ],
       "accountScope": "required",
       "notes": "Recognises tags only by documented tag types and snippets.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "analyze_paid_search_on_site",
@@ -4990,10 +4990,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     }
   ]
 }
