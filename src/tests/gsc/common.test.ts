@@ -34,6 +34,13 @@ describe("property membership", () => {
     expect(withinProperty("https://shop.example.com/", "http://shop.example.com/p/1")).toBe(false);
     expect(withinProperty("https://shop.example.com/", "https://shop.example.com.evil.test/")).toBe(false);
   });
+  it("URL-prefix matching normalises the URL first: dot segments resolved, host case ignored", () => {
+    expect(withinProperty("https://example.com/blog/", "https://example.com/blog/../admin")).toBe(false);
+    expect(withinProperty("https://example.com/blog/", "https://example.com/blog/%2e%2e/admin")).toBe(false);
+    expect(withinProperty("https://example.com/blog/", "https://example.com/blog/./post")).toBe(true);
+    expect(withinProperty("https://example.com/blog/", "https://EXAMPLE.com/blog/post")).toBe(true);
+    expect(withinProperty("https://example.com/blog/", "https://example.com/other/../blog/post")).toBe(true);
+  });
 });
 
 describe("input schemas", () => {
@@ -66,6 +73,9 @@ describe("validateQuery", () => {
     expect(() => validateQuery(q({ dimensions: ["hour"], dataState: "hourly_all" }))).not.toThrow();
     expect(() => validateQuery(q({ type: "discover", dimensions: ["query"] }))).toThrow(/Discover/);
     expect(() => validateQuery(q({ type: "discover", filters: [{ dimension: "query", operator: "equals", expression: "x" }] }))).toThrow(/Discover/);
+    expect(() => validateQuery(q({ type: "googleNews", dimensions: ["query"] }))).toThrow(/Google News data has no queries/);
+    expect(() => validateQuery(q({ type: "googleNews", filters: [{ dimension: "query", operator: "equals", expression: "x" }] }))).toThrow(/Google News/);
+    expect(() => validateQuery(q({ type: "googleNews", dimensions: ["page"] }))).not.toThrow();
     expect(() => validateQuery(q({ aggregation: "byProperty", filters: [page] }))).toThrow(/byProperty/);
     expect(() => validateQuery(q({ aggregation: "byProperty", type: "googleNews" }))).toThrow(/byProperty/);
     const ns = { dimension: "searchAppearance" as const, operator: "equals" as const, expression: "NEWS_SHOWCASE" };

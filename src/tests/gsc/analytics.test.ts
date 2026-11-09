@@ -93,6 +93,30 @@ describe("get_search_performance", () => {
     expect(d.period).toEqual({ start_date: "2026-10-31", end_date: "2026-11-06", time_zone: "America/Los_Angeles", end_basis: "latest_final_data" });
   });
 
+  it('a named period with data_state "all" ends on today in Pacific Time, so the fresh days are included', async () => {
+    vi.setSystemTime(new Date("2026-11-10T07:30:00Z")); // 2026-11-09 in Pacific Time
+    // The probe would say 2026-11-06 is the latest final day; with fresh data it must not be used.
+    fake.sa = (_s, b) =>
+      isProbe(b) ? { rows: [r(["2026-11-06"], 1, 1)] } : b.startRow === 0 && !isTotals(b) ? { rows: [r(["2026-11-08"], 3, 30), r(["2026-11-09"], 1, 10)], metadata: { first_incomplete_date: "2026-11-08" } } : { rows: [] };
+    const d = (await kit.run("get_search_performance", { period: "last_7_days", dimensions: ["date"], data_state: "all" })).data as any;
+    expect(d.period).toEqual({ start_date: "2026-11-03", end_date: "2026-11-09", time_zone: "America/Los_Angeles", end_basis: "today_fresh_data" });
+    expect(queries().some(isProbe)).toBe(false);
+    expect(queries()[0]).toMatchObject({ startDate: "2026-11-03", endDate: "2026-11-09", dataState: "all", dimensions: ["date"] });
+    expect(d.rows.map((x: any) => x.date)).toEqual(["2026-11-08", "2026-11-09"]);
+    expect(d.first_incomplete_date).toBe("2026-11-08");
+    expect(d.notes.join(" ")).toContain("fresh data");
+  });
+
+  it('a named period with data_state "hourly_all" and hour grouping ends on today and passes first_incomplete_hour through', async () => {
+    fake.sa = (_s, b) =>
+      isProbe(b) ? { rows: [r(["2026-11-06"], 1, 1)] } : b.startRow === 0 && !isTotals(b) ? { rows: [r(["2026-11-10T09:00:00-08:00"], 2, 20)], metadata: { first_incomplete_hour: "2026-11-10T09:00:00-08:00" } } : { rows: [] };
+    const d = (await kit.run("get_search_performance", { period: "last_7_days", dimensions: ["hour"], data_state: "hourly_all" })).data as any;
+    expect(d.period).toMatchObject({ start_date: "2026-11-04", end_date: "2026-11-10", end_basis: "today_fresh_data" });
+    expect(queries()[0]).toMatchObject({ endDate: "2026-11-10", dataState: "hourly_all", dimensions: ["hour"] });
+    expect(d.rows[0]).toMatchObject({ hour: "2026-11-10T09:00:00-08:00", clicks: 2 });
+    expect(d.first_incomplete_hour).toBe("2026-11-10T09:00:00-08:00");
+  });
+
   it("falls back to three days ago with a note when the probe finds nothing; last_16_months starts at the retention limit", async () => {
     let d = (await kit.run("get_search_performance", { period: "last_28_days" })).data as any;
     expect(d.period).toMatchObject({ end_date: "2026-11-07", start_date: "2026-10-11", end_basis: "fallback_today_minus_3" });
@@ -130,6 +154,27 @@ describe("get_top_queries and get_top_pages", () => {
     ]);
     expect(d.notes.join(" ")).toContain("leave out anonymized queries too");
     expect((await kit.run("get_top_queries", { ...dates, type: "discover" })).error?.code).toBe("invalid_argument");
+    // Google News has no query dimension either (Search Console Help, answer 10083653)
+    expect((await kit.run("get_top_queries", { ...dates, type: "googleNews" })).error?.code).toBe("invalid_argument");
+    expect((kit.deps.registry.get("get_top_queries")!.input as any).safeParse({ account_id: "x", type: "googleNews" }).success).toBe(false); // not offered at all
+  });
+
+  it("Google News: no query dimension, filter or breakdown, refused before calling Google; pages carry the no-query note", async () => {
+    for (const [tool, extra] of [
+      ["get_search_performance", { type: "googleNews", dimensions: ["query"] }],
+      ["get_search_performance", { type: "googleNews", filters: [{ dimension: "query", operator: "contains", expression: "x" }] }],
+      ["get_top_pages", { type: "googleNews", query_contains: "x" }],
+      ["get_search_appearance", { type: "googleNews", appearance: "VIDEO", breakdown: "query" }],
+      ["compare_search_periods", { type: "googleNews", dimension: "query" }],
+    ] as const) {
+      const res = await kit.run(tool, { ...dates, ...extra });
+      expect(res.error?.code, `${tool} ${JSON.stringify(extra)}`).toBe("invalid_argument");
+      expect(res.error!.message).toContain("Google News data has no queries");
+    }
+    expect(fake.calls).toHaveLength(0);
+    fake.sa = (_s, b) => (b.startRow === 0 ? { rows: [r(["https://example.com/n"], 4, 40)] } : {});
+    const d = (await kit.run("get_top_pages", { ...dates, type: "googleNews" })).data as any;
+    expect(d.notes.join(" ")).toContain("Google News reports no queries, and position is not reported");
   });
 
   it("top pages: page dimension with auto aggregation; Discover allowed, Discover with a query filter refused", async () => {

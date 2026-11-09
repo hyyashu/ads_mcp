@@ -92,6 +92,36 @@ describe("compare_search_periods", () => {
     expect(d.counts.new).toBe(1000);
   });
 
+  it("only the previous period cut: a key only in the current period is beyond_cap, not new with zero previous clicks", async () => {
+    periods([["fresh", 9, 90, 1]], []);
+    const orig = fake.sa;
+    fake.sa = (s, b) => (b.startDate === "2026-10-01" && b.dimensions?.[0] === "query" && b.startRow === 0 ? { rows: Array.from({ length: b.rowLimit }, (_, i) => row([`x${i}`, 1, 10, 1])) } : orig(s, b));
+    const d = (await kit.run("compare_search_periods", { ...args, scan_limit: 1000 })).data as any;
+    expect(d.current.truncated).toBe(false);
+    expect(d.previous.truncated).toBe(true);
+    expect(d.beyond_cap).toBe(1); // "fresh": unknown in the previous period
+    expect(d.new).toEqual([]);
+    expect([...d.risers, ...d.fallers, ...d.new, ...d.lost].map((m: any) => m.key)).not.toContain("fresh");
+    expect(d.counts.lost).toBe(1000);
+    expect(d.notes.join(" ")).toContain("in the previous period");
+  });
+
+  it("refuses last_365_days and last_16_months with the default previous period before calling Google; explicit previous dates work", async () => {
+    periods([], []);
+    for (const period of ["last_365_days", "last_16_months"]) {
+      const res = await kit.run("compare_search_periods", { dimension: "page", period });
+      expect(res.error?.code, period).toBe("invalid_argument");
+      expect(res.error!.message).toContain("previous_start_date and previous_end_date");
+    }
+    expect(fake.calls).toHaveLength(0);
+    // last_180_days with its default previous period fits in 16 months
+    expect((await kit.run("compare_search_periods", { dimension: "page", period: "last_180_days" })).ok).toBe(true);
+    // 2026-11-06 is the probe's latest day; last_365_days starts 2025-11-07, so the previous period must end before it
+    const d = (await kit.run("compare_search_periods", { dimension: "page", period: "last_365_days", previous_start_date: "2025-07-15", previous_end_date: "2025-11-06" })).data as any;
+    expect(d.current).toMatchObject({ start_date: "2025-11-07", end_date: "2026-11-06" });
+    expect(d.periods_equal_length).toBe(false);
+  });
+
   it("drops keys under min_impressions and flags unequal periods; refuses overlap and Discover queries", async () => {
     periods([["small", 1, 3, 1], ["big", 9, 90, 1]], [["big", 1, 50, 1]]);
     const d = (await kit.run("compare_search_periods", { ...args, min_impressions: 10, previous_start_date: "2026-09-01", previous_end_date: "2026-09-30" })).data as any;

@@ -254,9 +254,12 @@ dimensions" (query it alone, then filter by each value); data typically availabl
 the past 10 days); 16 months of data kept.
 
 **How the tools use it.** Every rule above is checked before any request (`validateQuery`, `checkDates`): searchAppearance alone, `hour` only
-with `hourly_all` (the docs say "should"; enforced), no query dimension or filter for Discover, the `byProperty` and `byNewsShowcasePanel`
+with `hourly_all` (the docs say "should"; enforced), no query dimension or filter for Discover or Google News, the `byProperty` and `byNewsShowcasePanel`
 rules, start ≤ end ≤ today (Pacific Time), start ≥ today − 16 months. Named periods end on the latest day with final data (a 10-day date
-query); if it finds none they end 3 days ago and say so. The client pages with `startRow`, asking for one row past the cap, and either refuses
+query); if it finds none they end 3 days ago and say so. With `data_state` `all` or `hourly_all` a named period ends on today (Pacific Time,
+`end_basis: today_fresh_data`) with no probe, so the fresh days the caller asked for are included. `compare_search_periods` refuses
+`last_365_days` and `last_16_months` with the default previous period (two such periods do not fit in 16 months) and asks for explicit
+`previous_start_date`/`previous_end_date`; `get_top_queries` offers neither Discover nor Google News. The client pages with `startRow`, asking for one row past the cap, and either refuses
 with `row_cap` or (for tools that show a page) returns `truncated`; it never asks for more than 50,000 rows. Totals come from a second query
 with no dimensions and the same filters, so they are Google's totals, never a sum of the rows shown.
 
@@ -299,9 +302,18 @@ Unknown values are passed through and called unrecognised.
 `concurrentLimitExceeded`, `servingLimitExceeded` are quota (the foundation maps all of them to `quota_exceeded`, tested in
 `src/tests/gsc/client.test.ts`); `forbidden`, `insufficientPermissions` are permission.
 
+**Google News** (Search Console Help, https://support.google.com/webmasters/answer/10083653, the Google News performance report): the
+report has no query dimension and no position metric. **From the Help page, confirm live** (the API reference does not say it): the tools
+treat `googleNews` like Discover (query dimension, query filter and query breakdown refused before any call; the no-query/no-position note is
+added).
+
+**Property membership** (`withinProperty`, used by `inspect_url` and `submit_sitemap`): a URL-prefix property matches by prefix after both
+URLs are normalised by the WHATWG URL parser (host lower-cased, `.`/`..` and `%2e%2e` segments resolved), so
+`https://example.com/blog/../admin` is not inside `https://example.com/blog/`.
+
 **Write flow.** Each write plans read-only (property membership, the user's permission level, live state), stores a snapshot of only what a
 person changes (never `isPending`, `lastDownloaded` or counts, which Google changes by itself), sends one body-less request after approval,
-reads the result back (a failed read-back is `unknown_outcome`) and verifies from live state. Risk: `submit_sitemap`, `add_gsc_site` write
+reads the result back (a failed read-back, including a 403 or 429 on that GET, is `unknown_outcome`) and verifies from live state. Risk: `submit_sitemap`, `add_gsc_site` write
 (change set with a neutral effect, never automated); `delete_sitemap`, `remove_gsc_site` destructive (second approver).
 
 **Inferred, not confirmed (safe choice taken):** `feedpath` is percent-encoded like `siteUrl` (only `siteUrl` has a documented example);
@@ -310,8 +322,8 @@ a sitemap outside the property is refused (docs do not say it must be inside); `
 an owner's verification, other users and data is not documented (the summary says so); whether deleting a sitemap stops Google reading its
 URLs is not documented (the summary says so); which permission levels may delete sitemaps (restricted and unverified users are refused);
 `long` fields (`errors`, `warnings`, `submitted`) are read from numbers or numeric strings; the format of `hour` keys is undocumented (passed
-through as given); a short page is not taken as the end (paging continues until an empty page); whether Google News lacks queries/positions
-(not blocked; Google's 400 comes back as `invalid_argument`); the URL Inspection quota error's status and whether day and minute limits can be
+through as given); a short page is not taken as the end (paging continues until an empty page); that the Search Console API also rejects
+queries for `googleNews` (blocked from the Help page, see above); the URL Inspection quota error's status and whether day and minute limits can be
 told apart (the message names both). Confirm these on the first live run.
 
 ## Tag Manager tools (2026-11-10)
