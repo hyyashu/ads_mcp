@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 246,
+    "implemented": 249,
     "external_limitation": 1,
-    "pending": 39
+    "pending": 36
   },
   "rows": [
     {
@@ -4512,10 +4512,10 @@
         "https://www.googleapis.com/auth/analytics.edit"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "remove_key_event",
@@ -4530,10 +4530,10 @@
         "https://www.googleapis.com/auth/analytics.edit"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_custom_dimension",
@@ -4548,10 +4548,10 @@
         "https://www.googleapis.com/auth/analytics.edit"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_ga4_audience",

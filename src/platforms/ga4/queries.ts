@@ -3,7 +3,7 @@ import { ratio, round, todayIn } from "../core/report-math";
 import { keyEventOut, keyEventsByName, type KeyEventOut } from "./admin";
 import type { Ga4Client } from "./client";
 import type { FilterExpression, RunReportResponse } from "./types";
-import { byMetric, combine, headerFrom, incompatibleFields, indexMetadata, inListFilter, type PeriodInput, type ReportHeader, reportPeriod, runFixedReport, stringFilter } from "./report";
+import { byMetric, combine, headerFrom, incompatibleFields, indexMetadata, inListFilter, type PeriodInput, type ReportHeader, type ResolvedPeriod, reportPeriod, runFixedReport, stringFilter } from "./report";
 
 /**
  * Fixed-shape GA4 queries (Data API v1beta runReport with constant dimension and metric names from the API schema page,
@@ -384,3 +384,29 @@ export async function fetchKeyEventCounts(ga4: Ga4Client, o: { period: PeriodInp
   return { ...header, key_events, summary: { total: key_events.length, recorded, not_recorded: key_events.length - recorded } };
 }
 
+
+// ------------------------------------------------------------------------------------------------ event counts (write plans)
+/**
+ * How often each of `names` fired in the last 28 complete days (eventCount and keyEvents per eventName). Names that did not
+ * fire are absent from GA4's answer and reported as 0. Used by write plans to tell the approver whether an event is real.
+ */
+export async function eventCountsLast28Days(ga4: Ga4Client, names: string[], now = new Date()): Promise<{ counts: Map<string, { event_count: number; key_events: number }>; period: ResolvedPeriod }> {
+  const { period } = await reportPeriod(ga4, { date_range: "LAST_28_DAYS" }, now);
+  const counts = new Map(names.map((x) => [x, { event_count: 0, key_events: 0 }]));
+  if (!names.length) return { counts, period };
+  const res = await ga4.runReport({
+    dateRanges: [{ startDate: period.start_date, endDate: period.end_date }],
+    dimensions: [{ name: "eventName" }],
+    metrics: [{ name: "eventCount" }, { name: "keyEvents" }],
+    dimensionFilter: inListFilter("eventName", names),
+    limit: Math.max(1, names.length),
+  });
+  const headers = (res.metricHeaders ?? []).map((h) => h.name);
+  for (const r of res.rows ?? []) {
+    const name = r.dimensionValues?.[0]?.value ?? "";
+    if (!counts.has(name)) continue;
+    const v = (m: string) => Number(r.metricValues?.[headers.indexOf(m)]?.value ?? 0) || 0;
+    counts.set(name, { event_count: v("eventCount"), key_events: v("keyEvents") });
+  }
+  return { counts, period };
+}

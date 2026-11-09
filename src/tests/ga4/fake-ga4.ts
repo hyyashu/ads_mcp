@@ -241,6 +241,8 @@ export async function ga4Harness(label: string, f: FakeGa4, o: { units?: { curre
     approvals,
     deps,
     run: (name: string, args: Record<string, unknown>) => runTool(deps, deps.registry.get(name)!, { account_id: accountId, ...args }, { tenantId, userId: owner, role: "owner", scopes: ["ads:read", "ads:write"] }),
+    /** A tool context with the property's services, for calling verify() directly. */
+    ctx: async () => ({ services: await deps.createServices({ tenantId, account: { id: accountId, platform: "google_analytics", externalId: "properties/123", loginCustomerId: null, connectionId: "c", currencyCode: "EUR", timeZone: "Europe/Berlin" } }) }) as never,
     approveAs: (approvalId: string, userId: string) =>
       approvals.decide({ tenantId, approvalId, decider: { userId, role: userId === owner ? "owner" : "admin" }, decision: "approve", execute: createExecutor(deps) }),
   };
