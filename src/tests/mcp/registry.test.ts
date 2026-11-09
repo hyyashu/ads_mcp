@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { loadInventory } from "../../inventory";
+import { EXPECTED, loadInventory } from "../../inventory";
 import { ToolRegistry, reconcile, validateTool } from "../../mcp/registry";
 import type { ReadTool, WriteTool } from "../../mcp/tool";
 import { allTools } from "../../platforms";
@@ -66,8 +66,8 @@ describe("reconciliation against the inventory", () => {
     const reg = new ToolRegistry(inv).registerAll(allTools());
     const rec = reconcile(inv, reg, {});
     expect(rec.errors).toEqual([]);
-    expect(rec.rows).toHaveLength(232);
-    expect(rec.counts.implemented + rec.counts.external_limitation + rec.counts.pending).toBe(232);
+    expect(rec.rows).toHaveLength(EXPECTED.total);
+    expect(rec.counts.implemented + rec.counts.external_limitation + rec.counts.pending).toBe(EXPECTED.total);
     // Nothing is exposed that does not have a real handler.
     expect(reg.list().every((t) => typeof (t.kind === "read" ? t.handler : t.execute) === "function")).toBe(true);
   });

@@ -59,7 +59,7 @@ export const platformConnection = pgTable(
     id: id(),
     tenantId: text("tenant_id").notNull().references(() => tenant.id, { onDelete: "cascade" }),
     userId: text("user_id").references(() => appUser.id, { onDelete: "set null" }),
-    platform: text("platform").notNull(), // google_ads | meta_ads
+    platform: text("platform").notNull(), // google_ads | meta_ads | google_search_console | google_analytics | google_tag_manager
     credentialsEnc: text("credentials_enc").notNull(),
     keyVersion: integer("key_version").notNull().default(1),
     grantedScopes: text("granted_scopes").array().notNull().default(sql`'{}'::text[]`),
@@ -82,7 +82,7 @@ export const connectedAccount = pgTable(
     tenantId: text("tenant_id").notNull().references(() => tenant.id, { onDelete: "cascade" }),
     connectionId: text("connection_id").notNull().references(() => platformConnection.id, { onDelete: "cascade" }),
     platform: text("platform").notNull(),
-    externalId: text("external_id").notNull(), // Google customer id (digits) or Meta act_ id
+    externalId: text("external_id").notNull(), // Google customer id (digits), Meta act_ id, GSC site URL, GA4 properties/N, GTM accounts/N/containers/N
     displayName: text("display_name").notNull().default(""),
     /** Google: the manager (MCC) account to send as login-customer-id. Per account, never global. */
     loginCustomerId: text("login_customer_id"),
@@ -94,6 +94,23 @@ export const connectedAccount = pgTable(
     createdAt: created(),
   },
   (t) => [uniqueIndex("account_uq").on(t.tenantId, t.platform, t.externalId), index("account_tenant_idx").on(t.tenantId)],
+);
+
+/**
+ * An undirected link between two connected accounts of the same workspace, e.g. an ad account and its Search Console site,
+ * GA4 property or Tag Manager container. Stored once per pair with account_a_id < account_b_id; removing either account
+ * removes the link. Managed by owners and admins on the Connections page, never by an MCP tool.
+ */
+export const accountLink = pgTable(
+  "account_link",
+  {
+    id: id(),
+    tenantId: text("tenant_id").notNull().references(() => tenant.id, { onDelete: "cascade" }),
+    accountAId: text("account_a_id").notNull().references(() => connectedAccount.id, { onDelete: "cascade" }),
+    accountBId: text("account_b_id").notNull().references(() => connectedAccount.id, { onDelete: "cascade" }),
+    createdAt: created(),
+  },
+  (t) => [uniqueIndex("account_link_pair_uq").on(t.accountAId, t.accountBId), index("account_link_tenant_idx").on(t.tenantId), index("account_link_b_idx").on(t.accountBId), check("account_link_ordered", sql`${t.accountAId} < ${t.accountBId}`)],
 );
 
 /** Server-verified approval gate for every tool that modifies an ad account. */

@@ -30,6 +30,12 @@ export interface InternalServices {
   db: import("../db").Db;
 }
 
+/** Another account of this workspace, with the platform clients built for it (no tokens). */
+export interface OtherAccount<S = unknown> {
+  account: ResolvedAccount & { name: string };
+  services: S;
+}
+
 /** Everything a handler needs. Handlers never see raw tokens: they receive platform clients built by the server. */
 export interface ToolContext<S = unknown> {
   tenantId: string;
@@ -37,6 +43,18 @@ export interface ToolContext<S = unknown> {
   account: ResolvedAccount | null;
   services: S;
   signal: AbortSignal;
+  /**
+   * The accounts of `platform` linked to this tool's account on the Connections page (table account_link), each with its
+   * services, in a stable order (name, then platform id). Empty when none is linked. Read access is enough; a linked account whose
+   * connection was revoked or expired fails with auth_expired naming it, rather than being left out silently. Only for
+   * account-scoped tools (throws `internal` when the tool has no account).
+   */
+  linked<T = unknown>(platform: Platform): Promise<OtherAccount<T>[]>;
+  /**
+   * An account the caller named explicitly (e.g. a `property_account_id` argument): this server's id or the platform's own
+   * id, resolved within this workspace and platform only. Ids of other workspaces and unknown ids are `not_found`.
+   */
+  accountFor<T = unknown>(platform: Platform, accountId: string): Promise<OtherAccount<T>>;
 }
 
 interface Base<I extends z.ZodObject, O extends z.ZodType, S> {

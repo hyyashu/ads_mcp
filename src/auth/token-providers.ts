@@ -64,7 +64,7 @@ export class GoogleTokenProvider {
       if (body.error === "invalid_grant" || body.error === "unauthorized_client") {
         await markNeedsReauth(this.o.db, tenantId, connectionId);
         this.forget(connectionId);
-        throw new ToolError("auth_expired", "Google access was revoked or expired. Reconnect the Google Ads account.");
+        throw new ToolError("auth_expired", "Google access was revoked or expired. Reconnect this Google connection on the Connections page.");
       }
       throw new ToolError(res.status >= 500 ? "transient" : "auth_expired", "Google refused to refresh credentials.");
     }

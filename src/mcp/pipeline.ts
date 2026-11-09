@@ -1,7 +1,10 @@
+import { and, eq, inArray, or } from "drizzle-orm";
 import type { z } from "zod";
 import { resolveAccount } from "../auth/accounts";
 import type { AuthContext } from "../auth/context";
 import type { Db } from "../db";
+import { accountLink, connectedAccount, platformConnection } from "../db/schema";
+import type { Platform } from "../inventory";
 import { recordExecution, type ExecutionOutcome } from "../obs/executions";
 import { logger } from "../obs/logger";
 import type { Change, ChangeSet } from "../policy/change-set";
@@ -14,7 +17,7 @@ import type { Limiter } from "../security/rate-limit";
 import { type Envelope, approvalEnvelope, errorEnvelope, okEnvelope } from "./envelope";
 import { ERROR_CODES, ToolError, toToolError } from "./errors";
 import type { ToolRegistry } from "./registry";
-import { type AnyTool, type ResolvedAccount, type ToolContext, type VerifyResult, riskOf } from "./tool";
+import { type AnyTool, type OtherAccount, type ResolvedAccount, type ToolContext, type VerifyResult, riskOf } from "./tool";
 
 export interface PipelineDeps {
   db: Db;
@@ -28,7 +31,7 @@ export interface PipelineDeps {
    * Builds the platform clients for one account (decrypts credentials server-side; handlers never see tokens).
    * `signal` aborts upstream requests when the call is cancelled or runs past its deadline.
    */
-  createServices(o: { tenantId: string; account: { id: string; platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null }; signal?: AbortSignal }): Promise<unknown>;
+  createServices(o: { tenantId: string; account: { id: string; platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null; timeZone?: string | null }; signal?: AbortSignal }): Promise<unknown>;
 }
 
 /** Default deadlines. Reads and planning are bounded tightly; executing an approved change gets longer. */
@@ -61,15 +64,59 @@ function raceAbort<T>(work: Promise<T>, signal: AbortSignal, timedOut: () => boo
   });
 }
 
+/** Rows of account_link that touch `accountId`, as the id of the account on the other end (same tenant only). */
+async function linkedAccountIds(db: Db, tenantId: string, accountId: string): Promise<string[]> {
+  const rows = await db
+    .select({ a: accountLink.accountAId, b: accountLink.accountBId })
+    .from(accountLink)
+    .where(and(eq(accountLink.tenantId, tenantId), or(eq(accountLink.accountAId, accountId), eq(accountLink.accountBId, accountId))));
+  return rows.map((r) => (r.a === accountId ? r.b : r.a));
+}
+
+/**
+ * The second-account helpers of the tool context. Every lookup is scoped to the caller's tenant and goes through
+ * resolveAccount (connection active, platform checked, foreign ids not_found); each account also takes from the per-account
+ * rate limit, and its clients are built by the same services factory with the call's signal.
+ */
+function otherAccounts(deps: PipelineDeps, tenantId: string, own: ResolvedAccount | null, signal: AbortSignal): Pick<ToolContext, "linked" | "accountFor"> {
+  const open = async <T>(platform: Platform, idOrExternal: string): Promise<OtherAccount<T>> => {
+    const account = await resolveAccount(deps.db, tenantId, idOrExternal, platform, false);
+    const lim = await deps.accountLimiter.take(`${tenantId}:${account.id}`);
+    if (!lim.ok) throw new ToolError("quota_exceeded", "Too many requests for a linked account. Slow down and retry.", { retryAfterSeconds: lim.retryAfterSeconds });
+    const [row] = await deps.db.select({ name: connectedAccount.displayName }).from(connectedAccount).where(and(eq(connectedAccount.id, account.id), eq(connectedAccount.tenantId, tenantId)));
+    const services = (await deps.createServices({ tenantId, account, signal })) as T;
+    const { connectionId: _c, ...pub } = account;
+    return { account: { ...pub, name: row?.name ?? "" }, services };
+  };
+  return {
+    accountFor: (platform, accountId) => open(platform, accountId),
+    linked: async <T>(platform: Platform) => {
+      if (!own) throw new ToolError("internal", "linked() needs a tool that acts on an account.");
+      const ids = await linkedAccountIds(deps.db, tenantId, own.id);
+      if (!ids.length) return [];
+      const rows = await deps.db
+        .select({ id: connectedAccount.id, name: connectedAccount.displayName, externalId: connectedAccount.externalId, status: platformConnection.status })
+        .from(connectedAccount)
+        .innerJoin(platformConnection, eq(platformConnection.id, connectedAccount.connectionId))
+        .where(and(eq(connectedAccount.tenantId, tenantId), eq(connectedAccount.platform, platform), inArray(connectedAccount.id, ids)));
+      rows.sort((x, y) => x.name.localeCompare(y.name) || x.externalId.localeCompare(y.externalId));
+      for (const r of rows) if (r.status !== "active") throw new ToolError("auth_expired", `The linked account "${r.name || r.externalId}" needs to be reconnected on the Connections page.`);
+      const out: OtherAccount<T>[] = [];
+      for (const r of rows) out.push(await open<T>(platform, r.id));
+      return out;
+    },
+  };
+}
+
 async function buildContext(deps: PipelineDeps, tool: AnyTool, args: Record<string, unknown>, auth: { tenantId: string; userId: string }, signal: AbortSignal): Promise<ToolContext> {
   // Tenant-level tools (no ad account) get a database handle; the tool itself must scope every query by ctx.tenantId.
-  if (tool.accountScope === "none") return { tenantId: auth.tenantId, userId: auth.userId, account: null, services: { db: deps.db }, signal };
+  if (tool.accountScope === "none") return { tenantId: auth.tenantId, userId: auth.userId, account: null, services: { db: deps.db }, signal, ...otherAccounts(deps, auth.tenantId, null, signal) };
   const accountId = String(args.account_id ?? "");
   const account = await resolveAccount(deps.db, auth.tenantId, accountId, tool.platform, tool.kind === "write");
   const lim = await deps.accountLimiter.take(`${auth.tenantId}:${account.id}`);
   if (!lim.ok) throw new ToolError("quota_exceeded", "Too many requests for this ad account. Slow down and retry.", { retryAfterSeconds: lim.retryAfterSeconds });
   const services = await deps.createServices({ tenantId: auth.tenantId, account, signal });
-  return { tenantId: auth.tenantId, userId: auth.userId, account, services, signal };
+  return { tenantId: auth.tenantId, userId: auth.userId, account, services, signal, ...otherAccounts(deps, auth.tenantId, account, signal) };
 }
 
 /**

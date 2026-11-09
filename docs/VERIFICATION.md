@@ -170,3 +170,61 @@ regression test that fails without it.
 Reported by the review but not yet fixed (open): performance "totals" sum only the rows returned, which is misleading when `truncated` is true (R8); list reads silently cap at
 fixed sizes such as 5,000 keywords or 500 attached campaigns (R6); each write costs several API calls (R7); two simultaneous identical requests can surface as `internal` through the
 unique index (R9, not reproduced). The review's line counts and savings estimates were not checked.
+
+## Search Console, GA4, Tag Manager foundation (2026-11-10)
+
+Checked on developers.google.com on 2026-11-10 (WebFetch of each page). Used by the Connect flows, the shared transport
+(`src/platforms/gapi/`) and the per-product clients. Channel builders add their own methods' facts below this section.
+
+**OAuth scopes (each method page's "Authorization scopes")**
+- Search Console `sites.list`: `webmasters.readonly` or `webmasters`
+  (https://developers.google.com/webmaster-tools/v1/sites/list). `urlInspection.index.inspect`: `webmasters` or `webmasters.readonly`
+  (https://developers.google.com/webmaster-tools/v1/urlInspection.index/inspect). `sitemaps.submit`: `webmasters` only
+  (https://developers.google.com/webmaster-tools/v1/sitemaps/submit). So read = `webmasters.readonly`, write = `webmasters` (covers reads).
+- GA4 Admin `accountSummaries.list` and `properties.get`: `analytics.readonly` or `analytics.edit`
+  (https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1beta/accountSummaries/list,
+  https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1beta/properties/get). `properties.keyEvents.create`: `analytics.edit`
+  (https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1beta/properties.keyEvents/create).
+  **Data API `runReport` and `getMetadata`: `analytics.readonly` or `analytics` — NOT `analytics.edit`**
+  (https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/runReport,
+  https://developers.google.com/analytics/devguides/reporting/data/v1/rest/v1beta/properties/getMetadata). Therefore a GA4 write connection
+  asks for `analytics.readonly` **and** `analytics.edit` (the contract listed `analytics.edit` alone, which could not run reports).
+- Tag Manager `accounts.list`: `tagmanager.edit.containers`, `tagmanager.manage.accounts` or `tagmanager.readonly`
+  (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts/list). `accounts.containers.list`:
+  `tagmanager.edit.containers` or `tagmanager.readonly` (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts.containers/list).
+  `workspaces.tags.create`: `tagmanager.edit.containers` (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts.containers.workspaces.tags/create).
+  `workspaces.create_version`: `tagmanager.edit.containerversions` (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts.containers.workspaces/create_version).
+  `versions.publish`: `tagmanager.publish` only (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts.containers.versions/publish).
+  Read = `tagmanager.readonly`; write = `tagmanager.readonly tagmanager.edit.containers tagmanager.edit.containerversions tagmanager.publish`.
+- All prefixed `https://www.googleapis.com/auth/`. The token endpoint's `scope` field lists the scopes actually granted (users may grant
+  fewer); the callback checks every scope of the chosen access level against it
+  (https://developers.google.com/identity/protocols/oauth2/web-server). Revocation: POST `https://oauth2.googleapis.com/revoke` with `token`.
+
+**Discovery endpoints and fields**
+- `GET https://www.googleapis.com/webmasters/v3/sites` → `siteEntry[]` of Sites resources: `siteUrl` (URL-prefix or Domain property) and
+  `permissionLevel` ∈ `siteFullUser | siteOwner | siteRestrictedUser | siteUnverifiedUser` (https://developers.google.com/webmaster-tools/v1/sites).
+  No paging is documented. `siteUnverifiedUser` sites are skipped (no data access).
+- `GET https://analyticsadmin.googleapis.com/v1beta/accountSummaries`: `pageSize` default 50, max 200; `pageToken`; response
+  `accountSummaries[]` (`name`, `account`, `displayName`, `propertySummaries[]` with `property` = `properties/{id}`, `displayName`,
+  `propertyType`, `parent`) and `nextPageToken`.
+- `GET https://analyticsadmin.googleapis.com/v1beta/{name=properties/*}` → Property with `name`, `displayName`, `timeZone` ("Reporting Time Zone,
+  used as the day boundary for reports"), `currencyCode` ("The currency type used in reports involving monetary values"), `propertyType`, `parent`
+  (https://developers.google.com/analytics/devguides/config/admin/v1/rest/v1beta/properties). Stored as `currency_code` / `time_zone`.
+- `GET https://tagmanager.googleapis.com/tagmanager/v2/accounts` (`pageToken`, `includeGoogleTags`) → `account[]`, `nextPageToken`; Account fields
+  `path, accountId, name, shareData, fingerprint, tagManagerUrl, features` (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts).
+- `GET https://tagmanager.googleapis.com/tagmanager/v2/{parent=accounts/*}/containers` (`pageToken`) → `container[]`, `nextPageToken`; Container
+  fields `path, accountId, containerId, name, domainName, publicId, tagIds, features, notes, usageContext, fingerprint, tagManagerUrl,
+  taggingServerUrls` (https://developers.google.com/tag-platform/tag-manager/api/reference/rest/v2/accounts.containers).
+
+**Hosts used** (the transport's allow-list): `www.googleapis.com` (webmasters v3), `searchconsole.googleapis.com` (URL Inspection v1),
+`analyticsadmin.googleapis.com`, `analyticsdata.googleapis.com`, `tagmanager.googleapis.com` — each from the request URLs on the pages above.
+
+**Error mapping: partly unconfirmed.** None of the pages above document the error reasons for quota. Search Console's usage-limits page says
+only that "the quota exceeded error is the same for all quota exceeded events" (https://developers.google.com/webmaster-tools/limits) without
+naming a status or reason. The mapping therefore treats 429, `RESOURCE_EXHAUSTED`, and a 403 whose `errors[].reason` or ErrorInfo `reason`
+mentions quota or rate limit (`quotaExceeded`, `rateLimitExceeded`, `userRateLimitExceeded`, `dailyLimitExceeded`, `RATE_LIMIT_EXCEEDED`) as
+`quota_exceeded`; any other 403 is `platform_permission_denied`. The GA4 `429 RESOURCE_EXHAUSTED` token-quota case is from the design's checked
+facts. Confirm the exact Search Console and URL Inspection quota responses on the first live run.
+
+**Not confirmed (do not depend on them):** the internal fields of `sites` entries beyond `siteUrl` / `permissionLevel`; whether
+`webmasters/v3/sites` pages (assumed not, as documented); how Google reports the URL Inspection daily limit.

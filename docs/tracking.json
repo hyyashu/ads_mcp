@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 231,
+    "implemented": 232,
     "external_limitation": 1,
-    "pending": 0
+    "pending": 53
   },
   "rows": [
     {
@@ -4053,6 +4053,947 @@
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
       "inputSchema": "defined"
+    },
+    {
+      "tool": "list_gsc_sites",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "GET webmasters/v3/sites (siteEntry: siteUrl, permissionLevel)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_search_performance",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query (rowLimit up to 25,000, startRow paging)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_top_queries",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query (rowLimit up to 25,000, startRow paging)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_top_pages",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query (rowLimit up to 25,000, startRow paging)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "compare_search_periods",
+      "platform": "google_search_console",
+      "action": "Analyze",
+      "domain": "search_console",
+      "api": "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query for two periods, deterministic diff",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_search_appearance",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query (rowLimit up to 25,000, startRow paging)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "inspect_url",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "POST searchconsole.googleapis.com/v1/urlInspection/index:inspect",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "notes": "600/min and 2,000/day per site.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_sitemaps",
+      "platform": "google_search_console",
+      "action": "Read",
+      "domain": "search_console",
+      "api": "GET webmasters/v3/sites/{siteUrl}/sitemaps",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "submit_sitemap",
+      "platform": "google_search_console",
+      "action": "Create",
+      "domain": "search_console",
+      "api": "PUT webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "delete_sitemap",
+      "platform": "google_search_console",
+      "action": "Delete",
+      "domain": "search_console",
+      "api": "DELETE webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "add_gsc_site",
+      "platform": "google_search_console",
+      "action": "Create",
+      "domain": "search_console",
+      "api": "PUT webmasters/v3/sites/{siteUrl}",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters"
+      ],
+      "accountScope": "required",
+      "notes": "Ownership must still be verified in Search Console. Acts on the connection of the named site account.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_gsc_site",
+      "platform": "google_search_console",
+      "action": "Delete",
+      "domain": "search_console",
+      "api": "DELETE webmasters/v3/sites/{siteUrl}",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_ga4_properties",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Admin v1beta accountSummaries.list + properties.get + properties.dataStreams.list",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ga4_metadata",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties/{id}/metadata + Admin keyEvents.list",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "run_ga4_report",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:checkCompatibility then properties:runReport",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "run_ga4_pivot_report",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runPivotReport",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "run_ga4_funnel_report",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1alpha properties:runFunnelReport (alpha API)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ga4_realtime",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runRealtimeReport",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_traffic_by_channel",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runReport with fixed dimensions and metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_campaign_traffic",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runReport with fixed dimensions and metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_landing_page_performance",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runReport with fixed dimensions and metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_google_ads_traffic_in_ga4",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runReport with fixed dimensions and metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_conversion_events",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Data v1beta properties:runReport with fixed dimensions and metrics",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ga4_ads_links",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Admin v1beta properties.googleAdsLinks.list",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ga4_attribution_settings",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Admin v1alpha properties.getAttributionSettings (alpha API)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_ga4_change_history",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "analytics",
+      "api": "Admin v1beta accounts:searchChangeHistoryEvents",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "notes": "Check the method's scope before building: it may need analytics.edit.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_key_event",
+      "platform": "google_analytics",
+      "action": "Create",
+      "domain": "analytics",
+      "api": "Admin v1beta properties.keyEvents.create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/analytics.edit"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_key_event",
+      "platform": "google_analytics",
+      "action": "Delete",
+      "domain": "analytics",
+      "api": "Admin v1beta properties.keyEvents.delete",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/analytics.edit"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_custom_dimension",
+      "platform": "google_analytics",
+      "action": "Create",
+      "domain": "analytics",
+      "api": "Admin v1beta properties.customDimensions.create",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/analytics.edit"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_ga4_audience",
+      "platform": "google_analytics",
+      "action": "Create",
+      "domain": "analytics",
+      "api": "Admin v1alpha properties.audiences.create (alpha API)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/analytics.edit"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_gtm_containers",
+      "platform": "google_tag_manager",
+      "action": "Read",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/accounts + accounts/{a}/containers",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_gtm_live_version",
+      "platform": "google_tag_manager",
+      "action": "Read",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/{container}/versions:live",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_gtm_tags",
+      "platform": "google_tag_manager",
+      "action": "Read",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/{workspace}/tags | triggers | variables",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_gtm_triggers",
+      "platform": "google_tag_manager",
+      "action": "Read",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/{workspace}/tags | triggers | variables",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "list_gtm_variables",
+      "platform": "google_tag_manager",
+      "action": "Read",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/{workspace}/tags | triggers | variables",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_gtm_workspace_status",
+      "platform": "google_tag_manager",
+      "action": "Read",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/{workspace}/status",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "audit_gtm_container",
+      "platform": "google_tag_manager",
+      "action": "Analyze",
+      "domain": "tag_manager",
+      "api": "GET tagmanager/v2/{container}/versions:live, fixed documented rules",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_gtm_tag",
+      "platform": "google_tag_manager",
+      "action": "Create",
+      "domain": "tag_manager",
+      "api": "POST {workspace}/tags | PUT {tag} (in the server's own JackOfAds workspace)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.edit.containers"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "update_gtm_tag",
+      "platform": "google_tag_manager",
+      "action": "Update",
+      "domain": "tag_manager",
+      "api": "POST {workspace}/tags | PUT {tag} (in the server's own JackOfAds workspace)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.edit.containers"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_gtm_trigger",
+      "platform": "google_tag_manager",
+      "action": "Create",
+      "domain": "tag_manager",
+      "api": "POST {workspace}/triggers (in the server's own JackOfAds workspace)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.edit.containers"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "create_gtm_version",
+      "platform": "google_tag_manager",
+      "action": "Create",
+      "domain": "tag_manager",
+      "api": "POST {workspace}:create_version",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.edit.containerversions"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "publish_gtm_version",
+      "platform": "google_tag_manager",
+      "action": "Update",
+      "domain": "tag_manager",
+      "api": "POST {version}:publish",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.publish"
+      ],
+      "accountScope": "required",
+      "notes": "The only tool that changes the live site; the approval shows a diff against the live version.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_property_links",
+      "platform": "google_analytics",
+      "action": "Read",
+      "domain": "connections",
+      "api": "This server's account_link table (no platform call)",
+      "risk": "read",
+      "feasibility": "internal",
+      "platformPermissions": [],
+      "accountScope": "none",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "analyze_paid_organic_overlap",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "Google Ads search_term_view (GAQL) + GSC searchAnalytics.query (dimension query) for the linked site",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords",
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "notes": "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "find_organic_keyword_gaps",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "GSC searchAnalytics.query (query) + Google Ads keyword_view (GAQL)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords",
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "audit_ad_landing_pages",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "Google Ads ad final URLs (GAQL) and/or Meta creatives + GA4 runReport (landingPage) + GSC urlInspection.index.inspect (sampled: 2,000/day per site)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords",
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "notes": "URL inspection is quota-limited, so it samples and says so.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "compare_conversion_tracking",
+      "platform": "google_analytics",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "GA4 runReport (keyEvents by sessionGoogleAdsCampaignName / sessionCampaignName) + Google Ads conversions (GAQL) or Meta insights actions",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Reports the gap and the known reasons a gap is normal (attribution model, window, time zone); never claims one side is right.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_meta_traffic_quality",
+      "platform": "meta_ads",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "Meta GET /{ad_id}?fields=url_tags,creative + GA4 runReport (sessionSource, sessionMedium, sessionCampaignName)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "ads_read",
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "notes": "GA4 has no Meta dimensions: matched through UTM tags only, with a list of campaigns it could not match.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "get_channel_mix",
+      "platform": "google_analytics",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "GA4 runReport (sessionDefaultChannelGroup) + spend from linked ad accounts",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "check_utm_tagging",
+      "platform": "google_analytics",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "Google Ads customer.auto_tagging_enabled + tracking templates (GAQL), Meta url_tags, GA4 runReport (sessionManual* UTM dimensions)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/adwords",
+        "ads_read"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_brand_search_trend",
+      "platform": "google_search_console",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "GSC searchAnalytics.query (date, query filtered to brand terms) + spend from linked ad accounts",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "notes": "A trend next to spend only: no causal claim.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "find_converting_terms_without_content",
+      "platform": "google_ads",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "Google Ads search_term_view with conversions (GAQL) + GSC searchAnalytics.query (query)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords",
+        "https://www.googleapis.com/auth/webmasters.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "audit_tracking_setup",
+      "platform": "google_tag_manager",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "GTM live version (versions.live) + GA4 Admin keyEvents.list + Google Ads conversion_action (GAQL) + Meta adspixels",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/tagmanager.readonly",
+        "https://www.googleapis.com/auth/analytics.readonly",
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "Recognises tags only by documented tag types and snippets.",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "analyze_paid_search_on_site",
+      "platform": "google_analytics",
+      "action": "Analyze",
+      "domain": "combined",
+      "api": "GA4 runReport (sessionGoogleAdsQuery with engagement and keyEvents)",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "pending",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
     }
   ]
 }

@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { mapTool } from "../../../inventory/mapping";
 import { loadInventory } from "../../inventory";
+import { crossTools } from "../../platforms/cross";
+import { propertyLinkTools } from "../../platforms/cross/property-links";
+import { ga4Tools } from "../../platforms/ga4";
 import { googleTools } from "../../platforms/google";
+import { gscTools } from "../../platforms/gsc";
+import { gtmTools } from "../../platforms/gtm";
 
 const inv = loadInventory();
 
@@ -12,10 +17,12 @@ describe("implementation plan (inventory/mapping.ts)", () => {
   });
 
   it("risk tiers agree with the inventory: reads are read, deletes are destructive, other mutations are write or high_impact", () => {
+    // Design 2026-11-10 section 6: publishing a Tag Manager version changes the live site with no API undo.
+    const destructiveUpdates = new Set(["publish_gtm_version"]);
     for (const t of inv) {
       const { risk } = mapTool(t);
       if (!t.modifies_data) expect(risk, t.name).toBe("read");
-      else if (t.action_type === "Delete") expect(risk, t.name).toBe("destructive");
+      else if (t.action_type === "Delete" || destructiveUpdates.has(t.name)) expect(risk, t.name).toBe("destructive");
       else expect(["write", "high_impact"], t.name).toContain(risk);
     }
   });
@@ -48,9 +55,19 @@ describe("implementation plan (inventory/mapping.ts)", () => {
     for (const n of ["pause_campaign", "pause_meta_campaign", "add_keywords"]) expect(risk(n), n).toBe("write");
   });
 
+  it("Search Console, GA4 and Tag Manager tiers follow design section 6", () => {
+    const risk = (n: string) => mapTool(inv.find((t) => t.name === n)!).risk;
+    expect(Object.fromEntries(["submit_sitemap", "add_gsc_site", "delete_sitemap", "remove_gsc_site", "create_key_event", "remove_key_event", "create_custom_dimension", "create_ga4_audience", "create_gtm_tag", "update_gtm_tag", "create_gtm_trigger", "create_gtm_version", "publish_gtm_version"].map((n) => [n, risk(n)]))).toEqual({
+      submit_sitemap: "write", add_gsc_site: "write", delete_sitemap: "destructive", remove_gsc_site: "destructive",
+      create_key_event: "high_impact", remove_key_event: "destructive", create_custom_dimension: "write", create_ga4_audience: "write",
+      create_gtm_tag: "write", update_gtm_tag: "write", create_gtm_trigger: "write", create_gtm_version: "write", publish_gtm_version: "destructive",
+    });
+  });
+
   it("every implemented tool declares exactly the risk tier the plan assigns it (a mis-tiered resume_* could be self-approved)", () => {
     expect(googleTools.length).toBeGreaterThan(0);
-    for (const tool of googleTools) {
+    // Google Ads plus the Search Console, GA4, Tag Manager and combined tools (their builders add to these lists).
+    for (const tool of [...googleTools, ...gscTools, ...ga4Tools, ...gtmTools, ...propertyLinkTools, ...crossTools]) {
       const t = inv.find((i) => i.name === tool.name);
       expect(t, `${tool.name} is not in the inventory`).toBeDefined();
       const planned = mapTool(t!).risk;

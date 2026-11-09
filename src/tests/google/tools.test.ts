@@ -366,6 +366,19 @@ describe("list_accounts", () => {
     responder = () => ({ results: [] });
     expect((await run("list_campaigns", {}, accounts.find((a) => a.account_id === accountId)!.account_id)).ok).toBe(true);
   });
+
+  it("lists Search Console sites, GA4 properties (with currency and time zone) and Tag Manager containers too", async () => {
+    await seedAccount(db, tenantId, "google_search_console", "read", "active", "sc-domain:shop.example", null);
+    await seedAccount(db, tenantId, "google_analytics", "write", "active", "properties/321", { currencyCode: "EUR", timeZone: "Europe/Berlin" });
+    await seedAccount(db, tenantId, "google_tag_manager", "read", "active", "accounts/1/containers/2", null);
+    const env = await run("list_accounts", {});
+    const accounts = (env.data as any).accounts as { platform: string; external_id: string; access: string; currency_code: string | null; time_zone: string | null }[];
+    expect(accounts.filter((a) => a.platform !== "google_ads" && a.platform !== "meta_ads").map((a) => [a.platform, a.external_id, a.access, a.currency_code, a.time_zone])).toEqual([
+      ["google_analytics", "properties/321", "write", "EUR", "Europe/Berlin"],
+      ["google_search_console", "sc-domain:shop.example", "read", null, null],
+      ["google_tag_manager", "accounts/1/containers/2", "read", null, null],
+    ]);
+  });
 });
 
 describe("account_id accepts the Google customer id", () => {

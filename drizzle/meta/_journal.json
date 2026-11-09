@@ -64,6 +64,13 @@
       "when": 1793793283389,
       "tag": "0008_cheerful_stick",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794261476592,
+      "tag": "0009_nervous_dragon_lord",
+      "breakpoints": true
     }
   ]
 }

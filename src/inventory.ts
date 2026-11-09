@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
-export const PLATFORMS = ["google_ads", "meta_ads"] as const;
+export const PLATFORMS = ["google_ads", "meta_ads", "google_search_console", "google_analytics", "google_tag_manager"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 const InventoryTool = z.object({
@@ -19,7 +19,8 @@ export type InventoryTool = z.infer<typeof InventoryTool>;
 
 const Inventory = z.object({ schema_version: z.literal(1), tools: z.array(InventoryTool) });
 
-export const EXPECTED = { google_ads: 172, meta_ads: 60, total: 232 } as const;
+/** Per platform. The 2026-11-10 additions file each combined tool under the platform of the account its account_id names. */
+export const EXPECTED = { google_ads: 176, meta_ads: 61, google_search_console: 13, google_analytics: 23, google_tag_manager: 13, total: 286 } as const;
 
 export function loadInventory(path = fileURLToPath(new URL("../inventory/tool-registry.json", import.meta.url))): InventoryTool[] {
   return Inventory.parse(JSON.parse(readFileSync(path, "utf8"))).tools;
@@ -37,8 +38,7 @@ export function validateInventory(tools: InventoryTool[]): string[] {
     if (t.approval_required !== t.modifies_data) problems.push(`${t.name}: approval_required must equal modifies_data`);
   }
   const count = (p: Platform) => tools.filter((t) => t.platform === p).length;
-  if (count("google_ads") !== EXPECTED.google_ads) problems.push(`expected ${EXPECTED.google_ads} Google tools, found ${count("google_ads")}`);
-  if (count("meta_ads") !== EXPECTED.meta_ads) problems.push(`expected ${EXPECTED.meta_ads} Meta tools, found ${count("meta_ads")}`);
+  for (const p of PLATFORMS) if (count(p) !== EXPECTED[p]) problems.push(`expected ${EXPECTED[p]} ${p} tools, found ${count(p)}`);
   if (tools.length !== EXPECTED.total) problems.push(`expected ${EXPECTED.total} tools, found ${tools.length}`);
   return problems;
 }

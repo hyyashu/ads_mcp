@@ -332,7 +332,7 @@ const listAccountsOutput = z.object({
       account_id: z.string().describe("This server's id for the account. Tools accept it or external_id."),
       platform: z.string(),
       name: z.string().describe("Account name as the ad platform reports it (untrusted text)."),
-      external_id: z.string().describe("The platform's own id: Google Ads customer id (digits) or Meta act_ id. Tools accept it as account_id."),
+      external_id: z.string().describe("The platform's own id: Google Ads customer id (digits), Meta act_ id, Search Console site URL (https://example.com/ or sc-domain:example.com), GA4 properties/N or Tag Manager accounts/N/containers/N. Tools accept it as account_id."),
       access: z.enum(["read", "write"]),
       status: z.string().describe("Connection status: active, or needs_reauth (reconnect on the Connections page)."),
       currency_code: z.string().nullable(),
@@ -347,7 +347,7 @@ export const listAccounts: ReadTool<typeof listAccountsInput, typeof listAccount
   platform: "google_ads",
   title: "List connected accounts",
   description:
-    "Lists the ad accounts connected to this workspace (Google Ads and Meta Ads): name, account_id, platform id, access (read or write) and connection status. Other tools accept either the account_id or the platform id.",
+    "Lists the accounts connected to this workspace: Google Ads and Meta Ads accounts, Search Console sites, GA4 properties and Tag Manager containers, each with name, account_id, platform, platform id, access (read or write), connection status, and currency and time zone where the platform reports them. Other tools accept either the account_id or the platform id.",
   accountScope: "none",
   input: listAccountsInput,
   output: listAccountsOutput,
