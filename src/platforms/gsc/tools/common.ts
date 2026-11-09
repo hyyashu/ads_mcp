@@ -242,3 +242,25 @@ export const propertyType = (siteUrl: string): "domain" | "url_prefix" => (siteU
 /** Plain-language permission levels (Search Console's Sites resource). */
 export const PERMISSION_LABEL: Record<string, string> = { siteOwner: "owner", siteFullUser: "full user", siteRestrictedUser: "restricted user", siteUnverifiedUser: "unverified (ownership not verified)" };
 export const permissionLabel = (p: string) => PERMISSION_LABEL[p] ?? (p || "unknown");
+
+// ------------------------------------------------------------------------------------------------- writes
+
+/**
+ * The connected user's permission on this site, refusing levels that cannot change it: restricted users cannot submit
+ * sitemaps (Search Console Help, permissions), and an unverified user has no access until ownership is verified.
+ */
+export async function requireEditor(gsc: GscClient, what: string): Promise<string> {
+  const { permissionLevel } = await gsc.getSite();
+  if (permissionLevel === "siteRestrictedUser") throw new ToolError("platform_permission_denied", `The connected Google user is a restricted user of ${gsc.siteUrl}; restricted users cannot ${what}. An owner or full user must do it.`);
+  if (permissionLevel === "siteUnverifiedUser") throw new ToolError("platform_permission_denied", `The connected Google user has not verified ownership of ${gsc.siteUrl}; verify it in Search Console first.`);
+  return permissionLevel;
+}
+
+/** A read after a change was sent: any failure there means the outcome is unknown, never a definite failure. */
+export async function readBack<T>(read: () => Promise<T>): Promise<T> {
+  try {
+    return await read();
+  } catch {
+    throw new ToolError("unknown_outcome", "The change was sent but reading it back failed, so its outcome is not confirmed. Check Search Console before trying again.");
+  }
+}
