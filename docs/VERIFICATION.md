@@ -228,3 +228,88 @@ facts. Confirm the exact Search Console and URL Inspection quota responses on th
 
 **Not confirmed (do not depend on them):** the internal fields of `sites` entries beyond `siteUrl` / `permissionLevel`; whether
 `webmasters/v3/sites` pages (assumed not, as documented); how Google reports the URL Inspection daily limit.
+
+## Search Console tools (2026-11-10)
+
+The 12 Search Console tools (`src/platforms/gsc/`, tests in `src/tests/gsc/`). Facts from the GSC plan's table
+(`docs/superpowers/plans/2026-11-10-gsc-plan.md` §1, pages fetched 2026-11-10); the searchAnalytics.query page and the
+search-appearance help page were fetched again while building (WebFetch, 2026-11-10). `WT` = `https://developers.google.com/webmaster-tools`.
+Status: docs-checked, tested against a fake API, **not run against a real property**.
+
+**searchAnalytics.query** (`WT/v1/searchanalytics/query`, re-checked): `POST https://www.googleapis.com/webmasters/v3/sites/{siteUrl}/searchAnalytics/query`,
+`siteUrl` percent-encoded as one path segment. `startDate`/`endDate` required, `YYYY-MM-DD`, Pacific Time, inclusive.
+`dimensions`: `country`, `device`, `page`, `query`, `searchAppearance`, `date`, `hour`. `type`: `web` (default), `image`, `video`, `news`,
+`discover`, `googleNews`. `dimensionFilterGroups[].groupType` `and` only; filter `dimension` `country` (ISO 3166-1 alpha-3), `device`
+(`DESKTOP`, `MOBILE`, `TABLET`), `page`, `query`, `searchAppearance`; `operator` `equals` (default), `notEquals`, `contains`, `notContains`,
+`includingRegex`, `excludingRegex` (RE2); `expression` at most 4,096 characters. `aggregationType` `auto` (default), `byPage`, `byProperty`,
+`byNewsShowcasePanel`: "If you group or filter by page, you cannot aggregate by property"; `byProperty` "Not supported for type=discover or
+type=googleNews"; `byNewsShowcasePanel` needs a `NEWS_SHOWCASE` searchAppearance filter and type discover or googleNews, and no page grouping
+or filter. `rowLimit` 1–25,000 (default 1,000); `startRow` zero-based, non-negative; page with `startRow` until a response has no rows
+(`WT/v1/how-tos/all-your-data`). `dataState` `final` (default), `all` (fresh data), `hourly_all` ("should be used when grouping by the HOUR API
+dimension"). Response `rows[] {keys, clicks, impressions, ctr, position}`, `responseAggregationType`, and `metadata.first_incomplete_date`
+(`YYYY-MM-DD`) / `metadata.first_incomplete_hour` (`YYYY-MM-DDThh:mm:ss±hh:mm`). Rows sorted by clicks descending (by date when grouped by
+date). At most 50,000 rows per day per site per search type; grouping by page or query can drop rows; anonymized queries are left out of rows
+but counted in totals unless a filter is set; Discover has no queries or positions; searchAppearance "cannot be a column alongside other
+dimensions" (query it alone, then filter by each value); data typically available after 2–3 days (find the latest day with a date query over
+the past 10 days); 16 months of data kept.
+
+**How the tools use it.** Every rule above is checked before any request (`validateQuery`, `checkDates`): searchAppearance alone, `hour` only
+with `hourly_all` (the docs say "should"; enforced), no query dimension or filter for Discover, the `byProperty` and `byNewsShowcasePanel`
+rules, start ≤ end ≤ today (Pacific Time), start ≥ today − 16 months. Named periods end on the latest day with final data (a 10-day date
+query); if it finds none they end 3 days ago and say so. The client pages with `startRow`, asking for one row past the cap, and either refuses
+with `row_cap` or (for tools that show a page) returns `truncated`; it never asks for more than 50,000 rows. Totals come from a second query
+with no dimensions and the same filters, so they are Google's totals, never a sum of the rows shown.
+
+**Search appearance values and names** (Search Console Help, https://support.google.com/webmasters/answer/17011259, re-checked):
+`AMP_TOP_STORIES` AMP articles, `AMP_BLUE_LINK` AMP non-rich results, `AMP_IMAGE_RESULT` AMP on image result, `FORUMS` Discussion forums,
+`EDU_Q_AND_A` Education Q&As, `JOB_DETAILS` Job details, `JOB_LISTING` Job listings, `MATH_SOLVERS` Math solvers, `ACTION` Media Actions,
+`MERCHANT_LISTINGS` Merchant listings, `PRACTICE_PROBLEMS` Practice problems, `PRODUCT_SNIPPETS` Product snippets, `TPF_QA` Q&A rich results,
+`RECIPE_FEATURE` Recipe galleries, `RECIPE_RICH_SNIPPET` Recipe rich results, `REVIEW_SNIPPET` Review snippet, `SUBSCRIBED_CONTENT` Subscribed
+content, `TRANSLATED_RESULT` Translated results, `VIDEO` Videos, `AMP_STORY` Web Stories; deprecated: `SEARCH_APPEARANCE_ANDROID_APP`,
+`EVENTS_DETAILS`, `EVENTS_LISTING`, `TPF_FAQ`, `PAGE_EXPERIENCE`, `TPF_HOWTO`, `LEARNING_VIDEOS`, `ORGANIC_SHOPPING`, `SPECIAL_ANNOUNCEMENT`,
+`WEBLITE`. "Grouping by Search appearance will aggregate table data by page rather than by property." "All dates are in Pacific Time Zone (PT)."
+Unknown values are passed through with `label: null`.
+
+**Sites** (`WT/v1/sites`, `/sites/list`, `/sites/get`, `/sites/add`, `/sites/delete`): list `GET .../webmasters/v3/sites` → `siteEntry[]`
+(no paging documented); get/add/delete `GET`/`PUT`/`DELETE .../sites/{siteUrl}`; add and delete take no request body and return an empty body;
+delete "removes a site from the set of the user's Search Console sites". `permissionLevel` ∈ `siteOwner`, `siteFullUser`,
+`siteRestrictedUser`, `siteUnverifiedUser`. URL-prefix properties need a trailing `/` (`WT/v1/urlInspection.index/inspect`).
+Restricted users cannot submit sitemaps (Search Console Help, https://support.google.com/webmasters/answer/7687615).
+
+**Sitemaps** (`WT/v1/sitemaps`, `/list`, `/get`, `/submit`, `/delete`): list `GET .../sites/{siteUrl}/sitemaps` (optional `sitemapIndex`) →
+`sitemap[]` (no paging documented); get/submit/delete `GET`/`PUT`/`DELETE .../sitemaps/{feedpath}`, submit and delete with no body. WmxSitemap
+fields `path`, `lastSubmitted`, `isPending`, `isSitemapsIndex`, `type` (`atomFeed`, `notSitemap`, `patternSitemap`, `rssFeed`, `sitemap`,
+`urlList`), `lastDownloaded`, `warnings`, `errors`, `contents[] {type, submitted}`; `contents[].indexed` is deprecated and never read.
+
+**URL Inspection** (`WT/v1/urlInspection.index/inspect`, `.../UrlInspectionResult`): `POST https://searchconsole.googleapis.com/v1/urlInspection/index:inspect`,
+body `inspectionUrl` (must be under `siteUrl`), `siteUrl`, optional `languageCode` (BCP-47, default en-US); it reports the indexed version, not a
+live test. Result fields `inspectionResultLink`, `indexStatusResult` (`sitemap`, `referringUrls`, `verdict`, `coverageState`, `robotsTxtState`,
+`indexingState`, `lastCrawlTime`, `pageFetchState`, `googleCanonical`, `userCanonical`, `crawledAs`), `ampResult`, `richResultsResult`
+(`detectedItems[] {richResultType, items[] {name, issues[] {issueMessage, severity}}}`, `verdict`); `mobileUsabilityResult` is deprecated and
+never read. Enum values explained by the tool: Verdict `PASS`, `PARTIAL`, `FAIL`, `NEUTRAL`; RobotsTxtState `ALLOWED`, `DISALLOWED`;
+IndexingState `INDEXING_ALLOWED`, `BLOCKED_BY_META_TAG`, `BLOCKED_BY_HTTP_HEADER`, `BLOCKED_BY_ROBOTS_TXT`; PageFetchState `SUCCESSFUL`,
+`SOFT_404`, `BLOCKED_ROBOTS_TXT`, `NOT_FOUND`, `ACCESS_DENIED`, `SERVER_ERROR`, `REDIRECT_ERROR`, `ACCESS_FORBIDDEN`, `BLOCKED_4XX`,
+`INTERNAL_CRAWL_ERROR`, `INVALID_URL`; AmpIndexingState `AMP_INDEXING_ALLOWED`, `BLOCKED_DUE_TO_NOINDEX`, `BLOCKED_DUE_TO_EXPIRED_UNAVAILABLE_AFTER`.
+Unknown values are passed through and called unrecognised.
+
+**Scopes**: reads `webmasters.readonly` or `webmasters`; `sites.add`, `sites.delete`, `sitemaps.submit`, `sitemaps.delete` need `webmasters`
+(each method page). **Quotas** (`WT/limits`): Search Analytics 1,200 queries/min per site and per user, plus a cost-based load quota (wait
+15 minutes on short-term overage); URL Inspection 2,000/day and 600/min per site; other resources 20 QPS / 200 QPM per user. Error reasons
+(`WT/v1/errors`): 403 `quotaExceeded`, `rateLimitExceeded`, `userRateLimitExceeded`, `dailyLimitExceeded`, `limitExceeded`,
+`concurrentLimitExceeded`, `servingLimitExceeded` are quota (the foundation maps all of them to `quota_exceeded`, tested in
+`src/tests/gsc/client.test.ts`); `forbidden`, `insufficientPermissions` are permission.
+
+**Write flow.** Each write plans read-only (property membership, the user's permission level, live state), stores a snapshot of only what a
+person changes (never `isPending`, `lastDownloaded` or counts, which Google changes by itself), sends one body-less request after approval,
+reads the result back (a failed read-back is `unknown_outcome`) and verifies from live state. Risk: `submit_sitemap`, `add_gsc_site` write
+(change set with a neutral effect, never automated); `delete_sitemap`, `remove_gsc_site` destructive (second approver).
+
+**Inferred, not confirmed (safe choice taken):** `feedpath` is percent-encoded like `siteUrl` (only `siteUrl` has a documented example);
+a sitemap outside the property is refused (docs do not say it must be inside); `sites.add` on an existing property is refused in planning
+(docs do not say what Google does); a freshly added property is expected to read back as `siteUnverifiedUser`; what `sites.delete` does to
+an owner's verification, other users and data is not documented (the summary says so); whether deleting a sitemap stops Google reading its
+URLs is not documented (the summary says so); which permission levels may delete sitemaps (restricted and unverified users are refused);
+`long` fields (`errors`, `warnings`, `submitted`) are read from numbers or numeric strings; the format of `hour` keys is undocumented (passed
+through as given); a short page is not taken as the end (paging continues until an empty page); whether Google News lacks queries/positions
+(not blocked; Google's 400 comes back as `invalid_argument`); the URL Inspection quota error's status and whether day and minute limits can be
+told apart (the message names both). Confirm these on the first live run.
