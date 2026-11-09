@@ -30,6 +30,8 @@ export interface GoogleApiCall {
   /** True for reads (including POST queries that only read): safe to retry. Mutations are never retried. */
   idempotent: boolean;
   signal?: AbortSignal;
+  /** Runs before every attempt, retries included (passed to sendWithRetry). */
+  beforeAttempt?: () => Promise<void>;
 }
 
 /**
@@ -119,6 +121,7 @@ export class GoogleApiHttp {
       init: { method, headers, body: c.body === undefined ? undefined : JSON.stringify(c.body) },
       idempotent: c.idempotent,
       signal: c.signal,
+      ...(c.beforeAttempt ? { beforeAttempt: c.beforeAttempt } : {}),
       platform: product,
       isSuccess: (r) => r.ok,
       mapError: (r, json) => mapGapiError(r.status, ((Array.isArray(json) ? json[0] : json) as GapiErrorBody) ?? {}, !c.idempotent, product),

@@ -4,7 +4,7 @@ import type { Change, Effect } from "../../../policy/change-set";
 import { canonicalJson } from "../../../security/canonical";
 import { withHidden } from "../../core/hidden";
 import { type GtmClient, gtmIdOrFail } from "../client";
-import { externalHosts, param, riskyConstructs, stripVolatile, typeLabel, varRefs } from "../model";
+import { hostsNote, param, riskyConstructs, stripVolatile, typeLabel, varRefs } from "../model";
 import type { GtmParameter, GtmTag } from "../types";
 import { DRAFT_ONLY, GTM_EDIT_CONTAINERS, accountId, consentInput, entityName, firingOption, gtmId, htmlBody, notesText, paramEdits } from "./common";
 import { type DraftLocation, NEXT_STEP_TAG, confirmAfterSend, draftBase, gtmStateWrite, inServerWorkspace, location, q, refuseUnknownRefs, resolveRefs, wsLabel, wsPrefix } from "./write-kit";
@@ -41,9 +41,8 @@ const consentText = (c: { consentStatus?: string; consentType?: GtmParameter } |
 
 /** What an approver must know about custom HTML: hosts it loads from and risky constructs. */
 const htmlNotes = (html: string) => {
-  const hosts = externalHosts(html);
   const risky = riskyConstructs(html);
-  return `${hosts.length ? `loads from or links to ${hosts.join(", ")}` : "names no external host"}${risky.length ? `; contains ${risky.join(", ")}` : ""}`;
+  return `${hostsNote(html)}${risky.length ? `; contains ${risky.join(", ")}` : ""}`;
 };
 
 // ---- create_gtm_tag -------------------------------------------------------------------------------------------------------

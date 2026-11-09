@@ -1,6 +1,6 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { auditContainer, customHtmlTags, recogniseGa4, recogniseGoogleAds, recogniseMetaPixel } from "../../platforms/gtm";
-import { externalHosts, measurementIds, metaPixel } from "../../platforms/gtm/model";
+import { externalHosts, hostsNote, measurementIds, metaPixel } from "../../platforms/gtm/model";
 import type { GtmContainerInfo, GtmTag, GtmVersion } from "../../platforms/gtm/types";
 import { FakeGtm, type GtmHarness, gtmHarness, seedContainer } from "./support/fake-gtm";
 
@@ -23,6 +23,15 @@ describe("recognisers", () => {
     expect(recogniseGa4(base([]), { tagIds: ["G-FROMTAG1"] }).measurement_ids).toEqual(["G-FROMTAG1"]);
     expect(recogniseGa4(base([], { gtagConfig: [{ type: "googtag", parameter: [{ key: "tagId", value: "G-GTAGCFG1" }] }] }), {}).measurement_ids).toEqual(["G-GTAGCFG1"]);
   });
+  it("external hosts: backtick, ; , < after the host, IPv4 literals, protocol-relative", () => {
+    expect(externalHosts("var s=document.createElement('script');s.src=`https://evil.example`;")).toEqual(["evil.example"]);
+    expect(externalHosts("<img src=//203.0.113.9/p.gif>")).toEqual(["203.0.113.9"]);
+    expect(externalHosts("a='https://one.example';b=['//two.example',3];<a href=http://three.example<b>")).toEqual(["one.example", "three.example", "two.example"]);
+    expect(externalHosts("x=//999.1.1.1/")).toEqual([]);
+    expect(hostsNote("location.host")).toBe("no host recognised (the full code is shown below)");
+    expect(hostsNote("s.src=`https://evil.example`")).toBe("hosts found: evil.example");
+  });
+
   it("external hosts in custom HTML", () => {
     expect(externalHosts(`<script src="//cdn.example.com/a.js"></script><img src='https://px.ads.example/t?x=1'> http://Track.Example.org/`)).toEqual(["cdn.example.com", "px.ads.example", "track.example.org"]);
   });

