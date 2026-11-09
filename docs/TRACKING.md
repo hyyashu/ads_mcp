@@ -19,7 +19,7 @@ Only **implemented** tools are listed by the MCP server. A pending tool is never
 
 ## Plan breakdown
 
-- Risk tiers: write 68, read 149, high_impact 41, destructive 28
+- Risk tiers: write 66, read 149, high_impact 43, destructive 28
 - Feasibility: api 243, derived 34, limitation_candidate 2, internal 7
 - Tools still without an API mapping: 0
 
@@ -341,8 +341,8 @@ These names do not map cleanly onto an official API, or they conflict with the "
 | `list_gtm_variables` | Read | read | tag_manager | GET tagmanager/v2/{workspace}/tags \| triggers \| variables | api | pending | n/a |
 | `get_gtm_workspace_status` | Read | read | tag_manager | GET tagmanager/v2/{workspace}/status | api | pending | n/a |
 | `audit_gtm_container` | Analyze | read | tag_manager | GET tagmanager/v2/{container}/versions:live, fixed documented rules | derived | pending | n/a |
-| `create_gtm_tag` | Create | write | tag_manager | POST {workspace}/tags \| PUT {tag} (in the server's own JackOfAds workspace) | api | pending | n/a |
-| `update_gtm_tag` | Update | write | tag_manager | POST {workspace}/tags \| PUT {tag} (in the server's own JackOfAds workspace) | api | pending | n/a |
+| `create_gtm_tag` | Create | high_impact | tag_manager | POST {workspace}/tags \| PUT {tag} (in the server's own JackOfAds workspace) | api | pending | n/a |
+| `update_gtm_tag` | Update | high_impact | tag_manager | POST {workspace}/tags \| PUT {tag} (in the server's own JackOfAds workspace) | api | pending | n/a |
 | `create_gtm_trigger` | Create | write | tag_manager | POST {workspace}/triggers (in the server's own JackOfAds workspace) | api | pending | n/a |
 | `create_gtm_version` | Create | write | tag_manager | POST {workspace}:create_version | api | pending | n/a |
 | `publish_gtm_version` | Update | destructive | tag_manager | POST {version}:publish | api | pending | n/a |

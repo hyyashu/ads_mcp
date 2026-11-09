@@ -47,7 +47,7 @@ interface GapiErrorBody {
 }
 
 /** Reasons Google uses for quota and rate limits (ErrorInfo and the legacy errors[] array). A 403 with one of these is a quota, not a permission problem. */
-const QUOTA_REASON = /quota|rate.?limit|dailyLimitExceeded|RESOURCE_EXHAUSTED/i;
+const QUOTA_REASON = /quota|rate.?limit|limitExceeded|RESOURCE_EXHAUSTED/i;
 
 /** Maps a failed Google API response to a stable ToolError. Exported for tests. `product` names the API in messages. */
 export function mapGapiError(status: number, body: GapiErrorBody, mutation: boolean, product = "Google"): ToolError {
@@ -63,6 +63,8 @@ export function mapGapiError(status: number, body: GapiErrorBody, mutation: bool
   if (status === 403 || e.status === "PERMISSION_DENIED") return new ToolError("platform_permission_denied", `Google denied access: ${msg}`);
   if (status === 404 || e.status === "NOT_FOUND") return new ToolError("not_found", msg);
   if (status === 409 || e.status === "ABORTED" || e.status === "ALREADY_EXISTS") return new ToolError("conflict", msg);
+  // 412: a precondition such as Tag Manager's `fingerprint` did not match, so Google refused the change before applying it.
+  if (status === 412) return new ToolError("conflict", `The item changed since this was planned, so ${product} refused the change. Nothing was changed. ${msg}`, { definite: true });
   if (status >= 500 || e.status === "UNAVAILABLE" || e.status === "INTERNAL" || e.status === "DEADLINE_EXCEEDED") {
     // The server may have applied a mutation before failing: never report that as a definite failure.
     return mutation ? new ToolError("unknown_outcome", `${product} returned a server error while applying a change. It may or may not have been applied.`) : new ToolError("transient", `${product} API is temporarily unavailable.`, { retryable: true });

@@ -10,3 +10,16 @@ export function isRealDate(value: string): boolean {
 /** Division that returns null instead of NaN/Infinity, so a metric is never reported as a number it is not. */
 export const ratio = (a: number, b: number): number | null => (b > 0 ? a / b : null);
 export const round = (n: number | null, digits = 4): number | null => (n === null ? null : Math.round(n * 10 ** digits) / 10 ** digits);
+
+/** Today's date (YYYY-MM-DD) in the account's or property's time zone (shared by Meta and GA4). Unknown zone: the latest date anywhere (UTC+14), so a valid
+ * "today" is never refused. */
+export function todayIn(timeZone: string | null, now = new Date()): string {
+  if (timeZone) {
+    try {
+      return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    } catch {
+      /* unknown zone name: fall through */
+    }
+  }
+  return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
+}

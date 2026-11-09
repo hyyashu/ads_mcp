@@ -176,3 +176,29 @@ describe("product clients", () => {
     expect(() => new GtmClient({ ...base, containerPath: "accounts/1/containers/2/workspaces/3" })).toThrow();
   });
 });
+
+describe("shared fixes before the channel builds (2026-11-10)", () => {
+  it("412 (Tag Manager fingerprint mismatch) is a definite conflict, even for a change", () => {
+    const e = mapGapiError(412, { error: { code: 412, message: "Fingerprint mismatch" } }, true, "Tag Manager");
+    expect(e.code).toBe("conflict");
+    expect(e.opts.definite).toBe(true);
+  });
+
+  it("every quota reason Search Console documents is a quota error, not a permission error", () => {
+    for (const reason of ["quotaExceeded", "rateLimitExceeded", "userRateLimitExceeded", "dailyLimitExceeded", "limitExceeded", "concurrentLimitExceeded", "servingLimitExceeded"]) {
+      expect(mapGapiError(403, { error: { code: 403, message: "x", errors: [{ reason }] } }, false).code).toBe("quota_exceeded");
+    }
+    expect(mapGapiError(403, { error: { code: 403, message: "x", errors: [{ reason: "forbidden" }] } }, false).code).toBe("platform_permission_denied");
+  });
+
+  it("the Tag Manager project limit stops a request before it is sent", async () => {
+    const { createServicesFactory } = await import("../../platforms/services");
+    const { GoogleApiHttp } = await import("../../platforms/gapi/http");
+    let calls = 0;
+    const http = new GoogleApiHttp({ fetch: async () => { calls++; return new Response(JSON.stringify({ account: [] })); } } as never);
+    const make = createServicesFactory({ db: undefined as never, gapi: { tokens: { getAccessToken: async () => "t" }, http, gtmLimiter: { take: () => ({ ok: false, retryAfterSeconds: 7 }) } } });
+    const s = (await make({ tenantId: "t", account: { platform: "google_tag_manager", externalId: "accounts/1/containers/2", loginCustomerId: null, connectionId: "c" } })) as { gtm: { read(u: string): Promise<unknown> } };
+    await expect(s.gtm.read("https://tagmanager.googleapis.com/tagmanager/v2/accounts")).rejects.toMatchObject({ code: "quota_exceeded", opts: { retryAfterSeconds: 7 } });
+    expect(calls).toBe(0);
+  });
+});

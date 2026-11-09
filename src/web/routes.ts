@@ -391,7 +391,7 @@ ${hidden("csrf", csrfToken(s, "consent"))}
     const canDecide = s.role === "owner" || s.role === "admin";
     const pending = rows.filter((r) => r.a.status === "pending" && r.a.expiresAt > new Date());
     const other = rows.filter((r) => !pending.includes(r)).slice(0, 15);
-    const card = (r: (typeof rows)[number]) => `<div class="card"><div class="muted">${esc(r.platform)} · ${esc(r.name || r.ext)} · ${esc(r.a.tool)} · risk: <strong>${esc(r.a.risk)}</strong></div><p>${esc(r.a.summary)}</p>${changeTable(r.a.changeSet as ChangeSet | null)}${
+    const card = (r: (typeof rows)[number]) => `<div class="card"><div class="muted">${esc(r.platform)} · ${esc(r.name || r.ext)} · ${esc(r.a.tool)} · risk: <strong>${esc(r.a.risk)}</strong></div><p>${esc(r.a.summary)}</p>${changeTable(r.a.changeSet as ChangeSet | null, r.a.risk)}${
       canDecide
         ? `<form method="post" action="/approvals/${esc(r.a.id)}/decision">${hidden("csrf", csrfToken(s, `approval:${r.a.id}`))}<button class="primary" name="decision" value="approve">Approve</button> <button class="danger" name="decision" value="reject">Reject</button></form>${r.a.risk !== "write" ? `<p class="muted">Needs someone other than the requester.</p>` : ""}`
         : `<p class="muted">Only an owner or admin can decide.</p>`
@@ -615,10 +615,11 @@ ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${h
 }
 
 /** Before/after table for an approval's change set. Every value is escaped: names come from the ad platform. */
-function changeTable(cs: ChangeSet | null): string {
+function changeTable(cs: ChangeSet | null, risk = "write"): string {
   if (!cs?.changes?.length) return "";
   const fmt = (v: unknown, unit: string) => (v === null || v === undefined ? "unset" : unit === "currency" && cs.currency_code ? `${v} ${cs.currency_code}` : String(v));
-  const shown = cs.changes.slice(0, 50);
+  // A destructive change (e.g. a Tag Manager publish) shows its whole diff, up to 300 rows; others show 50.
+  const shown = cs.changes.slice(0, risk === "destructive" ? 300 : 50);
   const rows = shown
     .map((c) => `<tr><td>${esc(c.resource)} ${esc(c.name ?? c.id)}</td><td>${esc(c.field)}</td><td>${esc(fmt(c.before, c.unit))}</td><td>${esc(fmt(c.after, c.unit))}</td><td>${esc(c.effect.replace(/_/g, " "))}</td></tr>`)
     .join("");

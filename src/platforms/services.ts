@@ -2,6 +2,7 @@ import { safeFetchBytes } from "../auth/ssrf";
 import type { GoogleTokenProvider, MetaTokenProvider } from "../auth/token-providers";
 import type { Db } from "../db";
 import { ToolError } from "../mcp/errors";
+import type { Limiter } from "../security/rate-limit";
 import { GoogleAdsClient } from "./google/client";
 import type { GoogleAdsHttp } from "./google/http";
 import { type ImageFetcher, fetchImageSafely } from "./google/media";
@@ -23,7 +24,9 @@ export interface ServiceFactoryDeps {
   google?: { tokens: GoogleTokenProvider; http: GoogleAdsHttp };
   meta?: { tokens: MetaTokenProvider; http: MetaGraphHttp };
   /** Search Console, GA4 and Tag Manager: the same Google OAuth client (token provider) as Ads, one shared transport. */
-  gapi?: { tokens: Pick<GoogleTokenProvider, "getAccessToken">; http: GoogleApiHttp };
+  /** gtmLimiter: Tag Manager's quota is per Cloud project (25 requests per 100 s, Tag Manager "Limits and quotas"), shared by
+   * every tenant, so one limiter for the whole server keeps a busy tenant from failing everyone's calls at Google. */
+  gapi?: { tokens: Pick<GoogleTokenProvider, "getAccessToken">; http: GoogleApiHttp; gtmLimiter?: Limiter };
   fetchImage?: ImageFetcher;
   youtube?: YouTubeClient;
   fetchPage?: (url: string) => Promise<string>;
@@ -96,7 +99,14 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         const ga4 = new Ga4Client({ ...base, property: o.account.externalId, currencyCode: o.account.currencyCode ?? null, timeZone: o.account.timeZone ?? null });
         return { ga4, mutationsSent: () => ga4.mutationsSent } satisfies Ga4Services;
       }
-      const gtm = new GtmClient({ ...base, containerPath: o.account.externalId });
+      const lim = d.gapi.gtmLimiter;
+      const beforeCall = lim
+        ? async () => {
+            const r = await lim.take("project");
+            if (!r.ok) throw new ToolError("quota_exceeded", `Tag Manager's request limit for this server is reached (Google allows 25 requests per 100 seconds per project). Try again in ${r.retryAfterSeconds} seconds. Nothing was sent.`, { retryAfterSeconds: r.retryAfterSeconds, definite: true });
+          }
+        : undefined;
+      const gtm = new GtmClient({ ...base, containerPath: o.account.externalId, ...(beforeCall ? { beforeCall } : {}) });
       return { gtm, mutationsSent: () => gtm.mutationsSent } satisfies GtmServices;
     }
     throw new ToolError("unsupported", `Platform ${o.account.platform} is not available yet.`);

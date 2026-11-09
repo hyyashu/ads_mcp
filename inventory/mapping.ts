@@ -274,7 +274,9 @@ const productApi: Rule[] = [
 ];
 
 /** Design section 6: tiers that differ from the action type's default (Delete = destructive, other changes = write). */
-const productRisk: Record<string, Risk> = { create_key_event: "high_impact", publish_gtm_version: "destructive" };
+// create/update_gtm_tag are high_impact (owner-approved 2026-11-10, stricter than design section 6): a custom HTML tag is code
+// that will run on the customer's website once published, so a second person approves even the draft.
+const productRisk: Record<string, Risk> = { create_key_event: "high_impact", create_gtm_tag: "high_impact", update_gtm_tag: "high_impact", publish_gtm_version: "destructive" };
 const PRODUCTS = new Set(["google_search_console", "google_analytics", "google_tag_manager"]);
 
 const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$/;

@@ -22,6 +22,8 @@ export interface GoogleApiClientOptions {
   getAccessToken: () => Promise<string>;
   /** The tool call's signal: cancellation and deadlines reach the upstream requests. */
   signal?: AbortSignal;
+  /** Runs before every request (Tag Manager uses it for its project-wide rate limit). Throwing stops the request unsent. */
+  beforeCall?: () => Promise<void>;
 }
 
 /**
@@ -39,11 +41,13 @@ export class GoogleApiClient {
 
   /** GET that only reads. Retried on transient failures. */
   async read<T = Row>(url: string, params?: Params): Promise<T> {
+    await this.o.beforeCall?.();
     return this.o.http.call<T>({ accessToken: await this.o.getAccessToken(), url, params, idempotent: true, signal: this.o.signal });
   }
 
   /** POST that only reads (searchAnalytics.query, runReport, urlInspection). Retried like a read: never use it for a change. */
   async query<T = Row>(url: string, body: unknown, params?: Params): Promise<T> {
+    await this.o.beforeCall?.();
     return this.o.http.call<T>({ accessToken: await this.o.getAccessToken(), method: "POST", url, params, body, idempotent: true, signal: this.o.signal });
   }
 
@@ -54,6 +58,7 @@ export class GoogleApiClient {
    */
   async send<T = Row>(method: "POST" | "PUT" | "PATCH" | "DELETE", url: string, body?: unknown, params?: Params): Promise<T> {
     const accessToken = await this.o.getAccessToken();
+    await this.o.beforeCall?.();
     if (this.o.signal?.aborted) throw new ToolError("deadline_exceeded", "Stopped before sending the change: the call was cancelled or ran past its time limit. Nothing was changed.");
     this.sent++; // counted right before sending: a failure after this point may have changed something
     return this.o.http.call<T>({ accessToken, method, url, params, body, idempotent: false, signal: this.o.signal });

@@ -60,7 +60,7 @@ describe("implementation plan (inventory/mapping.ts)", () => {
     expect(Object.fromEntries(["submit_sitemap", "add_gsc_site", "delete_sitemap", "remove_gsc_site", "create_key_event", "remove_key_event", "create_custom_dimension", "create_ga4_audience", "create_gtm_tag", "update_gtm_tag", "create_gtm_trigger", "create_gtm_version", "publish_gtm_version"].map((n) => [n, risk(n)]))).toEqual({
       submit_sitemap: "write", add_gsc_site: "write", delete_sitemap: "destructive", remove_gsc_site: "destructive",
       create_key_event: "high_impact", remove_key_event: "destructive", create_custom_dimension: "write", create_ga4_audience: "write",
-      create_gtm_tag: "write", update_gtm_tag: "write", create_gtm_trigger: "write", create_gtm_version: "write", publish_gtm_version: "destructive",
+      create_gtm_tag: "high_impact", update_gtm_tag: "high_impact", create_gtm_trigger: "write", create_gtm_version: "write", publish_gtm_version: "destructive",
     });
   });
 

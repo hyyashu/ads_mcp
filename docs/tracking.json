@@ -4696,7 +4696,7 @@
       "action": "Create",
       "domain": "tag_manager",
       "api": "POST {workspace}/tags | PUT {tag} (in the server's own JackOfAds workspace)",
-      "risk": "write",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/tagmanager.edit.containers"
@@ -4713,7 +4713,7 @@
       "action": "Update",
       "domain": "tag_manager",
       "api": "POST {workspace}/tags | PUT {tag} (in the server's own JackOfAds workspace)",
-      "risk": "write",
+      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/tagmanager.edit.containers"
