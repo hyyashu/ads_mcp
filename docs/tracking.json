@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 232,
+    "implemented": 235,
     "external_limitation": 1,
-    "pending": 53
+    "pending": 50
   },
   "rows": [
     {
@@ -4272,10 +4272,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ga4_metadata",
@@ -4289,10 +4289,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "run_ga4_report",
@@ -4306,10 +4306,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "run_ga4_pivot_report",
