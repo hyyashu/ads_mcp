@@ -41,7 +41,7 @@ export const getPmaxAssetGroups = googleRead({
     if (a.campaign_id) await requirePmax(ads, a.campaign_id);
     const base = ["asset_group.id", "campaign.id", "asset_group.name", "asset_group.status", "asset_group.primary_status", "asset_group.ad_strength", "asset_group.final_urls", "asset_group.path1", "asset_group.path2"];
     const [groups, metrics] = await Promise.all([
-      ads.query(scopeWhere(new Gaql().select(...base).from("asset_group").where("asset_group.status != 'REMOVED'"), a).limit(1000), { maxRows: 1000 }),
+      ads.query(scopeWhere(new Gaql().select(...base).from("asset_group").where("asset_group.status != 'REMOVED'"), a), { maxRows: 1000 }),
       ads.query(scopeWhere(new Gaql().select("asset_group.id", "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value").from("asset_group").where(dateClause(a)), a), { maxRows: 10_000 }),
     ]);
     // A group with no activity in the period returns no metrics row: its counters are zero.
@@ -150,7 +150,7 @@ export const getPmaxAssetPerformance = googleRead({
       scopeWhere(new Gaql().select("asset_group.id", "asset_group_asset.field_type", "asset.id", "asset.type", "asset.text_asset.text", "asset.youtube_video_asset.youtube_video_id", "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value").from("asset_group_asset").where(dateClause(a)).where("asset_group_asset.status != 'REMOVED'"), a)
         .orderBy("metrics.impressions", "DESC")
         .limit(a.limit + 1),
-      { maxRows: a.limit + 1 },
+      { maxRows: a.limit + 1, partial: true },
     );
     const shown = rows.slice(0, a.limit).map((r) => ({ asset_group_id: str(r, "asset_group.id"), asset_id: String(pick(r, "asset.id") ?? ""), field_type: str(r, "asset_group_asset.field_type"), asset_type: str(r, "asset.type"), text: str(r, "asset.text_asset.text"), youtube_video_id: str(r, "asset.youtube_video_asset.youtube_video_id"), performance: perf(r) }));
     return { period: period(a), assets: shown, returned: shown.length, truncated: rows.length > a.limit };
@@ -239,13 +239,13 @@ export const analyzePmaxSearchTerms = googleRead({
   title: "Analyze Performance Max search terms",
   description: "Shows the search terms that triggered a Performance Max campaign in a period, with clicks, cost, conversions and value, and flags terms that spent above a threshold without converting (candidates for negative keywords or brand exclusions). Computed from live campaign search term data.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, ...dateFields, min_cost_without_conversion: z.number().min(0).max(1_000_000).default(10), limit: z.number().int().min(1).max(500).default(100) }).refine(datesOk, datesMsg),
-  output: z.object({ period: z.string(), terms: z.array(z.object({ search_term: z.string().nullable(), wasted: z.boolean(), performance: perfSchema })), wasted_cost: Money, analyzed_cost: Money, returned: z.number(), truncated: z.boolean() }),
+  output: z.object({ period: z.string(), terms: z.array(z.object({ search_term: z.string().nullable(), wasted: z.boolean(), performance: perfSchema })), wasted_cost: Money.describe("Cost of the flagged terms among the returned ones."), analyzed_cost: Money.describe("Cost of the returned terms only (the highest-cost ones). When truncated is true, the campaign's other terms are not included."), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const ads = ctx.services.ads;
     await requirePmax(ads, a.campaign_id);
     const rows = await ads.query(
       new Gaql().select("campaign_search_term_view.search_term", "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value").from("campaign_search_term_view").where(`campaign.id = ${lit.id(a.campaign_id)}`).where(dateClause(a)).orderBy("metrics.cost_micros", "DESC").limit(a.limit + 1),
-      { maxRows: a.limit + 1 },
+      { maxRows: a.limit + 1, partial: true },
     );
     const terms = rows.slice(0, a.limit).map((r) => {
       const p = perf(r);
@@ -261,19 +261,23 @@ export const analyzePmaxSearchCategories = googleRead({
   title: "Analyze Performance Max search categories",
   description: "Groups a Performance Max campaign's searches into Google's search categories (search term insights) for a period, with impressions, clicks, conversions and value per category, sorted by conversions. Cost is not available per category. Historical data starts March 2023. Fetched live.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, ...dateFields, limit: z.number().int().min(1).max(500).default(100) }).refine(datesOk, datesMsg),
-  output: z.object({ period: z.string(), categories: z.array(z.object({ category_id: z.string().nullable(), category_label: z.string().nullable(), impressions: z.number(), clicks: z.number(), conversions: z.number(), conversion_value: z.number(), conversion_share: z.number().nullable() })) }),
+  output: z.object({ period: z.string(), categories: z.array(z.object({ category_id: z.string().nullable(), category_label: z.string().nullable(), impressions: z.number(), clicks: z.number(), conversions: z.number(), conversion_value: z.number(), conversion_share: z.number().nullable().describe("Share of the conversions of every category in the period, not only the returned ones.") })), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const ads = ctx.services.ads;
     await requirePmax(ads, a.campaign_id);
     // Search term insights must be filtered on a single campaign id (insight-specific field).
     const rows = await ads.query(
-      new Gaql().select("campaign_search_term_insight.id", "campaign_search_term_insight.category_label", "metrics.impressions", "metrics.clicks", "metrics.conversions", "metrics.conversions_value").from("campaign_search_term_insight").where(`campaign_search_term_insight.campaign_id = ${lit.id(a.campaign_id)}`).where(dateClause(a)).orderBy("metrics.conversions", "DESC").limit(a.limit),
-      { maxRows: a.limit },
+      new Gaql().select("campaign_search_term_insight.id", "campaign_search_term_insight.category_label", "metrics.impressions", "metrics.clicks", "metrics.conversions", "metrics.conversions_value").from("campaign_search_term_insight").where(`campaign_search_term_insight.campaign_id = ${lit.id(a.campaign_id)}`).where(dateClause(a)).orderBy("metrics.conversions", "DESC"),
+      { maxRows: 10_000 },
     );
+    // Shares are of every category, so all rows are read (the client refuses rather than cut past 10,000) and only the top `limit` shown.
     const total = rows.reduce((s, r) => s + num(pick(r, "metrics.conversions")), 0);
+    const shown = rows.slice(0, a.limit);
     return {
       period: period(a),
-      categories: rows.map((r) => {
+      returned: shown.length,
+      truncated: rows.length > a.limit,
+      categories: shown.map((r) => {
         const conv = num(pick(r, "metrics.conversions"));
         return { category_id: str(r, "campaign_search_term_insight.id"), category_label: str(r, "campaign_search_term_insight.category_label"), impressions: num(pick(r, "metrics.impressions")), clicks: num(pick(r, "metrics.clicks")), conversions: round(conv, 2)!, conversion_value: round(num(pick(r, "metrics.conversions_value")), 2)!, conversion_share: round(ratio(conv, total)) };
       }),

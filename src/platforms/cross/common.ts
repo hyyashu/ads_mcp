@@ -338,7 +338,7 @@ export interface MetaAd {
 }
 /** Every ad of the account (up to META_AD_CAP; `truncated` when it has more) with its creative link, url_tags and the UTM values they produce. */
 export async function metaAds(m: MetaAdsClient): Promise<{ ads: MetaAd[]; truncated: boolean }> {
-  const rows = await m.list(`${m.adAccountId}/ads`, { fields: "id,campaign_id,effective_status,creative{url_tags,object_story_spec,asset_feed_spec}" }, META_AD_CAP + 1);
+  const rows = await m.list(`${m.adAccountId}/ads`, { fields: "id,campaign_id,effective_status,creative{url_tags,object_story_spec,asset_feed_spec}" }, META_AD_CAP + 1, { partial: true });
   const ads = rows.slice(0, META_AD_CAP).map((r) => {
     const c = obj(r.creative);
     const link = creativeLink(c);

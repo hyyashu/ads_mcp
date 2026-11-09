@@ -90,7 +90,7 @@ export const getKeywordPerformance = googleRead({
         .where(a.max_quality_score !== undefined && `${c}.quality_info.quality_score <= ${lit.int(a.max_quality_score)}`)
         .orderBy(order, "DESC")
         .limit(a.limit + 1),
-      { maxRows: a.limit + 1 },
+      { maxRows: a.limit + 1, partial: true },
     );
     const shown = rows.slice(0, a.limit).map((r) => ({
       campaign_id: str(r, "campaign.id"),

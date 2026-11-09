@@ -188,7 +188,7 @@ export const updateAdContent = googleWrite({
 
 // ---------------------------------------------------------------------------------------------------- create_ad
 async function findIdentical(ads: GoogleAdsClient, agId: string, h: Asset[], d: Asset[]): Promise<Rsa | null> {
-  const q = new Gaql().select(...RSA_FIELDS).from("ad_group_ad").where(`ad_group.id = ${lit.id(agId)}`).where("ad_group_ad.status != 'REMOVED'").where("ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'").limit(1000);
+  const q = new Gaql().select(...RSA_FIELDS).from("ad_group_ad").where(`ad_group.id = ${lit.id(agId)}`).where("ad_group_ad.status != 'REMOVED'").where("ad_group_ad.ad.type = 'RESPONSIVE_SEARCH_AD'");
   const rows = await ads.query(q, { maxRows: 1000 });
   return rows.map((r) => toRsa(r, ads.customerId)).find((x) => sameAssets(x.headlines, h) && sameAssets(x.descriptions, d)) ?? null;
 }

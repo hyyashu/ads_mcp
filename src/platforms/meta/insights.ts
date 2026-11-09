@@ -190,6 +190,7 @@ export async function fetchInsights(m: MetaAdsClient, o: { objectPath: string; l
       ...o.period,
     },
     cap + 1,
+    { partial: true },
   );
   return { rows: rows.slice(0, cap), truncated: rows.length > cap };
 }

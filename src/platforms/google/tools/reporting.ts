@@ -37,7 +37,7 @@ export const listCampaigns = googleRead({
       .where(a.name_contains && `campaign.name LIKE ${lit.str(`%${a.name_contains}%`)}`)
       .orderBy("campaign.id")
       .limit(a.limit + 1);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1 });
+    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
     const shown = rows.slice(0, a.limit);
     return {
       campaigns: shown.map((r) => ({
@@ -89,7 +89,7 @@ export const getCampaignPerformance = googleRead({
       .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined)
       .orderBy(order, "DESC")
       .limit(a.limit + 1);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1 });
+    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
     const shown = rows.slice(0, a.limit);
     const calc = (impressions: number, clicks: number, cost: number, conversions: number, conversion_value: number) => ({
       impressions, clicks, cost: round(cost, 2)!, conversions, conversion_value: round(conversion_value, 2)!,
@@ -133,22 +133,23 @@ export const listConversionActions = googleRead({
   title: "List conversion actions",
   description: "Lists the conversion actions defined in a Google Ads account: name, type, category, status, counting type and default value. Removed actions are excluded.",
   input: z.object({ account_id: accountId, limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ conversion_actions: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), type: z.string().nullable(), category: z.string().nullable(), counting_type: z.string().nullable(), primary_for_goal: z.boolean().nullable(), default_value: z.number().nullable() })), returned: z.number() }),
+  output: z.object({ conversion_actions: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), type: z.string().nullable(), category: z.string().nullable(), counting_type: z.string().nullable(), primary_for_goal: z.boolean().nullable(), default_value: z.number().nullable() })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
   handler: async (a, ctx) => {
     const q = new Gaql()
       .select("conversion_action.id", "conversion_action.name", "conversion_action.status", "conversion_action.type", "conversion_action.category", "conversion_action.counting_type", "conversion_action.primary_for_goal", "conversion_action.value_settings.default_value")
       .from("conversion_action")
       .where("conversion_action.status != 'REMOVED'")
       .orderBy("conversion_action.id")
-      .limit(a.limit);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit });
+      .limit(a.limit + 1);
+    const fetched = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
+    const rows = fetched.slice(0, a.limit);
     return {
       conversion_actions: rows.map((r) => ({
         id: idStr(r, "conversion_action.id"), name: str(r, "conversion_action.name"), status: str(r, "conversion_action.status"), type: str(r, "conversion_action.type"), category: str(r, "conversion_action.category"), counting_type: str(r, "conversion_action.counting_type"),
         primary_for_goal: typeof pick(r, "conversion_action.primary_for_goal") === "boolean" ? (pick(r, "conversion_action.primary_for_goal") as boolean) : null,
         default_value: pick(r, "conversion_action.value_settings.default_value") === undefined ? null : num(pick(r, "conversion_action.value_settings.default_value")),
       })),
-      returned: rows.length,
+      returned: rows.length, truncated: fetched.length > a.limit,
     };
   },
 });
@@ -159,10 +160,11 @@ export const listLabels = googleRead({
   title: "List labels",
   description: "Lists the labels defined in a Google Ads account, which can be attached to campaigns, ad groups, ads and keywords.",
   input: z.object({ account_id: accountId, limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ labels: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable() })), returned: z.number() }),
+  output: z.object({ labels: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable() })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
   handler: async (a, ctx) => {
-    const rows = await ctx.services.ads.query(new Gaql().select("label.id", "label.name", "label.status").from("label").where("label.status != 'REMOVED'").orderBy("label.id").limit(a.limit), { maxRows: a.limit });
-    return { labels: rows.map((r) => ({ id: idStr(r, "label.id"), name: str(r, "label.name"), status: str(r, "label.status") })), returned: rows.length };
+    const fetched = await ctx.services.ads.query(new Gaql().select("label.id", "label.name", "label.status").from("label").where("label.status != 'REMOVED'").orderBy("label.id").limit(a.limit + 1), { maxRows: a.limit + 1, partial: true });
+    const rows = fetched.slice(0, a.limit);
+    return { labels: rows.map((r) => ({ id: idStr(r, "label.id"), name: str(r, "label.name"), status: str(r, "label.status") })), returned: rows.length, truncated: fetched.length > a.limit };
   },
 });
 
@@ -171,11 +173,12 @@ export const listNegativeKeywordLists = googleRead({
   title: "List negative keyword lists",
   description: "Lists the shared negative keyword lists in a Google Ads account, with how many keywords each holds.",
   input: z.object({ account_id: accountId, limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ lists: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), member_count: z.number().nullable() })), returned: z.number() }),
+  output: z.object({ lists: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), member_count: z.number().nullable() })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
   handler: async (a, ctx) => {
-    const q = new Gaql().select("shared_set.id", "shared_set.name", "shared_set.status", "shared_set.member_count").from("shared_set").where("shared_set.type = 'NEGATIVE_KEYWORDS'").where("shared_set.status = 'ENABLED'").orderBy("shared_set.id").limit(a.limit);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit });
-    return { lists: rows.map((r) => ({ id: idStr(r, "shared_set.id"), name: str(r, "shared_set.name"), status: str(r, "shared_set.status"), member_count: pick(r, "shared_set.member_count") === undefined ? null : num(pick(r, "shared_set.member_count")) })), returned: rows.length };
+    const q = new Gaql().select("shared_set.id", "shared_set.name", "shared_set.status", "shared_set.member_count").from("shared_set").where("shared_set.type = 'NEGATIVE_KEYWORDS'").where("shared_set.status = 'ENABLED'").orderBy("shared_set.id").limit(a.limit + 1);
+    const fetched = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
+    const rows = fetched.slice(0, a.limit);
+    return { lists: rows.map((r) => ({ id: idStr(r, "shared_set.id"), name: str(r, "shared_set.name"), status: str(r, "shared_set.status"), member_count: pick(r, "shared_set.member_count") === undefined ? null : num(pick(r, "shared_set.member_count")) })), returned: rows.length, truncated: fetched.length > a.limit };
   },
 });
 
@@ -185,7 +188,7 @@ export const getCampaignTracking = googleRead({
   title: "Campaign tracking settings",
   description: "Shows the tracking URL template, final URL suffix and custom parameters set on campaigns, for auditing click tracking.",
   input: z.object({ account_id: accountId, campaign_ids: campaignIds.optional(), limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), tracking_url_template: z.string().nullable(), final_url_suffix: z.string().nullable(), custom_parameters: z.array(z.object({ key: z.string(), value: z.string() })) })), returned: z.number() }),
+  output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), tracking_url_template: z.string().nullable(), final_url_suffix: z.string().nullable(), custom_parameters: z.array(z.object({ key: z.string(), value: z.string() })) })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
   handler: async (a, ctx) => {
     const q = new Gaql()
       .select("campaign.id", "campaign.name", "campaign.tracking_url_template", "campaign.final_url_suffix", "campaign.url_custom_parameters")
@@ -193,14 +196,15 @@ export const getCampaignTracking = googleRead({
       .where("campaign.status != 'REMOVED'")
       .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined)
       .orderBy("campaign.id")
-      .limit(a.limit);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit });
+      .limit(a.limit + 1);
+    const fetched = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
+    const rows = fetched.slice(0, a.limit);
     return {
       campaigns: rows.map((r) => ({
         campaign_id: idStr(r, "campaign.id"), name: str(r, "campaign.name"), tracking_url_template: str(r, "campaign.tracking_url_template"), final_url_suffix: str(r, "campaign.final_url_suffix"),
         custom_parameters: ((pick(r, "campaign.url_custom_parameters") as { key?: string; value?: string }[] | undefined) ?? []).filter((p) => p.key).map((p) => ({ key: String(p.key), value: String(p.value ?? "") })),
       })),
-      returned: rows.length,
+      returned: rows.length, truncated: fetched.length > a.limit,
     };
   },
 });
@@ -220,7 +224,7 @@ export const getAdPolicyViolations = googleRead({
       .where("ad_group_ad.policy_summary.approval_status IN ('DISAPPROVED', 'APPROVED_LIMITED', 'AREA_OF_INTEREST_ONLY')")
       .where(a.campaign_id && `campaign.id = ${lit.id(a.campaign_id)}`)
       .limit(a.limit + 1);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1 });
+    const rows = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
     const shown = rows.slice(0, a.limit);
     return {
       ads: shown.map((r) => ({

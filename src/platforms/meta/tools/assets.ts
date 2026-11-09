@@ -70,7 +70,7 @@ export const getMetaAdCreatives = metaRead({
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
     if (a.ad_id) await m.getOwned(a.ad_id, ["id"], "ad");
-    const rows = await m.list(`${a.ad_id ?? m.adAccountId}/adcreatives`, { fields: CREATIVE_FIELDS.join(",") }, a.limit + 1);
+    const rows = await m.list(`${a.ad_id ?? m.adAccountId}/adcreatives`, { fields: CREATIVE_FIELDS.join(",") }, a.limit + 1, { partial: true });
     const shown = rows.slice(0, a.limit).map(toCreative);
     return { creatives: shown, returned: shown.length, truncated: rows.length > a.limit };
   },
@@ -87,7 +87,7 @@ export const listMetaPages = metaRead({
   permissions: needs(PAGES_SHOW_LIST),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const rows = await m.list(`${m.adAccountId}/promote_pages`, { fields: "id,name" }, a.limit + 1);
+    const rows = await m.list(`${m.adAccountId}/promote_pages`, { fields: "id,name" }, a.limit + 1, { partial: true });
     const pages = rows.slice(0, a.limit).map((r) => ({ page_id: String(r.id ?? ""), name: s(r, "name") }));
     return { pages, returned: pages.length, truncated: rows.length > a.limit };
   },
@@ -104,7 +104,7 @@ export const listMetaInstagramAccounts = metaRead({
   permissions: needs(INSTAGRAM_BASIC, PAGES_READ_ENGAGEMENT),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const rows = await m.list(`${m.adAccountId}/instagram_accounts`, { fields: "id,username" }, a.limit + 1);
+    const rows = await m.list(`${m.adAccountId}/instagram_accounts`, { fields: "id,username" }, a.limit + 1, { partial: true });
     const list = rows.slice(0, a.limit).map((r) => ({ instagram_account_id: String(r.id ?? ""), username: s(r, "username") }));
     return { instagram_accounts: list, returned: list.length, truncated: rows.length > a.limit };
   },
@@ -126,7 +126,7 @@ export const listMetaPixels = metaRead({
   }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const rows = await m.list(`${m.adAccountId}/adspixels`, { fields: PIXEL_FIELDS.join(",") }, a.limit + 1);
+    const rows = await m.list(`${m.adAccountId}/adspixels`, { fields: PIXEL_FIELDS.join(",") }, a.limit + 1, { partial: true });
     const pixels = rows.slice(0, a.limit).map((r) => ({
       pixel_id: String(r.id ?? ""),
       name: s(r, "name"),
@@ -162,7 +162,7 @@ export const getMetaPixelStats = metaRead({
     await requireOnEdge(m, "adspixels", a.pixel_id, "pixel");
     const end = Math.floor(Date.now() / 1000);
     const start = end - a.days * 86_400;
-    const rows = await m.list(`${a.pixel_id}/stats`, { aggregation: "event_total_counts", start_time: String(start), end_time: String(end) }, STATS_CAP + 1);
+    const rows = await m.list(`${a.pixel_id}/stats`, { aggregation: "event_total_counts", start_time: String(start), end_time: String(end) }, STATS_CAP + 1, { partial: true });
     // The AdsPixelStatsResult fields are not spelled out in the reference, so both shapes seen in Meta's responses are read:
     // {data: [{value, count}]} per result, or {value, count} directly.
     const counts = new Map<string, number>();
@@ -211,7 +211,7 @@ export const listMetaCustomAudiences = metaRead({
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
     // Meta's custom audience FAQ recommends small pages (limit 20) for this edge.
-    const rows = await m.list(`${m.adAccountId}/customaudiences`, { fields: AUDIENCE_FIELDS.join(","), limit: "25" }, EDGE_CAP);
+    const rows = await m.list(`${m.adAccountId}/customaudiences`, { fields: AUDIENCE_FIELDS.join(","), limit: "25" }, EDGE_CAP, { partial: true });
     const wanted = rows.filter((r) => !a.subtype || s(r, "subtype") === a.subtype);
     const audiences = wanted.slice(0, a.limit).map((r) => ({
       audience_id: String(r.id ?? ""),
@@ -271,8 +271,9 @@ export const toVideo = (r: MetaRow) => {
   const big = formats.sort((x, y) => y.w! * y.h! - x.w! * x.h!)[0];
   return { video_id: String(r.id ?? ""), name: s(r, "name"), width: big?.w ?? null, height: big?.h ?? null, picture: s(r, "picture"), created_time: s(r, "created_time") };
 };
-export const readImages = (m: import("../client").MetaAdsClient, max: number) => m.list(`${m.adAccountId}/adimages`, { fields: IMAGE_FIELDS.join(",") }, max);
-export const readVideos = (m: import("../client").MetaAdsClient, max: number) => m.list(`${m.adAccountId}/advideos`, { fields: VIDEO_FIELDS.join(",") }, max);
+/** The image library. Complete (refused past `max`) unless `partial`, which returns the first `max` for display. */
+export const readImages = (m: import("../client").MetaAdsClient, max: number, partial = false) => m.list(`${m.adAccountId}/adimages`, { fields: IMAGE_FIELDS.join(",") }, max, { partial });
+export const readVideos = (m: import("../client").MetaAdsClient, max: number, partial = false) => m.list(`${m.adAccountId}/advideos`, { fields: VIDEO_FIELDS.join(",") }, max, { partial });
 
 export const discoverMetaAssets = metaRead({
   name: "discover_meta_assets",
@@ -283,7 +284,7 @@ export const discoverMetaAssets = metaRead({
   output: z.object({ images: z.array(imageRow), videos: z.array(videoRow), images_truncated: z.boolean(), videos_truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const [imgs, vids] = await Promise.all([a.kinds.includes("images") ? readImages(m, EDGE_CAP) : Promise.resolve([]), a.kinds.includes("videos") ? readVideos(m, a.limit + 1) : Promise.resolve([])]);
+    const [imgs, vids] = await Promise.all([a.kinds.includes("images") ? readImages(m, EDGE_CAP, true) : Promise.resolve([]), a.kinds.includes("videos") ? readVideos(m, a.limit + 1, true) : Promise.resolve([])]);
     const images = imgs.filter((r) => r.hash && (a.include_deleted || s(r, "status") !== "DELETED")).map(toImage);
     return { images: images.slice(0, a.limit), videos: vids.slice(0, a.limit).filter((r) => r.id).map(toVideo), images_truncated: images.length > a.limit || imgs.length >= EDGE_CAP, videos_truncated: vids.length > a.limit };
   },

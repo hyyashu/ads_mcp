@@ -95,7 +95,7 @@ function requireHousing(v: Vertical, special: readonly string[]) {
 
 /** OFFSITE_CONVERSIONS needs a pixel or app connected to the catalog so purchases can be matched to items. */
 async function requireEventSource(m: MetaAdsClient, catalogId: string) {
-  const rows = await m.list(`${catalogId}/external_event_sources`, { fields: "id" }, 10);
+  const rows = await m.list(`${catalogId}/external_event_sources`, { fields: "id" }, 10, { partial: true });
   if (!rows.length) throw new ToolError("invalid_argument", `Catalog ${catalogId} has no connected pixel or app (external_event_sources), so OFFSITE_CONVERSIONS with PURCHASE cannot work. Connect one in Commerce Manager (see validate_catalog_readiness) or use LINK_CLICKS.`);
 }
 

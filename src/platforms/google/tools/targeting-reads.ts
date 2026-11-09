@@ -48,8 +48,7 @@ export async function adGroupCriteria(ads: GoogleAdsClient, o: { types: readonly
       .where(`${c}.status != 'REMOVED'`)
       .where(o.campaignId && `campaign.id = ${lit.id(o.campaignId)}`)
       .where(o.adGroupIds?.length ? `ad_group.id IN ${lit.list(o.adGroupIds.map(lit.id))}` : undefined)
-      .where(o.channel && `campaign.advertising_channel_type = '${o.channel}'`)
-      .limit(10_000),
+      .where(o.channel && `campaign.advertising_channel_type = '${o.channel}'`),
     { maxRows: 10_000 },
   );
   const customIds = [...new Set(rows.map((r) => tailId(pick(r, `${c}.custom_audience.custom_audience`))).filter((x): x is string => !!x))];
@@ -174,8 +173,7 @@ export const getDisplayAdGroupSettings = googleRead({
         .where("campaign.advertising_channel_type = 'DISPLAY'")
         .where("ad_group.status != 'REMOVED'")
         .where(a.campaign_id && `campaign.id = ${lit.id(a.campaign_id)}`)
-        .where(a.ad_group_ids?.length ? `ad_group.id IN ${lit.list(a.ad_group_ids.map(lit.id))}` : undefined)
-        .limit(1000),
+        .where(a.ad_group_ids?.length ? `ad_group.id IN ${lit.list(a.ad_group_ids.map(lit.id))}` : undefined),
       { maxRows: 1000 },
     );
     return {
@@ -203,7 +201,7 @@ export const getDisplayFrequencyCaps = googleRead({
   output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), frequency_caps: z.array(z.object({ level: z.string().nullable(), event_type: z.string().nullable(), time_unit: z.string().nullable(), time_length: z.number().nullable(), cap: z.number().nullable() })) })) }),
   handler: async (a, ctx) => {
     const rows = await ctx.services.ads.query(
-      new Gaql().select("campaign.id", "campaign.name", "campaign.frequency_caps").from("campaign").where("campaign.advertising_channel_type = 'DISPLAY'").where("campaign.status != 'REMOVED'").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined).limit(1000),
+      new Gaql().select("campaign.id", "campaign.name", "campaign.frequency_caps").from("campaign").where("campaign.advertising_channel_type = 'DISPLAY'").where("campaign.status != 'REMOVED'").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined),
       { maxRows: 1000 },
     );
     return { campaigns: rows.map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name"), frequency_caps: mapCaps(pick(r, "campaign.frequency_caps")) })) };
@@ -227,8 +225,7 @@ export const getDemandgenChannelControls = googleRead({
         .where("campaign.advertising_channel_type = 'DEMAND_GEN'")
         .where("ad_group.status != 'REMOVED'")
         .where(a.campaign_id && `campaign.id = ${lit.id(a.campaign_id)}`)
-        .where(a.ad_group_ids?.length ? `ad_group.id IN ${lit.list(a.ad_group_ids.map(lit.id))}` : undefined)
-        .limit(1000),
+        .where(a.ad_group_ids?.length ? `ad_group.id IN ${lit.list(a.ad_group_ids.map(lit.id))}` : undefined),
       { maxRows: 1000 },
     );
     return {
@@ -252,7 +249,7 @@ export const listGoogleLanguages = googleRead({
   input: z.object({ account_id: accountId, name_contains: z.string().regex(/^[\p{L} -]{1,50}$/u).optional() }),
   output: z.object({ languages: z.array(z.object({ language_constant_id: z.string().min(1), name: z.string().nullable(), code: z.string().nullable(), targetable: z.boolean() })) }),
   handler: async (a, ctx) => {
-    const rows = await ctx.services.ads.query(new Gaql().select("language_constant.id", "language_constant.name", "language_constant.code", "language_constant.targetable").from("language_constant").where(a.name_contains && `language_constant.name LIKE ${lit.str(`%${a.name_contains}%`)}`).orderBy("language_constant.name").limit(500), { maxRows: 500 });
+    const rows = await ctx.services.ads.query(new Gaql().select("language_constant.id", "language_constant.name", "language_constant.code", "language_constant.targetable").from("language_constant").where(a.name_contains && `language_constant.name LIKE ${lit.str(`%${a.name_contains}%`)}`).orderBy("language_constant.name"), { maxRows: 500 });
     return { languages: rows.map((r) => ({ language_constant_id: String(pick(r, "language_constant.id") ?? ""), name: str(r, "language_constant.name"), code: str(r, "language_constant.code"), targetable: pick(r, "language_constant.targetable") === true })) };
   },
 });
@@ -287,20 +284,21 @@ export const searchAudiences = googleRead({
   title: "Search audiences",
   description: "Searches the audiences you can target by name: Google's affinity, in-market and life event segments (user interests), your own data segments (remarketing and customer lists, with size), and custom audiences. Returns the ids to use when adding audiences. Fetched live.",
   input: z.object({ account_id: accountId, query: z.string().trim().min(2).max(80).regex(/^[^\u0000-\u001f%_]+$/, "no control characters, % or _"), kinds: z.array(z.enum(["user_interest", "user_list", "custom_audience"])).min(1).max(3).default(["user_interest", "user_list", "custom_audience"]), limit: z.number().int().min(1).max(200).default(50) }),
-  output: z.object({ audiences: z.array(z.object({ kind: z.enum(["user_interest", "user_list", "custom_audience"]), id: z.string().min(1), name: z.string().nullable(), subtype: z.string().nullable(), size_for_display: z.number().nullable(), size_for_search: z.number().nullable(), status: z.string().nullable() })) }),
+  output: z.object({ audiences: z.array(z.object({ kind: z.enum(["user_interest", "user_list", "custom_audience"]), id: z.string().min(1), name: z.string().nullable(), subtype: z.string().nullable(), size_for_display: z.number().nullable(), size_for_search: z.number().nullable(), status: z.string().nullable() })), truncated: z.boolean().describe("True when some kind had more matches than limit; use a more specific query.") }),
   handler: async (a, ctx) => {
     const ads = ctx.services.ads;
     const like = lit.str(`%${a.query}%`);
     const out: { kind: "user_interest" | "user_list" | "custom_audience"; id: string; name: string | null; subtype: string | null; size_for_display: number | null; size_for_search: number | null; status: string | null }[] = [];
     const [ui, ul, ca] = await Promise.all([
-      a.kinds.includes("user_interest") ? ads.query(new Gaql().select("user_interest.user_interest_id", "user_interest.name", "user_interest.taxonomy_type").from("user_interest").where(`user_interest.name LIKE ${like}`).limit(a.limit), { maxRows: a.limit }) : [],
-      a.kinds.includes("user_list") ? ads.query(new Gaql().select("user_list.id", "user_list.name", "user_list.type", "user_list.size_for_display", "user_list.size_for_search", "user_list.membership_status").from("user_list").where(`user_list.name LIKE ${like}`).limit(a.limit), { maxRows: a.limit }) : [],
-      a.kinds.includes("custom_audience") ? ads.query(new Gaql().select("custom_audience.id", "custom_audience.name", "custom_audience.type", "custom_audience.status").from("custom_audience").where(`custom_audience.name LIKE ${like}`).where("custom_audience.status = 'ENABLED'").limit(a.limit), { maxRows: a.limit }) : [],
+      a.kinds.includes("user_interest") ? ads.query(new Gaql().select("user_interest.user_interest_id", "user_interest.name", "user_interest.taxonomy_type").from("user_interest").where(`user_interest.name LIKE ${like}`).limit(a.limit + 1), { maxRows: a.limit + 1, partial: true }) : [],
+      a.kinds.includes("user_list") ? ads.query(new Gaql().select("user_list.id", "user_list.name", "user_list.type", "user_list.size_for_display", "user_list.size_for_search", "user_list.membership_status").from("user_list").where(`user_list.name LIKE ${like}`).limit(a.limit + 1), { maxRows: a.limit + 1, partial: true }) : [],
+      a.kinds.includes("custom_audience") ? ads.query(new Gaql().select("custom_audience.id", "custom_audience.name", "custom_audience.type", "custom_audience.status").from("custom_audience").where(`custom_audience.name LIKE ${like}`).where("custom_audience.status = 'ENABLED'").limit(a.limit + 1), { maxRows: a.limit + 1, partial: true }) : [],
     ]);
-    for (const r of ui) out.push({ kind: "user_interest", id: String(pick(r, "user_interest.user_interest_id") ?? ""), name: str(r, "user_interest.name"), subtype: str(r, "user_interest.taxonomy_type"), size_for_display: null, size_for_search: null, status: null });
-    for (const r of ul) out.push({ kind: "user_list", id: String(pick(r, "user_list.id") ?? ""), name: str(r, "user_list.name"), subtype: str(r, "user_list.type"), size_for_display: n(r, "user_list.size_for_display"), size_for_search: n(r, "user_list.size_for_search"), status: str(r, "user_list.membership_status") });
-    for (const r of ca) out.push({ kind: "custom_audience", id: String(pick(r, "custom_audience.id") ?? ""), name: str(r, "custom_audience.name"), subtype: str(r, "custom_audience.type"), size_for_display: null, size_for_search: null, status: str(r, "custom_audience.status") });
-    return { audiences: out.filter((x) => x.id) };
+    const truncated = [ui, ul, ca].some((rows) => rows.length > a.limit);
+    for (const r of ui.slice(0, a.limit)) out.push({ kind: "user_interest", id: String(pick(r, "user_interest.user_interest_id") ?? ""), name: str(r, "user_interest.name"), subtype: str(r, "user_interest.taxonomy_type"), size_for_display: null, size_for_search: null, status: null });
+    for (const r of ul.slice(0, a.limit)) out.push({ kind: "user_list", id: String(pick(r, "user_list.id") ?? ""), name: str(r, "user_list.name"), subtype: str(r, "user_list.type"), size_for_display: n(r, "user_list.size_for_display"), size_for_search: n(r, "user_list.size_for_search"), status: str(r, "user_list.membership_status") });
+    for (const r of ca.slice(0, a.limit)) out.push({ kind: "custom_audience", id: String(pick(r, "custom_audience.id") ?? ""), name: str(r, "custom_audience.name"), subtype: str(r, "custom_audience.type"), size_for_display: null, size_for_search: null, status: str(r, "custom_audience.status") });
+    return { audiences: out.filter((x) => x.id), truncated };
   },
 });
 

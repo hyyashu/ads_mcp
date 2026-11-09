@@ -299,7 +299,7 @@ const dcoInput = z
 async function prepareDco(a: z.infer<typeof dcoInput>, m: MetaAdsClient) {
   const set = await usableAdSet(m, a.ad_set_id);
   if (!(set.is_dynamic_creative === true || set.is_dynamic_creative === "true")) throw new ToolError("invalid_argument", "The ad set is not a dynamic creative ad set. Create one with add_meta_ad_set and is_dynamic_creative: true.");
-  if ((await m.list(`${a.ad_set_id}/ads`, { fields: "id" }, 10)).length) throw new ToolError("invalid_argument", "Meta allows one ad per dynamic creative ad set, and this ad set already has one.");
+  if ((await m.list(`${a.ad_set_id}/ads`, { fields: "id" }, 10, { partial: true })).length) throw new ToolError("invalid_argument", "Meta allows one ad per dynamic creative ad set, and this ad set already has one.");
   await checkIdentity(m, a);
   await checkAssets(m, a.images ?? [], (a.videos ?? []).map((v) => v.video_id));
   await requireFreeName(m, `${m.adAccountId}/adcreatives`, a.ad_name, "creative");
