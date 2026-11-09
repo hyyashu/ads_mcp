@@ -101,45 +101,117 @@ const Ga4AggOut = z.object({ sessions: z.number(), engaged_sessions: z.number(),
 const aggOut = (a: Ga4Agg) => ({ sessions: a.sessions, engaged_sessions: a.engaged_sessions, engagement_rate: round(ratio(a.engaged_sessions, a.sessions)), key_events: round(a.key_events, 2)!, total_revenue: r2(a.total_revenue), ga4_rows: a.rows });
 
 const META_LIKE = /(facebook|^fb$|^fb\.|instagram|^ig$|^meta$|^an$|audience.?network)/i;
-const UnmatchedCampaign = z.object({ campaign_id: z.string(), name: z.string().nullable(), spend: z.number(), reason: z.enum(["no_ads_read", "no_utm_source_or_campaign", "dynamic_parameter", "no_ga4_sessions"]), detail: z.string() });
+const UnmatchedCampaign = z.object({
+  campaign_id: z.string(),
+  name: z.string().nullable(),
+  spend: z.number(),
+  reason: z.enum(["no_ads_read", "not_read_cap", "no_utm_source_or_campaign", "dynamic_parameter", "shared_utm", "no_ga4_sessions"]),
+  detail: z.string(),
+});
 type Unmatched = z.infer<typeof UnmatchedCampaign>;
+const SharedUtmGroup = z.object({
+  utm_source: z.string(),
+  utm_campaign: z.string(),
+  campaigns: z.array(z.object({ account_id: z.string(), campaign_id: z.string(), name: z.string().nullable(), spend: z.number().describe("In that ad account's currency."), conversions: z.number() })),
+  ga4: Ga4AggOut.describe("GA4 figures for this UTM pair, reported once: they cannot be split between the campaigns sharing it."),
+});
+type SharedGroup = z.infer<typeof SharedUtmGroup>;
+const SharedNotCredited = z.array(z.object({ source: z.string(), campaign: z.string() })).describe("UTM pairs of this campaign that other campaigns share: their GA4 figures are not credited here (see shared_utm_groups).");
+export const SHARED_UTM_RULE =
+  "A utm_source + utm_campaign pair used by more than one Meta campaign (across every Meta account compared) is never credited to any of them: GA4 cannot tell which campaign a session came from. Its GA4 figures are reported once under shared_utm_groups and left out of per-campaign rows and summary totals. A campaign with only shared pairs is unmatched (shared_utm); one with unique pairs too is credited with the unique pairs only, and its shared pairs are listed in shared_utm_not_credited.";
 
-/** Joins Meta campaigns to GA4 manual-UTM rows. Returns per-campaign aggregates, the unmatched campaigns and GA4 rows not claimed. */
-function joinMetaGa4(campaigns: MetaCampaign[], ads: { ads: MetaAd[]; truncated: boolean }, ga4: CampaignTraffic) {
-  const utms = utmsByCampaign(ads.ads);
+export interface MetaSide {
+  account_id: string;
+  campaigns: MetaCampaign[];
+  ads: { ads: MetaAd[]; truncated: boolean };
+}
+interface Matched {
+  account_id: string;
+  c: MetaCampaign;
+  agg: Ga4Agg;
+  utm: { source: string; campaign: string }[];
+  shared: { source: string; campaign: string }[];
+  ads: number;
+  dynamic: number;
+  missing: number;
+}
+const pairText = (p: { source: string; campaign: string }) => `utm_source=${p.source}, utm_campaign=${p.campaign}`;
+
+/**
+ * Joins Meta campaigns (of one or several ad accounts) to GA4 manual-UTM rows. A UTM pair claimed by more than one campaign
+ * is not credited to any: it becomes a shared group. Returns per-campaign aggregates (unique pairs only), unmatched
+ * campaigns per account, shared groups and the Meta-like GA4 rows no campaign claims.
+ */
+export function joinMetaGa4(sides: MetaSide[], ga4: CampaignTraffic) {
   const rowsByKey = new Map<string, CampaignRow[]>();
   for (const r of ga4.rows) {
     const k = `${utmKey(r.source)}|${utmKey(r.campaign)}`;
     rowsByKey.set(k, [...(rowsByKey.get(k) ?? []), r]);
   }
+  const utmsPerSide = sides.map((s) => utmsByCampaign(s.ads.ads));
+  // claimants per UTM key, across every campaign of every account
+  const claimants = new Map<string, { account_id: string; c: MetaCampaign; pair: { source: string; campaign: string } }[]>();
+  sides.forEach((s, i) => {
+    for (const c of s.campaigns) {
+      for (const [k, pair] of utmsPerSide[i]!.get(c.campaign_id)?.pairs ?? []) claimants.set(k, [...(claimants.get(k) ?? []), { account_id: s.account_id, c, pair }]);
+    }
+  });
+  const isShared = (k: string) => (claimants.get(k)?.length ?? 0) > 1;
+  const others = (k: string, account_id: string, campaign_id: string) =>
+    claimants
+      .get(k)!
+      .filter((x) => !(x.account_id === account_id && x.c.campaign_id === campaign_id))
+      .map((x) => (x.account_id === account_id ? x.c.campaign_id : `${x.c.campaign_id} (account ${x.account_id})`));
+
   const claimed = new Set<string>();
-  const matched: { c: MetaCampaign; agg: Ga4Agg; utm: { source: string; campaign: string }[]; ads: number; dynamic: number; missing: number }[] = [];
-  const unmatched: Unmatched[] = [];
-  for (const c of campaigns) {
-    const u = utms.get(c.campaign_id);
-    const base = { campaign_id: c.campaign_id, name: c.name, spend: r2(c.spend) };
-    if (!u) {
-      unmatched.push({ ...base, reason: "no_ads_read", detail: ads.truncated ? `None of its ads were among the ${META_AD_CAP} ads read.` : "No ads of this campaign were returned." });
-      continue;
+  const matched: Matched[] = [];
+  const unmatched = new Map<string, Unmatched[]>(sides.map((s) => [s.account_id, []]));
+  sides.forEach((s, i) => {
+    const utms = utmsPerSide[i]!;
+    const out = unmatched.get(s.account_id)!;
+    for (const c of s.campaigns) {
+      const u = utms.get(c.campaign_id);
+      const base = { campaign_id: c.campaign_id, name: c.name, spend: r2(c.spend) };
+      if (!u) {
+        if (s.ads.truncated) out.push({ ...base, reason: "not_read_cap", detail: `None of its ads were among the ${META_AD_CAP.toLocaleString("en-US")} ads read (the account has more ads); its UTM tags are unknown.` });
+        else out.push({ ...base, reason: "no_ads_read", detail: "No ads of this campaign were returned." });
+        continue;
+      }
+      if (!u.pairs.size) {
+        if (u.dynamic.size) out.push({ ...base, reason: "dynamic_parameter", detail: `UTM values use Meta dynamic parameters, which are not resolved here: ${[...u.dynamic].slice(0, 3).join("; ")}` });
+        else out.push({ ...base, reason: "no_utm_source_or_campaign", detail: `${u.missing} of ${u.ads} ads have no utm_source or no utm_campaign in their link or url_tags.` });
+        continue;
+      }
+      const unique = [...u.pairs].filter(([k]) => !isShared(k));
+      const shared = [...u.pairs].filter(([k]) => isShared(k));
+      const sharedText = shared.map(([k, p]) => `${pairText(p)} (also used by ${others(k, s.account_id, c.campaign_id).join(", ")})`);
+      if (!unique.length) {
+        out.push({ ...base, reason: "shared_utm", detail: `Every UTM pair of its ads is used by other campaigns too, so GA4 sessions cannot be credited to it (see shared_utm_groups): ${sharedText.slice(0, 3).join("; ")}.` });
+        continue;
+      }
+      const agg = emptyAgg();
+      for (const [k] of unique) {
+        for (const r of rowsByKey.get(k) ?? []) addRow(agg, r);
+        if (rowsByKey.has(k)) claimed.add(k);
+      }
+      if (!agg.rows) {
+        out.push({ ...base, reason: "no_ga4_sessions", detail: `GA4 has no sessions with ${unique.map(([, p]) => pairText(p)).slice(0, 3).join("; ")} in the period${ga4.truncated ? " among the rows read" : ""}.${shared.length ? ` Shared pairs not credited: ${sharedText.slice(0, 3).join("; ")}.` : ""}` });
+        continue;
+      }
+      matched.push({ account_id: s.account_id, c, agg, utm: unique.map(([, p]) => p), shared: shared.map(([, p]) => p), ads: u.ads, dynamic: u.dynamic.size, missing: u.missing });
     }
-    if (!u.pairs.size) {
-      if (u.dynamic.size) unmatched.push({ ...base, reason: "dynamic_parameter", detail: `UTM values use Meta dynamic parameters, which are not resolved here: ${[...u.dynamic].slice(0, 3).join("; ")}` });
-      else unmatched.push({ ...base, reason: "no_utm_source_or_campaign", detail: `${u.missing} of ${u.ads} ads have no utm_source or no utm_campaign in their link or url_tags.` });
-      continue;
-    }
+  });
+  const shared: SharedGroup[] = [];
+  for (const [k, list] of claimants) {
+    if (list.length < 2) continue;
     const agg = emptyAgg();
-    for (const k of u.pairs.keys()) {
-      for (const r of rowsByKey.get(k) ?? []) addRow(agg, r);
-      if (rowsByKey.has(k)) claimed.add(k);
-    }
-    if (!agg.rows) {
-      unmatched.push({ ...base, reason: "no_ga4_sessions", detail: `GA4 has no sessions with ${[...u.pairs.values()].map((p) => `utm_source=${p.source}, utm_campaign=${p.campaign}`).slice(0, 3).join("; ")} in the period${ga4.truncated ? " among the rows read" : ""}.` });
-      continue;
-    }
-    matched.push({ c, agg, utm: [...u.pairs.values()], ads: u.ads, dynamic: u.dynamic.size, missing: u.missing });
+    for (const r of rowsByKey.get(k) ?? []) addRow(agg, r);
+    if (rowsByKey.has(k)) claimed.add(k);
+    shared.push({ utm_source: list[0]!.pair.source, utm_campaign: list[0]!.pair.campaign, campaigns: list.map((x) => ({ account_id: x.account_id, campaign_id: x.c.campaign_id, name: x.c.name, spend: r2(x.c.spend), conversions: round(x.c.conversions, 2)! })), ga4: aggOut(agg) });
   }
+  shared.sort((x, y) => y.ga4.sessions - x.ga4.sessions || x.utm_source.localeCompare(y.utm_source) || x.utm_campaign.localeCompare(y.utm_campaign));
   const unclaimed = ga4.rows.filter((r) => META_LIKE.test(r.source.trim()) && !claimed.has(`${utmKey(r.source)}|${utmKey(r.campaign)}`));
-  return { matched, unmatched, unclaimed };
+  return { matched, unmatched, shared, unclaimed };
 }
 const UnclaimedRow = z.object({ source: z.string(), medium: z.string(), campaign: z.string(), sessions: z.number().nullable(), key_events: z.number().nullable() });
 const unclaimedOut = (r: CampaignRow) => ({ source: r.source, medium: r.medium, campaign: r.campaign, sessions: r.sessions, key_events: r.key_events });
@@ -151,6 +223,7 @@ const MetaQualityRow = z.object({
   meta: z.object({ spend: z.number(), clicks: z.number(), link_clicks: z.number(), conversions: z.number() }),
   utm: z.array(z.object({ source: z.string(), campaign: z.string() })),
   ga4: Ga4AggOut,
+  shared_utm_not_credited: SharedNotCredited,
   sessions_per_link_click: z.number().nullable().describe("GA4 sessions / Meta link clicks; below 1 is normal (not every click starts a tracked session)."),
   ads_without_usable_utm: z.number().int(),
 });
@@ -159,14 +232,15 @@ export const analyzeMetaTrafficQuality = metaCross("meta_ads", [META_READ, GA4_R
   name: "analyze_meta_traffic_quality",
   title: "What Meta clicks do on the site",
   description:
-    "Per Meta campaign: spend, link clicks and Meta conversions next to what GA4 records for its UTM-tagged sessions (sessions, engagement rate, key events, revenue). GA4 has no Meta dimensions, so campaigns are matched only through utm_source and utm_campaign in their ads' links and url_tags; campaigns that cannot be matched are listed with the reason, and Meta-looking GA4 traffic no campaign claims is listed too. States period, time zones and rules.",
+    "Per Meta campaign: spend, link clicks and Meta conversions next to what GA4 records for its UTM-tagged sessions (sessions, engagement rate, key events, revenue). GA4 has no Meta dimensions, so campaigns are matched only through utm_source and utm_campaign in their ads' links and url_tags; a UTM pair several campaigns share is reported once as a shared group and credited to none of them. Campaigns that cannot be matched are listed with the reason, and Meta-looking GA4 traffic no campaign claims is listed too. States period, time zones and rules.",
   input: z.object({ account_id: z.string().min(1), property_account_id: idArg("GA4 property"), ...periodFields, limit: limitField }).refine(datesOk, datesMsg),
   output: z.object({
     ...frame,
     currency_code: z.string().nullable().describe("Meta spend currency."),
     ga4_currency_code: z.string().nullable().describe("GA4 revenue currency."),
-    summary: z.object({ campaigns: z.number().int(), matched: z.number().int(), unmatched: z.number().int(), matched_spend_share: z.number().nullable() }),
+    summary: z.object({ campaigns: z.number().int(), matched: z.number().int(), unmatched: z.number().int(), shared_utm_groups: z.number().int(), matched_spend_share: z.number().nullable().describe("Spend of matched campaigns / all spend.") }),
     campaigns: listOf(MetaQualityRow),
+    shared_utm_groups: listOf(SharedUtmGroup).describe("UTM pairs used by more than one campaign: GA4 figures shown once per pair, not in campaigns or summary."),
     unmatched: z.object({ campaigns: listOf(UnmatchedCampaign), ga4_meta_like_rows_not_claimed: listOf(UnclaimedRow) }),
   }),
   handler: async (a, ctx) => {
@@ -176,28 +250,31 @@ export const analyzeMetaTrafficQuality = metaCross("meta_ads", [META_READ, GA4_R
     const period = await resolveCrossPeriod(a, [{ source: "meta_ads", account: own.externalId, time_zone: own.timeZone }, { source: "google_analytics", account: prop.account.externalId, time_zone: ga4Zone(ga4c, prop.account.timeZone) }]);
     const m = ctx.services.meta;
     const [camps, ads, ga4] = await Promise.all([metaCampaigns(m, period, own.timeZone), metaAds(m), fetchCampaignTraffic(ga4c, { period: ga4Period(period), utm_only: true, limit: GA4_CAP })]);
-    const { matched, unmatched, unclaimed } = joinMetaGa4(camps.campaigns, ads, ga4);
+    const j = joinMetaGa4([{ account_id: own.id, campaigns: camps.campaigns, ads }], ga4);
+    const { matched, shared, unclaimed } = j;
+    const unmatched = j.unmatched.get(own.id)!;
     const rows = matched
-      .map((x) => ({ campaign_id: x.c.campaign_id, name: x.c.name, meta: { spend: r2(x.c.spend), clicks: x.c.clicks, link_clicks: x.c.link_clicks, conversions: round(x.c.conversions, 2)! }, utm: x.utm, ga4: aggOut(x.agg), sessions_per_link_click: round(ratio(x.agg.sessions, x.c.link_clicks)), ads_without_usable_utm: x.dynamic + x.missing }))
+      .map((x) => ({ campaign_id: x.c.campaign_id, name: x.c.name, meta: { spend: r2(x.c.spend), clicks: x.c.clicks, link_clicks: x.c.link_clicks, conversions: round(x.c.conversions, 2)! }, utm: x.utm, ga4: aggOut(x.agg), shared_utm_not_credited: x.shared, sessions_per_link_click: round(ratio(x.agg.sessions, x.c.link_clicks)), ads_without_usable_utm: x.dynamic + x.missing }))
       .sort((p, q) => q.meta.spend - p.meta.spend || p.campaign_id.localeCompare(q.campaign_id));
     unmatched.sort((p, q) => q.spend - p.spend || p.campaign_id.localeCompare(q.campaign_id));
     const spend = camps.campaigns.reduce((s, c) => s + c.spend, 0);
     const coverage = newCoverage();
     coverage.sources.push(
       { source: "meta_ads campaign insights", rows_read: camps.campaigns.length, complete: !camps.truncated, note: camps.truncated ? "Insights rows were capped at 2,000 campaigns." : null },
-      { source: "meta_ads ads (links, url_tags)", rows_read: ads.ads.length, complete: !ads.truncated, note: ads.truncated ? `Only the first ${META_AD_CAP} ads were read.` : null },
+      { source: "meta_ads ads (links, url_tags)", rows_read: ads.ads.length, complete: !ads.truncated, note: ads.truncated ? `The account has more than ${META_AD_CAP.toLocaleString("en-US")} ads; only the first ${META_AD_CAP.toLocaleString("en-US")} were read, so campaigns with no ad among them are unmatched (not_read_cap) and a UTM pair may be shared with a campaign whose ads were not read.` : null },
       ga4Source("google_analytics manual UTM traffic", ga4),
     );
     coverage.notes.push(...ga4.data_quality.notes, "Meta conversions use Meta's unified attribution setting; GA4 key events use GA4's attribution, so the two are not expected to be equal.");
     return {
       period,
       accounts: [accountInfo("meta_ads", own), accountInfo("ga4_property", prop.account)],
-      rules: [UTM_RULE, "Campaigns are those with insights (spend or delivery) in the period. A campaign whose ads carry several UTM pairs is matched to all of them.", `Meta conversions count: ${META_CONVERSIONS.join(", ")}.`, "Meta-like GA4 sources: facebook, fb, instagram, ig, meta, an, audience network (case-insensitive)."],
+      rules: [UTM_RULE, SHARED_UTM_RULE, "Campaigns are those with insights (spend or delivery) in the period. A campaign whose ads carry several UTM pairs it alone uses is matched to all of them.", `Meta conversions count: ${META_CONVERSIONS.join(", ")}.`, "Meta-like GA4 sources: facebook, fb, instagram, ig, meta, an, audience network (case-insensitive)."],
       coverage,
       currency_code: own.currencyCode,
       ga4_currency_code: ga4.currency_code,
-      summary: { campaigns: camps.campaigns.length, matched: rows.length, unmatched: unmatched.length, matched_spend_share: round(ratio(rows.reduce((s, r) => s + r.meta.spend, 0), spend)) },
+      summary: { campaigns: camps.campaigns.length, matched: rows.length, unmatched: unmatched.length, shared_utm_groups: shared.length, matched_spend_share: round(ratio(rows.reduce((s, r) => s + r.meta.spend, 0), spend)) },
       campaigns: capList(rows, a.limit),
+      shared_utm_groups: capList(shared, a.limit),
       unmatched: { campaigns: capList(unmatched, a.limit), ga4_meta_like_rows_not_claimed: capList(unclaimed.map(unclaimedOut), a.limit) },
     };
   },
@@ -216,6 +293,7 @@ const CompareRow = z.object({
   gap: z.number().describe("platform_conversions - ga4_key_events."),
   relative_gap: z.number().nullable().describe("|gap| / the larger of the two; null when both are 0."),
   flagged: z.boolean(),
+  shared_utm_not_credited: SharedNotCredited.describe("Meta only: UTM pairs of this campaign that other campaigns share; their GA4 key events are not in ga4_key_events (see shared_utm_groups). Empty for Google Ads."),
 });
 const REASONS = [
   "Attribution: Google Ads and Meta credit their own ad clicks/views (Meta also view-through, per the ad set's attribution setting); GA4 key events are counted on sessions and credited by GA4's own model, across all channels.",
@@ -230,7 +308,7 @@ export const compareConversionTracking = ga4Cross("google_analytics", [GA4_READ,
   name: "compare_conversion_tracking",
   title: "Compare ad platform conversions with GA4",
   description:
-    "Per campaign of the Google Ads and/or Meta accounts linked to this GA4 property (or named): conversions the ad platform reports, GA4 key events for the same campaign's sessions, the gap, and a flag when the gap is larger than gap_threshold. Google Ads campaigns are joined on campaign id (GA4's Google Ads dimensions), Meta campaigns through UTM tags. Lists the known reasons a gap is normal and never says which side is right.",
+    "Per campaign of the Google Ads and/or Meta accounts linked to this GA4 property (or named): conversions the ad platform reports, GA4 key events for the same campaign's sessions, the gap, and a flag when the gap is larger than gap_threshold. Google Ads campaigns are joined on campaign id (GA4's Google Ads dimensions), Meta campaigns through UTM tags; a UTM pair several Meta campaigns share (in any account compared) is credited to none and shown once under shared_utm_groups. Lists the known reasons a gap is normal and never says which side is right.",
   input: z
     .object({
       account_id: z.string().min(1),
@@ -244,8 +322,9 @@ export const compareConversionTracking = ga4Cross("google_analytics", [GA4_READ,
     .refine(datesOk, datesMsg),
   output: z.object({
     ...frame,
-    summary: z.object({ campaigns_compared: z.number().int(), flagged: z.number().int(), google_ads_conversions: z.number(), google_ads_ga4_key_events: z.number(), meta_conversions: z.number(), meta_ga4_key_events: z.number() }),
+    summary: z.object({ campaigns_compared: z.number().int(), flagged: z.number().int(), google_ads_conversions: z.number(), google_ads_ga4_key_events: z.number(), meta_conversions: z.number(), meta_ga4_key_events: z.number().describe("Over the compared Meta campaigns only; shared UTM groups are left out.") }),
     campaigns: listOf(CompareRow),
+    shared_utm_groups: listOf(SharedUtmGroup).describe("Meta UTM pairs used by more than one campaign: GA4 figures shown once per pair, not compared and not in the summary."),
     reasons_a_gap_can_be_normal: z.array(z.string()),
     unmatched: z.object({ meta_campaigns: listOf(UnmatchedCampaign), ga4_google_ads_campaigns_not_in_accounts: listOf(z.object({ campaign_id: z.string(), campaign: z.string(), key_events: z.number().nullable(), sessions: z.number().nullable() })) }),
   }),
@@ -282,7 +361,7 @@ export const compareConversionTracking = ga4Cross("google_analytics", [GA4_READ,
           const g = round(ga4ById.get(id) ?? 0, 2)!;
           totals.google_ads_conversions += p;
           totals.google_ads_ga4_key_events += g;
-          rows.push({ platform: "google_ads", account_id: acc.account.id, campaign_id: id, name: str(r, "campaign.name"), platform_conversions: p, platform_conversions_by_click_date: round(num(pick(r, "metrics.conversions")), 2), ga4_key_events: g, gap: round(p - g, 2)!, ...flag(p, g) });
+          rows.push({ platform: "google_ads", account_id: acc.account.id, campaign_id: id, name: str(r, "campaign.name"), platform_conversions: p, platform_conversions_by_click_date: round(num(pick(r, "metrics.conversions")), 2), ga4_key_events: g, gap: round(p - g, 2)!, ...flag(p, g), shared_utm_not_credited: [] });
         }
       }
       notInAccounts = traffic.rows.filter((r) => !known.has(r.campaign_id)).map((r) => ({ campaign_id: r.campaign_id, campaign: r.campaign, key_events: r.key_events, sessions: r.sessions }));
@@ -290,22 +369,27 @@ export const compareConversionTracking = ga4Cross("google_analytics", [GA4_READ,
     } else coverage.not_checked.push({ source: "google_ads", reason: "No Google Ads account linked to this property (or named)." });
 
     let metaUnmatched: Unmatched[] = [];
+    let sharedGroups: z.infer<typeof SharedUtmGroup>[] = [];
     if (metas.length) {
       const utmTraffic = await fetchCampaignTraffic(ga4, { period: ga4Period(period), utm_only: true, limit: GA4_CAP });
       coverage.sources.push(ga4Source("google_analytics manual UTM traffic", utmTraffic));
+      const sides: MetaSide[] = [];
       for (const acc of metas) {
         const m = acc.services.meta;
         const [camps, ads] = await Promise.all([metaCampaigns(m, period, acc.account.timeZone), metaAds(m)]);
-        coverage.sources.push({ source: `meta_ads campaigns ${acc.account.externalId}`, rows_read: camps.campaigns.length, complete: !camps.truncated && !ads.truncated, note: ads.truncated ? `Only the first ${META_AD_CAP} ads were read for UTM tags.` : null });
-        const j = joinMetaGa4(camps.campaigns, ads, utmTraffic);
-        metaUnmatched = [...metaUnmatched, ...j.unmatched];
-        for (const x of j.matched) {
-          const p = round(x.c.conversions, 2)!;
-          const g = round(x.agg.key_events, 2)!;
-          totals.meta_conversions += p;
-          totals.meta_ga4_key_events += g;
-          rows.push({ platform: "meta_ads", account_id: acc.account.id, campaign_id: x.c.campaign_id, name: x.c.name, platform_conversions: p, platform_conversions_by_click_date: null, ga4_key_events: g, gap: round(p - g, 2)!, ...flag(p, g) });
-        }
+        coverage.sources.push({ source: `meta_ads campaigns ${acc.account.externalId}`, rows_read: camps.campaigns.length, complete: !camps.truncated && !ads.truncated, note: ads.truncated ? `The account has more than ${META_AD_CAP.toLocaleString("en-US")} ads; only the first ${META_AD_CAP.toLocaleString("en-US")} were read for UTM tags, so campaigns with no ad among them are unmatched (not_read_cap).` : null });
+        sides.push({ account_id: acc.account.id, campaigns: camps.campaigns, ads });
+      }
+      // one join over every Meta account, so a UTM pair shared across accounts is never credited twice
+      const j = joinMetaGa4(sides, utmTraffic);
+      metaUnmatched = sides.flatMap((s) => j.unmatched.get(s.account_id)!);
+      sharedGroups = j.shared;
+      for (const x of j.matched) {
+        const p = round(x.c.conversions, 2)!;
+        const g = round(x.agg.key_events, 2)!;
+        totals.meta_conversions += p;
+        totals.meta_ga4_key_events += g;
+        rows.push({ platform: "meta_ads", account_id: x.account_id, campaign_id: x.c.campaign_id, name: x.c.name, platform_conversions: p, platform_conversions_by_click_date: null, ga4_key_events: g, gap: round(p - g, 2)!, ...flag(p, g), shared_utm_not_credited: x.shared });
       }
     } else coverage.not_checked.push({ source: "meta_ads", reason: "No Meta ad account linked to this property (or named)." });
 
@@ -316,12 +400,14 @@ export const compareConversionTracking = ga4Cross("google_analytics", [GA4_READ,
       rules: [
         "Google Ads ↔ GA4: on campaign id (GA4 sessionGoogleAdsCampaignId, which needs the Google Ads link and auto-tagging). GA4 side: keyEvents of those sessions.",
         UTM_RULE,
+        SHARED_UTM_RULE,
         `Flag: the larger of the two counts ≥ ${a.min_conversions} and |gap| / larger > ${a.gap_threshold}.`,
         "Campaigns with no platform conversions row in the period (no delivery) are not listed.",
       ],
       coverage,
       summary: { campaigns_compared: rows.length, flagged: rows.filter((r) => r.flagged).length, google_ads_conversions: r2(totals.google_ads_conversions), google_ads_ga4_key_events: r2(totals.google_ads_ga4_key_events), meta_conversions: r2(totals.meta_conversions), meta_ga4_key_events: r2(totals.meta_ga4_key_events) },
       campaigns: capList(rows, a.limit),
+      shared_utm_groups: capList(sharedGroups, a.limit),
       reasons_a_gap_can_be_normal: REASONS,
       unmatched: { meta_campaigns: capList(metaUnmatched, a.limit), ga4_google_ads_campaigns_not_in_accounts: capList(notInAccounts, a.limit) },
     };
@@ -424,8 +510,8 @@ export const checkUtmTagging = ga4Cross("google_analytics", [GA4_READ, ADWORDS, 
     for (const acc of metas) {
       const m = acc.services.meta;
       const id = acc.account.externalId;
-      const [ads, campRows] = await Promise.all([metaAds(m), m.list(`${m.adAccountId}/campaigns`, { fields: "id,name" }, META_AD_CAP)]);
-      coverage.sources.push({ source: `meta_ads ${id} ads`, rows_read: ads.ads.length, complete: !ads.truncated, note: ads.truncated ? `Only the first ${META_AD_CAP} ads were read.` : null });
+      const [ads, campRows] = await Promise.all([metaAds(m), m.list(`${m.adAccountId}/campaigns`, { fields: "id,name" }, 5_000)]);
+      coverage.sources.push({ source: `meta_ads ${id} ads`, rows_read: ads.ads.length, complete: !ads.truncated, note: ads.truncated ? `The account has more than ${META_AD_CAP.toLocaleString("en-US")} ads; only the first ${META_AD_CAP.toLocaleString("en-US")} were read, so campaigns whose ads were not read are not checked and per-campaign findings may miss ads.` : null });
       const names = new Map(campRows.map((r) => [String(r.id ?? ""), typeof r.name === "string" ? r.name : ""]));
       const label = (cid: string) => `${names.get(cid) ?? ""} (${cid})`;
       const byCamp = new Map<string, MetaAd[]>();

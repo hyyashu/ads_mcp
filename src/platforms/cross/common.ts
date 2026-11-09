@@ -120,9 +120,16 @@ const daysBetween = (a: string, b: string) => Math.round((Date.parse(`${b}T00:00
 /** Today in a zone; an unknown zone counts as the earliest zone on Earth (UTC-12), so no day is taken as complete too early. */
 const todayStrict = (tz: string | null, now: Date) => (tz ? todayIn(tz, now) : new Date(now.getTime() - 12 * 3_600_000).toISOString().slice(0, 10));
 
+/** Search Console's latest day with final web data, else 3 days ago in Pacific Time. */
+async function gscLatest(gsc: GscClient, now: Date): Promise<{ end: string; latest: string | null }> {
+  const latest = await latestDataDate(gsc, "web", pacificToday(now));
+  return { end: latest ?? addDays(pacificToday(now), -3), latest };
+}
+
 /**
  * One set of calendar dates for every source. Named periods end on the latest day complete in every zone (and, with
- * Search Console, on its latest day with final data). Explicit dates may not be after today in any zone.
+ * Search Console, on its latest day with final data). Explicit dates may not be after today in any zone; with Search
+ * Console, end_date may not be after its latest day with final data either (later days would read as zero organic data).
  */
 export async function resolveCrossPeriod(a: { days: number; start_date?: string; end_date?: string }, zones: ZoneOf[], o: { gsc?: GscClient; now?: Date } = {}): Promise<CrossPeriod> {
   const now = o.now ?? new Date();
@@ -137,13 +144,22 @@ export async function resolveCrossPeriod(a: { days: number; start_date?: string;
     if (!a.start_date || !a.end_date) throw new ToolError("invalid_argument", "start_date and end_date must be given together.");
     if (a.start_date > a.end_date) throw new ToolError("invalid_argument", "start_date must not be after end_date.");
     if (a.end_date > today) throw new ToolError("invalid_argument", `end_date ${a.end_date} is after today (${today}) in one of the sources' time zones.`);
-    if (o.gsc) checkDates(a.start_date, a.end_date, pacificToday(now));
+    if (o.gsc) {
+      checkDates(a.start_date, a.end_date, pacificToday(now));
+      const { end: gscEnd, latest } = await gscLatest(o.gsc, now);
+      if (a.end_date > gscEnd)
+        throw new ToolError(
+          "invalid_argument",
+          latest
+            ? `end_date ${a.end_date} is after ${gscEnd}, Search Console's latest day with final data: later days have no final organic data yet and would read as zero. Use end_date ${gscEnd} or earlier.`
+            : `end_date ${a.end_date} is after ${gscEnd}: Search Console returned no final data for the last 10 days, so days after ${gscEnd} (3 days ago, Pacific Time) would read as zero. Use end_date ${gscEnd} or earlier.`,
+        );
+    }
     [start, end, basis] = [a.start_date, a.end_date, "explicit"];
   } else {
     end = addDays(today, -1);
     if (o.gsc) {
-      const latest = await latestDataDate(o.gsc, "web", pacificToday(now));
-      const gscEnd = latest ?? addDays(pacificToday(now), -3);
+      const { end: gscEnd, latest } = await gscLatest(o.gsc, now);
       if (!latest) notes.push(`Search Console returned no final data for the last 10 days, so the period ends no later than ${gscEnd} (3 days ago, Pacific Time).`);
       if (gscEnd < end) {
         end = gscEnd;
@@ -287,7 +303,11 @@ export async function adsDailyCost(ads: GoogleAdsClient, p: { start_date: string
 export const adsBetween = between;
 
 // ------------------------------------------------------------------------------------------------ Meta fetchers
-export const META_AD_CAP = 5_000;
+/**
+ * Ads used per account. MetaAdsClient.list stops at 5,000 rows, so one more than this (5,000) is asked for: getting all
+ * 5,000 back means the account has more ads than are used, and `truncated` is set.
+ */
+export const META_AD_CAP = 4_999;
 const obj = (v: unknown): MetaRow => (v && typeof v === "object" && !Array.isArray(v) ? (v as MetaRow) : {});
 const txt = (v: unknown): string | null => (typeof v === "string" && v.trim() !== "" ? v : null);
 
@@ -316,7 +336,7 @@ export interface MetaAd {
   url_tags: string | null;
   utm: Utm;
 }
-/** Every ad of the account (up to 5,000) with its creative link, url_tags and the UTM values they produce. */
+/** Every ad of the account (up to META_AD_CAP; `truncated` when it has more) with its creative link, url_tags and the UTM values they produce. */
 export async function metaAds(m: MetaAdsClient): Promise<{ ads: MetaAd[]; truncated: boolean }> {
   const rows = await m.list(`${m.adAccountId}/ads`, { fields: "id,campaign_id,effective_status,creative{url_tags,object_story_spec,asset_feed_spec}" }, META_AD_CAP + 1);
   const ads = rows.slice(0, META_AD_CAP).map((r) => {

@@ -1,10 +1,35 @@
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { utmsByCampaign } from "../../platforms/cross/analytics";
+import { joinMetaGa4, utmsByCampaign } from "../../platforms/cross/analytics";
 import { ga4Answer } from "./ga4-fixture";
 import { type CrossHarness, crossHarness } from "./harness";
 
 const purchase = (n: number) => [{ action_type: "offsite_conversion.fb_pixel_purchase", value: String(n) }];
 const metaAd = (id: string, campaign_id: string, link: string | null, url_tags?: string) => ({ id, campaign_id, effective_status: "ACTIVE", creative: { ...(url_tags ? { url_tags } : {}), ...(link ? { object_story_spec: { link_data: { link } } } : {}) } });
+
+/** c1 and c4 both tag facebook/spring; c4 also has facebook/winter of its own. */
+function sharedFixture(h: CrossHarness) {
+  h.meta.ads = [
+    metaAd("a1", "c1", "https://shop.example/spring", "utm_source=facebook&utm_medium=paid_social&utm_campaign=spring"),
+    metaAd("a4", "c4", "https://shop.example/spring", "utm_source=facebook&utm_medium=paid_social&utm_campaign=spring"),
+    metaAd("a6", "c4", "https://shop.example/winter", "utm_source=facebook&utm_medium=paid_social&utm_campaign=winter"),
+  ];
+  h.meta.insights = (level) =>
+    level === "campaign"
+      ? [
+          { campaign_id: "c1", campaign_name: "Spring", spend: "100", clicks: "80", inline_link_clicks: "50", actions: purchase(10) },
+          { campaign_id: "c4", campaign_name: "Winter", spend: "20", clicks: "5", inline_link_clicks: "5" },
+        ]
+      : [{ date_start: "x", spend: "0" }];
+  h.ga4.report = ga4Answer({
+    sessionManualSource: {
+      rows: [
+        { dims: ["facebook", "paid_social", "spring"], m: { sessions: 100, engagedSessions: 50, keyEvents: 12, totalRevenue: 0 } },
+        { dims: ["facebook", "paid_social", "winter"], m: { sessions: 20, engagedSessions: 10, keyEvents: 3, totalRevenue: 0 } },
+      ],
+    },
+    sessionGoogleAdsCampaignId: { rows: [] },
+  });
+}
 
 describe("GA4 combined tools", () => {
   let h: CrossHarness;
@@ -71,6 +96,44 @@ describe("GA4 combined tools", () => {
     h.google.search.customer = (q) => (q.includes("auto_tagging") ? [{ customer: { autoTaggingEnabled: false } }] : [{ metrics: { costMicros: "250000000" } }]);
   });
 
+  it("joinMetaGa4 counts claimants across every Meta account, not per account", () => {
+    const ad = (campaign_id: string, utm_campaign: string) => ({ ad_id: `${campaign_id}-ad`, campaign_id, effective_status: null, link: null, url_tags: null, utm: { utm_source: "facebook", utm_medium: null, utm_campaign } });
+    const camp = (campaign_id: string) => ({ campaign_id, name: null, spend: 1, clicks: 1, link_clicks: 1, conversions: 1 });
+    const ga4 = { rows: [{ source: "facebook", medium: "cpc", campaign: "spring", sessions: 100, engaged_sessions: 50, key_events: 12, total_revenue: 0 }], truncated: false } as never;
+    const j = joinMetaGa4(
+      [
+        { account_id: "A", campaigns: [camp("x")], ads: { ads: [ad("x", "spring")], truncated: false } },
+        { account_id: "B", campaigns: [camp("y")], ads: { ads: [ad("y", "Spring")], truncated: false } },
+      ],
+      ga4,
+    );
+    expect(j.matched).toEqual([]);
+    expect(j.unmatched.get("A")![0]).toMatchObject({ campaign_id: "x", reason: "shared_utm" });
+    expect(j.unmatched.get("A")![0]!.detail).toContain("y (account B)");
+    expect(j.shared).toHaveLength(1);
+    expect(j.shared[0]!.ga4).toMatchObject({ sessions: 100, key_events: 12 });
+  });
+
+  it("a Meta account with more ads than are read: campaigns with no ad read are not_read_cap, and every tool says the read is incomplete", async () => {
+    h.meta.ads = [
+      ...Array.from({ length: 5_999 }, (_, i) => metaAd(`a${i}`, "c1", "https://shop.example/spring", "utm_source=facebook&utm_medium=paid_social&utm_campaign=spring")),
+      metaAd("last", "c4", "https://shop.example/w", "utm_source=facebook&utm_medium=paid_social&utm_campaign=winter"),
+    ];
+    const d = (await h.run("analyze_meta_traffic_quality", { account_id: h.ids.meta })).data;
+    const c4 = d.unmatched.campaigns.items.find((u: { campaign_id: string }) => u.campaign_id === "c4");
+    expect(c4).toMatchObject({ reason: "not_read_cap" });
+    expect(c4.detail).toContain("4,999");
+    expect(d.unmatched.campaigns.items.find((u: { campaign_id: string }) => u.campaign_id === "c9").reason).toBe("not_read_cap");
+    expect(d.coverage.sources.find((s: { source: string }) => s.source.startsWith("meta_ads ads"))).toMatchObject({ rows_read: 4_999, complete: false });
+    const cmp = (await h.run("compare_conversion_tracking", { account_id: h.ids.prop })).data;
+    expect(cmp.coverage.sources.find((s: { source: string }) => s.source.startsWith("meta_ads campaigns")).complete).toBe(false);
+    expect(cmp.unmatched.meta_campaigns.items.find((u: { campaign_id: string }) => u.campaign_id === "c4").reason).toBe("not_read_cap");
+    const utm = (await h.run("check_utm_tagging", { account_id: h.ids.prop })).data;
+    const src = utm.coverage.sources.find((s: { source: string }) => s.source.startsWith("meta_ads"));
+    expect(src).toMatchObject({ rows_read: 4_999, complete: false });
+    expect(src.note).toContain("not checked");
+  });
+
   it("utmsByCampaign keeps dynamic and missing values apart", () => {
     const u = utmsByCampaign([
       { ad_id: "1", campaign_id: "c", effective_status: null, link: null, url_tags: null, utm: { utm_source: "fb", utm_medium: null, utm_campaign: "{{campaign.id}}" } },
@@ -91,6 +154,7 @@ describe("GA4 combined tools", () => {
           meta: { spend: 100, clicks: 80, link_clicks: 50, conversions: 10 },
           utm: [{ source: "facebook", campaign: "spring" }],
           ga4: { sessions: 50, engaged_sessions: 32, engagement_rate: 0.64, key_events: 4, total_revenue: 100, ga4_rows: 2 },
+          shared_utm_not_credited: [],
           sessions_per_link_click: 1,
           ads_without_usable_utm: 0,
         },
@@ -103,13 +167,39 @@ describe("GA4 combined tools", () => {
       ]);
       expect(d.unmatched.campaigns.items[0].detail).toContain("{{campaign.name}}");
       expect(d.unmatched.ga4_meta_like_rows_not_claimed.items).toEqual([{ source: "ig", medium: "(not set)", campaign: "story", sessions: 7, key_events: 0 }]);
-      expect(d.summary).toEqual({ campaigns: 5, matched: 1, unmatched: 4, matched_spend_share: 0.5 });
+      expect(d.summary).toEqual({ campaigns: 5, matched: 1, unmatched: 4, shared_utm_groups: 0, matched_spend_share: 0.5 });
+      expect(d.shared_utm_groups).toEqual({ total: 0, returned: 0, truncated: false, items: [] });
       expect(d.period.time_zones.map((z: { time_zone: string }) => z.time_zone)).toEqual(["America/Chicago", "Europe/Berlin"]);
       expect(d.rules.join(" ")).toContain("dynamic parameters");
       const insight = h.meta.requests.find((r) => r.path === "act_987/insights")!;
       expect(JSON.parse(insight.params.get("time_range")!)).toEqual({ since: d.period.start_date, until: d.period.end_date });
       const ga4Body = h.ga4.dataCalls("runReport")[0]!.body;
       expect(ga4Body.dateRanges).toEqual([{ startDate: d.period.start_date, endDate: d.period.end_date }]);
+    });
+
+    it("a UTM pair two campaigns share is credited to neither: reported once as a shared group, out of the summary", async () => {
+      sharedFixture(h);
+      const d = (await h.run("analyze_meta_traffic_quality", { account_id: h.ids.meta })).data;
+      // c4 has a pair of its own (winter) and the shared one (spring): credited with winter only
+      expect(d.campaigns.items).toHaveLength(1);
+      expect(d.campaigns.items[0]).toMatchObject({ campaign_id: "c4", utm: [{ source: "facebook", campaign: "winter" }], shared_utm_not_credited: [{ source: "facebook", campaign: "spring" }], ga4: { sessions: 20, key_events: 3, ga4_rows: 1 } });
+      const c1 = d.unmatched.campaigns.items.find((u: { campaign_id: string }) => u.campaign_id === "c1");
+      expect(c1).toMatchObject({ reason: "shared_utm" });
+      expect(c1.detail).toContain("also used by c4");
+      expect(d.shared_utm_groups.items).toEqual([
+        {
+          utm_source: "facebook",
+          utm_campaign: "spring",
+          campaigns: [
+            { account_id: h.ids.meta, campaign_id: "c1", name: "Spring", spend: 100, conversions: 10 },
+            { account_id: h.ids.meta, campaign_id: "c4", name: "Winter", spend: 20, conversions: 0 },
+          ],
+          ga4: { sessions: 100, engaged_sessions: 50, engagement_rate: 0.5, key_events: 12, total_revenue: 0, ga4_rows: 1 },
+        },
+      ]);
+      expect(d.summary).toMatchObject({ matched: 1, shared_utm_groups: 1 });
+      expect(d.unmatched.ga4_meta_like_rows_not_claimed.items).toEqual([]);
+      expect(d.rules.join(" ")).toContain("never credited");
     });
 
     it("needs a GA4 property; another workspace's property is not_found", async () => {
@@ -131,6 +221,16 @@ describe("GA4 combined tools", () => {
       expect(d.reasons_a_gap_can_be_normal.join(" ")).toContain("ad-click date");
       expect(JSON.stringify(d)).not.toMatch(/\bis (correct|right|wrong)\b/);
       expect(d.accounts.map((a: { role: string }) => a.role)).toEqual(["ga4_property", "google_ads", "meta_ads"]);
+    });
+
+    it("never double-counts GA4 key events for a UTM pair several Meta campaigns share", async () => {
+      sharedFixture(h);
+      const d = (await h.run("compare_conversion_tracking", { account_id: h.ids.prop })).data;
+      const meta = d.campaigns.items.filter((c: { platform: string }) => c.platform === "meta_ads");
+      expect(meta).toEqual([expect.objectContaining({ campaign_id: "c4", ga4_key_events: 3, shared_utm_not_credited: [{ source: "facebook", campaign: "spring" }] })]);
+      expect(d.summary.meta_ga4_key_events).toBe(3);
+      expect(d.shared_utm_groups.items.map((g: { utm_campaign: string; ga4: { key_events: number } }) => [g.utm_campaign, g.ga4.key_events])).toEqual([["spring", 12]]);
+      expect(d.unmatched.meta_campaigns.items.find((u: { campaign_id: string }) => u.campaign_id === "c1").reason).toBe("shared_utm");
     });
 
     it("refuses when no ad account is linked or named, and an explicit foreign id is not_found", async () => {

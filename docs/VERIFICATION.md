@@ -504,6 +504,12 @@ and field-selection rules by the test guard (`src/tests/support/schema-guard.ts`
 | Meta dynamic URL parameters (`{{campaign.name}}` …) | **Not confirmed**: the AdCreative reference does not document them, the Business Help page returned no body and the guessed developer page was 404. The tools therefore never resolve them: such campaigns are reported as unmatched (`dynamic_parameter`) with the raw template | (none) |
 | Search Console regex filters | `includingRegex` uses RE2 (recorded in "Search Console tools"); brand patterns use character classes (`[aA]`) instead of the `(?i)` flag so no RE2 flag syntax is relied on | — |
 
+**Caps and limits enforced by the tools (review fixes, 2026-11-10):** `MetaAdsClient.list` stops at 5,000 rows
+(`HARD_ROW_CAP`, src/platforms/meta/client.ts), so the combined tools use at most 4,999 ads per account and ask for 5,000: a
+full 5,000 means more ads exist (`complete: false`; campaigns with no ad read are `not_read_cap`). Search Console's latest
+day with final data is read for explicit dates too, and a later `end_date` is refused (those days would read as zero). A UTM
+pair several Meta campaigns share is never credited to one of them (`shared_utm_groups`). Tested against fakes only.
+
 **Not confirmed (not relied on):** how GA4 stores `sessionGoogleAdsCustomerId` (so compare_conversion_tracking joins on campaign
 id and lists GA4 campaigns not in the compared accounts instead of filtering by customer id); whether GA4's `landingPage` ever
 contains a query string (the join strips one if present).

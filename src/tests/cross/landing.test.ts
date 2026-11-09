@@ -91,6 +91,17 @@ describe("audit_ad_landing_pages", () => {
     expect((await h.run("audit_ad_landing_pages", { account_id: h.ids.gads, meta_account_id: h.ids.prop })).error).toMatchObject({ code: "not_found" });
   });
 
+  it("says when the Meta account has more ads than are read (Meta's client stops at 5,000)", async () => {
+    const many = (n: number) => Array.from({ length: n }, (_, i) => ({ id: `m${i}`, campaign_id: "c1", effective_status: "ACTIVE", creative: { object_story_spec: { link_data: { link: "https://example.com/boots" } } } }));
+    h.meta.ads = many(6_000);
+    const src = (d: { coverage: { sources: { source: string; complete: boolean; rows_read: number; note: string | null }[] } }) => d.coverage.sources.find((s) => s.source.startsWith("meta_ads"))!;
+    const d = (await h.run("audit_ad_landing_pages", { account_id: h.ids.gads, meta_account_id: "act_987", inspect_max: 0 })).data;
+    expect(src(d)).toMatchObject({ rows_read: 4_999, complete: false });
+    expect(src(d).note).toContain("only the first 4,999 were read");
+    h.meta.ads = many(4_999);
+    expect(src((await h.run("audit_ad_landing_pages", { account_id: h.ids.gads, meta_account_id: "act_987", inspect_max: 0 })).data)).toMatchObject({ rows_read: 4_999, complete: true });
+  });
+
   it("needs a GA4 property: without a link it says what to link", async () => {
     const env = await h.run("audit_ad_landing_pages", { account_id: h.ids.gadsUnlinked });
     expect(env.error).toMatchObject({ code: "invalid_argument" });
