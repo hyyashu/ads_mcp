@@ -1,7 +1,7 @@
 import type { Change, Effect } from "../../policy/change-set";
 import { canonicalJson, sha256 } from "../../security/canonical";
 import { conditionText, cut, msIso, param, paramText, stripVolatile } from "./model";
-import type { GtmBuiltIn, GtmTag, GtmTrigger, GtmVariable, GtmVersion, Row } from "./types";
+import type { GtmBuiltIn, GtmParameter, GtmTag, GtmTrigger, GtmVariable, GtmVersion, Row } from "./types";
 
 /**
  * Difference between two container versions (normally the live one and the one to publish), for the publish approval.
@@ -22,14 +22,22 @@ export interface DiffEntry {
   status: "added" | "removed" | "changed";
   /** For added / removed: the entity described; for changed: only the fields that differ. */
   fields: DiffField[];
-  /** Custom HTML (tag type html) code before / after, in full. */
-  html?: { before: string | null; after: string | null };
+  /**
+   * Code before / after, never cut: custom HTML (tag type html, field "parameter.html") or Custom JavaScript (variable type
+   * jsm, field "parameter.javascript"). Shown in its own row; bounded by PUBLISH_MAX_CODE in publish_gtm_version.
+   */
+  code?: DiffField;
 }
 export interface CoarseEntry {
   kind: CoarseKind;
   name: string;
   status: "added" | "removed" | "changed";
   detail: string | null;
+  /**
+   * What the entity contains, never cut, one row each: "settings" (the entity as canonical JSON, without name, location and,
+   * for a custom template, its code) and, for a custom template, "templateData" (its code). For changed: only parts that differ.
+   */
+  parts: DiffField[];
 }
 export interface Diff {
   entries: DiffEntry[];
@@ -50,7 +58,10 @@ const COARSE: [CoarseKind, keyof GtmVersion][] = [
   ["transformation", "transformation"],
 ];
 
-const html = (t: GtmTag) => (t.type === "html" ? (param(t.parameter, "html")?.value ?? null) : null);
+/** The parameter that holds an entity's code (shown in full, in its own row), or null. */
+const codeKeyOfTag = (t: GtmTag) => (t.type === "html" ? "html" : null);
+const codeKeyOfVariable = (v: GtmVariable) => (v.type === "jsm" ? "javascript" : null);
+const codeOf = (params: GtmParameter[] | undefined, key: string | null): DiffField | null => (key === null ? null : { field: `parameter.${key}`, before: null, after: param(params, key)?.value ?? "" });
 
 /** A tag as ordered field → text pairs (custom HTML code is reported separately, in full). */
 export function describeTag(t: GtmTag, triggerNames: Map<string, string>): DiffField[] {
@@ -69,7 +80,7 @@ export function describeTag(t: GtmTag, triggerNames: Map<string, string>): DiffF
     ["setup tag", t.setupTag?.length ? t.setupTag.map((x) => x.tagName ?? "?").join(", ") : null],
     ["teardown tag", t.teardownTag?.length ? t.teardownTag.map((x) => x.tagName ?? "?").join(", ") : null],
     ["consent", t.consentSettings ? `${t.consentSettings.consentStatus ?? "?"}${t.consentSettings.consentType?.list?.length ? `: ${t.consentSettings.consentType.list.map((x) => x.value).join(", ")}` : ""}` : null],
-    ...(t.parameter ?? []).filter((p) => !(t.type === "html" && p.key === "html")).map((p): [string, string | null] => [`parameter.${p.key ?? "?"}`, paramText(p)]),
+    ...(t.parameter ?? []).filter((p) => p.key !== codeKeyOfTag(t)).map((p): [string, string | null] => [`parameter.${p.key ?? "?"}`, paramText(p)]),
     ["monitoring metadata", t.monitoringMetadata ? canonicalJson(t.monitoringMetadata) : null],
     ["notes", t.notes ?? null],
   ];
@@ -90,7 +101,7 @@ export function describeVariable(v: GtmVariable): DiffField[] {
   const f: [string, string | null][] = [
     ["name", v.name ?? null],
     ["type", v.type ?? null],
-    ...(v.parameter ?? []).map((p): [string, string | null] => [`parameter.${p.key ?? "?"}`, paramText(p)]),
+    ...(v.parameter ?? []).filter((p) => p.key !== codeKeyOfVariable(v)).map((p): [string, string | null] => [`parameter.${p.key ?? "?"}`, paramText(p)]),
     ["format value", v.formatValue ? canonicalJson(v.formatValue) : null],
     ["notes", v.notes ?? null],
   ];
@@ -113,24 +124,31 @@ export function diffVersions(live: GtmVersion | null, target: GtmVersion): Diff 
   const namesOld = new Map((live?.trigger ?? []).map((t) => [t.triggerId ?? "", t.name ?? ""]));
   const namesNew = new Map((target.trigger ?? []).map((t) => [t.triggerId ?? "", t.name ?? ""]));
 
-  const compare = <T extends object>(kind: DiffKind, before: T[], after: T[], idOf: (x: T) => string, nameOf: (x: T) => string, describe: (x: T, old: boolean) => DiffField[], htmlOf: (x: T) => string | null) => {
+  const compare = <T extends object>(kind: DiffKind, before: T[], after: T[], idOf: (x: T) => string, nameOf: (x: T) => string, describe: (x: T, old: boolean) => DiffField[], codeOfX: (x: T) => DiffField | null) => {
     const bm = new Map(before.map((x) => [idOf(x), x]));
     const am = new Map(after.map((x) => [idOf(x), x]));
     for (const [id, x] of am) {
       const was = bm.get(id);
-      if (!was) entries.push({ kind, id, name: nameOf(x), status: "added", fields: describe(x, false), ...(htmlOf(x) !== null ? { html: { before: null, after: htmlOf(x) } } : {}) });
+      const c = codeOfX(x);
+      if (!was) entries.push({ kind, id, name: nameOf(x), status: "added", fields: describe(x, false), ...(c ? { code: c } : {}) });
       else if (!same(was, x)) {
         const fields = changedFields(describe(was, true), describe(x, false));
-        const h = htmlOf(was) !== htmlOf(x) ? { before: htmlOf(was), after: htmlOf(x) } : undefined;
-        if (!fields.length && !h) fields.push({ field: "other settings", before: "(as before)", after: "changed (a setting this summary does not show)" });
-        entries.push({ kind, id, name: nameOf(x), status: "changed", fields, ...(h ? { html: h } : {}) });
+        const w = codeOfX(was);
+        // A code field that appears, disappears (type change) or differs is shown in full, before and after.
+        const code = (w || c) && w?.after !== c?.after ? { field: (c ?? w)!.field, before: w?.after ?? null, after: c?.after ?? null } : undefined;
+        if (!fields.length && !code) fields.push({ field: "other settings", before: "(as before)", after: "changed (a setting this summary does not show)" });
+        entries.push({ kind, id, name: nameOf(x), status: "changed", fields, ...(code ? { code } : {}) });
       }
     }
-    for (const [id, x] of bm) if (!am.has(id)) entries.push({ kind, id, name: nameOf(x), status: "removed", fields: describe(x, true).map((f) => ({ field: f.field, before: f.after, after: null })), ...(htmlOf(x) !== null ? { html: { before: htmlOf(x), after: null } } : {}) });
+    for (const [id, x] of bm) {
+      if (am.has(id)) continue;
+      const c = codeOfX(x);
+      entries.push({ kind, id, name: nameOf(x), status: "removed", fields: describe(x, true).map((f) => ({ field: f.field, before: f.after, after: null })), ...(c ? { code: { field: c.field, before: c.after, after: null } } : {}) });
+    }
   };
-  compare<GtmTag>("tag", live?.tag ?? [], target.tag ?? [], (t) => t.tagId ?? "", (t) => t.name ?? "", (t, old) => describeTag(t, old ? namesOld : namesNew), html);
+  compare<GtmTag>("tag", live?.tag ?? [], target.tag ?? [], (t) => t.tagId ?? "", (t) => t.name ?? "", (t, old) => describeTag(t, old ? namesOld : namesNew), (t) => codeOf(t.parameter, codeKeyOfTag(t)));
   compare<GtmTrigger>("trigger", live?.trigger ?? [], target.trigger ?? [], (t) => t.triggerId ?? "", (t) => t.name ?? "", (t) => describeTrigger(t), () => null);
-  compare<GtmVariable>("variable", live?.variable ?? [], target.variable ?? [], (v) => v.variableId ?? "", (v) => v.name ?? "", (v) => describeVariable(v), () => null);
+  compare<GtmVariable>("variable", live?.variable ?? [], target.variable ?? [], (v) => v.variableId ?? "", (v) => v.name ?? "", (v) => describeVariable(v), (v) => codeOf(v.parameter, codeKeyOfVariable(v)));
   compare<GtmBuiltIn>("built_in_variable", live?.builtInVariable ?? [], target.builtInVariable ?? [], (b) => b.type ?? "", (b) => b.name ?? b.type ?? "", describeBuiltIn, () => null);
   entries.sort((x, y) => KIND_ORDER.indexOf(x.kind) - KIND_ORDER.indexOf(y.kind) || x.name.localeCompare(y.name) || x.id.localeCompare(y.id, undefined, { numeric: true }));
 
@@ -141,41 +159,61 @@ export function diffVersions(live: GtmVersion | null, target: GtmVersion): Diff 
     const am = new Map(((target[key] as Row[] | undefined) ?? []).map((x) => [nm(x), x]));
     for (const [name, x] of am) {
       const was = bm.get(name);
-      if (!was) coarse.push({ kind, name, status: "added", detail: null });
+      if (!was) coarse.push({ kind, name, status: "added", detail: null, parts: coarseParts(kind, x).map((p) => ({ field: p.field, before: null, after: p.text })) });
       else if (!same(was, x)) {
         const code = kind === "custom_template" && was.templateData !== x.templateData ? `code changed (sha256 ${sha256(String(was.templateData ?? "")).slice(0, 12)} → ${sha256(String(x.templateData ?? "")).slice(0, 12)})` : "settings changed";
-        coarse.push({ kind, name, status: "changed", detail: code });
+        const b = new Map(coarseParts(kind, was).map((p) => [p.field, p.text]));
+        const a = new Map(coarseParts(kind, x).map((p) => [p.field, p.text]));
+        const parts = [...new Set([...b.keys(), ...a.keys()])].filter((f) => b.get(f) !== a.get(f)).map((f) => ({ field: f, before: b.get(f) ?? null, after: a.get(f) ?? null }));
+        coarse.push({ kind, name, status: "changed", detail: code, parts });
       }
     }
-    for (const name of bm.keys()) if (!am.has(name)) coarse.push({ kind, name, status: "removed", detail: null });
+    for (const [name, x] of bm) if (!am.has(name)) coarse.push({ kind, name, status: "removed", detail: null, parts: coarseParts(kind, x).map((p) => ({ field: p.field, before: p.text, after: null })) });
   }
   coarse.sort((x, y) => COARSE.findIndex((c) => c[0] === x.kind) - COARSE.findIndex((c) => c[0] === y.kind) || x.name.localeCompare(y.name));
 
   return { entries, coarse, rows: toRows(entries, coarse), sha256: sha256(canonicalJson({ entries, coarse })) };
 }
 
+/**
+ * One approval row per described field. Added and removed entities show every field they have (the name is the row's item),
+ * changed ones the fields that differ; code (custom HTML, Custom JavaScript, template code) gets its own row, in full.
+ */
 function toRows(entries: DiffEntry[], coarse: CoarseEntry[]): Change[] {
   const rows: Change[] = [];
   for (const e of entries) {
     const ref = { resource: `gtm_${e.kind}`, id: e.id, name: e.name };
-    const brief = e.fields.filter((f) => ["type", "firing triggers"].includes(f.field) || f.field.startsWith("filter") || f.field.startsWith("customEventFilter"));
-    if (e.status === "added") {
-      rows.push({ ...ref, field: e.kind, before: null, after: cell(brief.map((f) => `${f.field}: ${f.after}`).join(" · ") || "added"), unit: "text", effect: "create" });
-      if (e.html) rows.push({ ...ref, field: "parameter.html", before: null, after: e.html.after, unit: "text", effect: "create" });
-    } else if (e.status === "removed") {
-      rows.push({ ...ref, field: e.kind, before: cell(brief.map((f) => `${f.field}: ${f.before}`).join(" · ") || "present"), after: null, unit: "text", effect: "remove" });
-      if (e.html) rows.push({ ...ref, field: "parameter.html", before: e.html.before, after: null, unit: "text", effect: "remove" });
-    } else {
-      for (const f of e.fields) {
-        const effect: Effect = f.field === "paused" ? (f.after === "true" ? "pause" : "enable") : "neutral";
-        rows.push({ ...ref, field: f.field, before: cell(f.before), after: cell(f.after), unit: "text", effect });
-      }
-      if (e.html) rows.push({ ...ref, field: "parameter.html", before: e.html.before, after: e.html.after, unit: "text", effect: "neutral" });
+    const effect: Effect = e.status === "added" ? "create" : e.status === "removed" ? "remove" : "neutral";
+    const fields = e.status === "changed" ? e.fields : e.fields.filter((f) => f.field !== "name");
+    if (e.status !== "changed") rows.push({ ...ref, field: e.kind, before: e.status === "removed" ? "present" : null, after: e.status === "added" ? "added" : null, unit: "text", effect });
+    for (const f of fields) {
+      const fx: Effect = e.status === "changed" && f.field === "paused" ? (f.after === "true" ? "pause" : "enable") : effect;
+      rows.push({ ...ref, field: f.field, before: cell(f.before), after: cell(f.after), unit: "text", effect: fx });
     }
+    if (e.code) rows.push({ ...ref, field: e.code.field, before: e.code.before, after: e.code.after, unit: "text", effect });
   }
-  for (const c of coarse) rows.push({ resource: `gtm_${c.kind}`, id: c.name, name: c.name, field: c.kind, before: c.status === "added" ? null : "present", after: c.status === "removed" ? null : (c.detail ?? "added"), unit: "text", effect: c.status === "added" ? "create" : c.status === "removed" ? "remove" : "neutral" });
+  for (const c of coarse) {
+    const ref = { resource: `gtm_${c.kind}`, id: c.name, name: c.name };
+    const effect: Effect = c.status === "added" ? "create" : c.status === "removed" ? "remove" : "neutral";
+    rows.push({ ...ref, field: c.kind, before: c.status === "added" ? null : "present", after: c.status === "removed" ? null : (c.detail ?? "added"), unit: "text", effect });
+    for (const p of c.parts) rows.push({ ...ref, field: p.field, before: p.before, after: p.after, unit: "text", effect });
+  }
   return rows;
 }
 
-/** Longest custom HTML code in a diff (approval pages show it in full, so it is bounded). */
-export const longestHtml = (d: Diff) => Math.max(0, ...d.entries.flatMap((e) => [e.html?.before?.length ?? 0, e.html?.after?.length ?? 0]));
+/** Parts of a coarse entity shown in full: its settings as JSON and, for a custom template, its code. */
+function coarseParts(kind: CoarseKind, x: Row): { field: string; text: string }[] {
+  const { name: _n, templateData, ...rest } = stripVolatile(x) as Row;
+  const settings = kind === "custom_template" ? rest : { ...rest, ...(templateData !== undefined ? { templateData } : {}) };
+  const out: { field: string; text: string }[] = [];
+  if (Object.keys(settings).length) out.push({ field: "settings", text: canonicalJson(settings) });
+  if (kind === "custom_template") out.push({ field: "templateData", text: String(templateData ?? "") });
+  return out;
+}
+
+/**
+ * Longest value an approval page shows in full (custom HTML, Custom JavaScript, template code, coarse settings), so it can
+ * be bounded: every other cell is cut at CELL_MAX.
+ */
+export const longestCode = (d: Diff) =>
+  Math.max(0, ...d.entries.flatMap((e) => [e.code?.before?.length ?? 0, e.code?.after?.length ?? 0]), ...d.coarse.flatMap((c) => c.parts.flatMap((p) => [p.before?.length ?? 0, p.after?.length ?? 0])));

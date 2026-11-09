@@ -349,9 +349,16 @@ building (same date). `R` = `https://developers.google.com/tag-platform/tag-mana
 - No list method takes a page size: only `pageToken` / `nextPageToken`.
 - Quota: "0.25 queries per second (QPS) per project", "25 requests per 100 seconds", "10,000 requests per project per day"; over
   quota is HTTP 403 (https://developers.google.com/tag-platform/tag-manager/api/v2/limits-quotas). Enforced by the foundation's
-  server-wide limiter (`beforeCall`), per request.
+  server-wide limiter (`beforeCall`), per request sent: reads are retried up to 3 times by the transport, so the limiter runs
+  before every attempt (`SendRequest.beforeAttempt` in `src/platforms/core/http-core.ts`), not once per call.
 - "When performing destructive operations using the API there will be no warnings, no confirmations, and no undo."
-  (https://developers.google.com/tag-platform/tag-manager/api/v2/devguide) — publish is `destructive` and shows the full diff.
+  (https://developers.google.com/tag-platform/tag-manager/api/v2/devguide) — publish is `destructive` and shows the full diff:
+  added / removed tags, triggers and variables with every setting and parameter (one row each), changed ones field by field, coarse
+  kinds (folders, templates, clients, zones, Google tag configs, transformations) with their settings as JSON. Code is never cut:
+  custom HTML (`html` / key `html`), Custom JavaScript variables (`jsm` / key `javascript`) and template `templateData` each get
+  their own row, in full; publish is refused when any of them is over 20,000 characters or the diff is over 300 rows. Other values
+  are cut at 2,000 characters. Hosts named in code are listed as a best-effort aid ("hosts found: …" / "no host recognised"),
+  never as a claim that the code contacts no host.
 
 **Resource fields used**
 - Tag: `tagId, name, type, parameter[], firingTriggerId[]` ("A tag will fire when any of the listed triggers are true and all of
@@ -400,7 +407,9 @@ building (same date). `R` = `https://developers.google.com/tag-platform/tag-mana
   (lower camel sent, read case-insensitively). Whether `publish` with `compilerError` leaves live unchanged (confirmed by reading live
   back). Name length limits and name uniqueness (the server refuses case-insensitive clashes itself). The id of built-in triggers
   such as All Pages (never invented; ids already on a tag are kept). Id fields of folders, clients, zones and transformations
-  (the publish diff matches them by name).
+  (the publish diff matches them by name). The Custom JavaScript variable's type `jsm` and code key `javascript` (Google's variable
+  dictionary page is gone and its archive could not be fetched on 2026-11-10; these are the codes Tag Manager's own exports use): a
+  `jsm` variable whose code sits under another key still has every parameter listed, cut at 2,000 characters.
 
 ## GA4 tools (2026-11-10)
 

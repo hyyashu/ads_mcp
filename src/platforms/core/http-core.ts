@@ -25,6 +25,8 @@ export interface SendRequest {
   mapError(res: Response, json: unknown): ToolError;
   /** Called for every response (for usage logging). */
   onResponse?(res: Response): void;
+  /** Runs before every attempt, retries included (Tag Manager's project rate limit). Throwing stops the request unsent. */
+  beforeAttempt?: () => Promise<void>;
 }
 
 /** Full jitter: random in [0, 250 ms * 2^(attempt-1)], so many clients retrying at once do not move in lockstep. */
@@ -34,6 +36,7 @@ export async function sendWithRetry<T>(o: RetryOptions, r: SendRequest): Promise
   const attempts = r.idempotent ? 3 : 1;
   for (let i = 1; ; i++) {
     let res: Response;
+    await r.beforeAttempt?.();
     try {
       res = await o.fetch(r.url, { ...r.init, signal: r.signal ?? AbortSignal.timeout(o.timeoutMs ?? 30_000) });
     } catch {

@@ -59,12 +59,23 @@ export function adsConversionIds(v: unknown): string[] {
   return [...ids].sort();
 }
 
-/** Hosts a piece of HTML loads from or links to (http(s):// and protocol-relative //host URLs). */
-export function externalHosts(html: string): string[] {
+/**
+ * Hosts named in a piece of code (custom HTML, Custom JavaScript, template code) as http(s):// or protocol-relative //host
+ * URLs: domain names and IPv4 literals. A best-effort aid only: code can build a URL any number of ways, so an empty list
+ * never means the code contacts no host (approval texts say "no host recognised" and show the code in full).
+ */
+export function externalHosts(code: string): string[] {
   const hosts = new Set<string>();
-  for (const m of html.matchAll(/(?:https?:)?\/\/([a-z0-9-]+(?:\.[a-z0-9-]+)*\.[a-z]{2,63})(?=[:/?#"'\s>)\\]|$)/gi)) hosts.add(m[1]!.toLowerCase());
+  const re = /(?:https?:)?\/\/((?:[a-z0-9-]+\.)+[a-z]{2,63}|(?:25[0-5]|2[0-4]\d|1?\d?\d)(?:\.(?:25[0-5]|2[0-4]\d|1?\d?\d)){3})(?=[:/?#"'`\s<>),;\\]|$)/gi;
+  for (const m of code.matchAll(re)) hosts.add(m[1]!.toLowerCase());
   return [...hosts].sort();
 }
+
+/** Approver note on the hosts in some code: never claims the code contacts no host. */
+export const hostsNote = (code: string): string => {
+  const hosts = externalHosts(code);
+  return hosts.length ? `hosts found: ${hosts.join(", ")}` : "no host recognised (the full code is shown below)";
+};
 
 /** Constructs in custom HTML an approver should know about. */
 export function riskyConstructs(html: string): string[] {

@@ -51,6 +51,23 @@ describe("GtmClient basics", () => {
     expect(r.error?.code).toBe("quota_exceeded");
     expect(f.calls.length).toBe(n);
   });
+
+  it("every attempt of a retried read takes a limiter token (503 then 200 → 2 tokens)", async () => {
+    let tokens = 0;
+    const counting = { take: () => (tokens++, { ok: true as const }) };
+    const c = new GtmClient({ http: new GoogleApiHttp({ fetch: (u, i) => f.fetch(u, i), sleep: async () => {}, random: () => 0 }), getAccessToken: async () => "t", containerPath: C, beforeCall: async () => void counting.take() });
+    f.failNext.push({ re: /versions:live/, status: 503, body: { error: { code: 503, message: "busy", status: "UNAVAILABLE" } } });
+    const n = f.calls.length;
+    expect((await c.liveVersion())?.containerVersionId).toBe("41");
+    expect(f.calls.length - n).toBe(2);
+    expect(tokens).toBe(2);
+    // and through the services factory's Tag Manager limiter: a limit of one token refuses the retry, unsent
+    f.failNext.push({ re: /versions:live/, status: 503, body: { error: { code: 503, message: "busy", status: "UNAVAILABLE" } } });
+    const limited = await gtmHarness("GTMLIM2", fake, { gtmLimiter: new RateLimiter(1, 0.0001) });
+    const m = f.calls.length;
+    expect((await limited.run("get_gtm_live_version", {})).error?.code).toBe("quota_exceeded");
+    expect(f.calls.length - m).toBe(1);
+  });
 });
 
 describe("list_gtm_containers", () => {

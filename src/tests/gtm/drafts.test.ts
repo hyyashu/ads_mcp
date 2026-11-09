@@ -150,7 +150,7 @@ describe("create_gtm_tag", () => {
     const r = await run("create_gtm_tag", { name: "Meta Pixel - v2", tag: { kind: "custom_html", html: HTML }, firing_trigger_ids: ["32"] });
     expect(r.approval!.risk).toBe("high_impact");
     expect(r.approval!.summary).toContain(HTML);
-    expect(r.approval!.summary).toContain("loads from or links to connect.facebook.net");
+    expect(r.approval!.summary).toContain("hosts found: connect.facebook.net");
     expect(r.approval!.summary).toContain("contains <script>, document.write");
     expect(r.approval!.change_set!.changes).toContainEqual(expect.objectContaining({ field: "parameter.html", after: HTML, effect: "create" }));
     const done = await approve(r.approval!.approval_id);

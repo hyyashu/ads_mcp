@@ -2,8 +2,8 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import { canonicalJson } from "../../../security/canonical";
 import { type GtmClient, SERVER_WS_NAME, gtmIdOrFail } from "../client";
-import { type Diff, diffVersions, longestHtml } from "../diff";
-import { externalHosts, stripVolatile } from "../model";
+import { type Diff, diffVersions, longestCode } from "../diff";
+import { hostsNote, stripVolatile } from "../model";
 import { GTM_EDIT_VERSIONS, GTM_PUBLISH, accountId, entityName, gtmId, notesText } from "./common";
 import { entityInfo } from "./reads";
 import { confirmAfterSend, gtmStateWrite, q } from "./write-kit";
@@ -109,7 +109,8 @@ export const createGtmVersion = gtmStateWrite({
 
 /** Rows the approval page shows for a destructive approval (src/web/routes.ts changeTable). */
 export const PUBLISH_MAX_ROWS = 300;
-export const PUBLISH_MAX_HTML = 20_000;
+/** Longest code (custom HTML, Custom JavaScript, template code) or coarse settings value the approval shows; longer is refused. */
+export const PUBLISH_MAX_CODE = 20_000;
 
 interface PublishS {
   live_version_id: string | null;
@@ -145,7 +146,7 @@ export const publishGtmVersion = gtmStateWrite({
   name: "publish_gtm_version",
   title: "Publish a Tag Manager version",
   description:
-    "Publishes a container version to the LIVE website: the only Tag Manager tool that changes the site. Any version of the container can be published, including an older one (rollback). The approval shows every difference from the live version (tags, triggers, variables, built-ins, templates; custom HTML in full) and needs a second approver. There is no undo through the API: roll back by publishing the previous version.",
+    "Publishes a container version to the LIVE website: the only Tag Manager tool that changes the site. Any version of the container can be published, including an older one (rollback). The approval lists every difference from the live version, one row per setting: added and removed tags, triggers and variables with all their settings and parameters, changed ones with each differing setting before and after, built-in variables, and folders, templates, clients, zones, Google tag configs and transformations with their settings. Code is shown in full in its own row: custom HTML tags, Custom JavaScript variables and custom template code (other values are cut at 2,000 characters). Refused when any code is over 20,000 characters or the list is over 300 rows (publish those in Tag Manager). Needs a second approver. There is no undo through the API: roll back by publishing the previous version.",
   risk: "destructive",
   scope: GTM_PUBLISH,
   input: z.object({ account_id: accountId, version_id: gtmId.describe("Container version to publish (create_gtm_version returns it).") }),
@@ -157,20 +158,29 @@ export const publishGtmVersion = gtmStateWrite({
     if (s.live_version_id === a.version_id) throw new ToolError("invalid_argument", `Version ${a.version_id} is already live.`);
     if (!s.target_fingerprint) throw new ToolError("internal", "Tag Manager returned the version without a fingerprint, so the publish could not be guarded. Nothing was changed.");
     if (diff.rows.length > PUBLISH_MAX_ROWS) throw new ToolError("invalid_argument", `This publish changes ${diff.rows.length} settings, more than one approval page can show (${PUBLISH_MAX_ROWS}). Publish it in Tag Manager, or split it.`);
-    if (longestHtml(diff) > PUBLISH_MAX_HTML) throw new ToolError("invalid_argument", `A custom HTML tag in this publish is longer than ${PUBLISH_MAX_HTML.toLocaleString("en-US")} characters, too large to show to approvers. Publish it in Tag Manager.`);
+    if (longestCode(diff) > PUBLISH_MAX_CODE) throw new ToolError("invalid_argument", `Code in this publish (a custom HTML tag, Custom JavaScript variable or custom template) is longer than ${PUBLISH_MAX_CODE.toLocaleString("en-US")} characters, too large to show to approvers. Publish it in Tag Manager.`);
     const older = s.live_version_id !== null && Number(a.version_id) < Number(s.live_version_id);
     const where = [container.publicId, (container.domainName ?? []).join(", "), (container.usageContext ?? []).join(", ")].filter(Boolean).join(", ");
     const coarse = diff.coarse.length ? ` Also changed: ${diff.coarse.map((c) => `${c.kind.replace(/_/g, " ")} ${q(c.name)} (${c.status}${c.detail ? `, ${c.detail}` : ""})`).join("; ")}.` : "";
-    const htmlNotes = diff.entries
-      .filter((e) => e.html?.after)
-      .map((e) => {
-        const fires = e.fields.find((f) => f.field === "firing triggers")?.after;
-        return `${e.status === "added" ? "Added" : "Changed"} custom HTML ${q(e.name)}${fires ? ` runs on pages matched by ${fires}` : ""}${externalHosts(e.html!.after!).length ? ` and loads from ${externalHosts(e.html!.after!).join(", ")}` : ""}: its full code is in the change list below.`;
-      });
+    const codeNotes = [
+      ...diff.entries
+        .filter((e) => e.code?.after)
+        .map((e) => {
+          const fires = e.fields.find((f) => f.field === "firing triggers")?.after;
+          const what = e.kind === "tag" ? "custom HTML tag" : "Custom JavaScript variable";
+          return `${e.status === "added" ? "Added" : "Changed"} ${what} ${q(e.name)}${fires ? ` runs on pages matched by ${fires}` : ""}; ${hostsNote(e.code!.after!)}. Its full code is in the change list below.`;
+        }),
+      ...diff.coarse
+        .filter((c) => c.kind === "custom_template" && c.status !== "removed")
+        .flatMap((c) => {
+          const code = c.parts.find((p) => p.field === "templateData")?.after;
+          return code ? [`${c.status === "added" ? "Added" : "Changed"} custom template ${q(c.name)} (its code runs wherever a tag or variable uses it); ${hostsNote(code)}. Its full code is in the change list below.`] : [];
+        }),
+    ];
     const summary = [
       `PUBLISH to the LIVE website: container ${where || "?"}. Version ${a.version_id} ${q(target.name ?? "")} ${live ? `replaces live version ${s.live_version_id} ${q(live.name ?? "")}` : "becomes the first live version (nothing is published yet)"}.${older ? " This is an OLDER version than the live one: it rolls changes back." : ""}`,
       `${counts(diff)}${coarse}${diff.rows.length ? "" : " No differences from the live version were found."}`,
-      ...htmlNotes,
+      ...codeNotes,
       `There is no undo through the API: ${live ? `to roll back, publish version ${s.live_version_id} again (publish_gtm_version).` : "to stop the tags, publish a version without them."}`,
     ].join("\n");
     return { summary, changes: diff.rows };

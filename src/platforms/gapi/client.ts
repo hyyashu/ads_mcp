@@ -22,7 +22,7 @@ export interface GoogleApiClientOptions {
   getAccessToken: () => Promise<string>;
   /** The tool call's signal: cancellation and deadlines reach the upstream requests. */
   signal?: AbortSignal;
-  /** Runs before every request (Tag Manager uses it for its project-wide rate limit). Throwing stops the request unsent. */
+  /** Runs before every request sent, each retry of a read included (Tag Manager uses it for its project-wide rate limit). Throwing stops the request unsent. */
   beforeCall?: () => Promise<void>;
 }
 
@@ -39,16 +39,19 @@ export class GoogleApiClient {
     return this.sent;
   }
 
+  /** Reads are retried by the transport, so the rate limit hook runs per attempt, not once per call. */
+  private attemptHook(): { beforeAttempt?: () => Promise<void> } {
+    return this.o.beforeCall ? { beforeAttempt: this.o.beforeCall } : {};
+  }
+
   /** GET that only reads. Retried on transient failures. */
   async read<T = Row>(url: string, params?: Params): Promise<T> {
-    await this.o.beforeCall?.();
-    return this.o.http.call<T>({ accessToken: await this.o.getAccessToken(), url, params, idempotent: true, signal: this.o.signal });
+    return this.o.http.call<T>({ accessToken: await this.o.getAccessToken(), url, params, idempotent: true, signal: this.o.signal, ...this.attemptHook() });
   }
 
   /** POST that only reads (searchAnalytics.query, runReport, urlInspection). Retried like a read: never use it for a change. */
   async query<T = Row>(url: string, body: unknown, params?: Params): Promise<T> {
-    await this.o.beforeCall?.();
-    return this.o.http.call<T>({ accessToken: await this.o.getAccessToken(), method: "POST", url, params, body, idempotent: true, signal: this.o.signal });
+    return this.o.http.call<T>({ accessToken: await this.o.getAccessToken(), method: "POST", url, params, body, idempotent: true, signal: this.o.signal, ...this.attemptHook() });
   }
 
   /**
