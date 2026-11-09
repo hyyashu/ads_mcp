@@ -430,6 +430,18 @@ export interface ReportHeader {
   quota: QuotaOut | null;
 }
 
+/** The common report header from one Data API response (metadata zone/currency win over the stored ones). */
+export function headerFrom(ga4: Ga4Client, period: ResolvedPeriod, timeZone: string | null, notes: string[], res: { metadata?: ResponseMetaData; propertyQuota?: PropertyQuota } | null): ReportHeader {
+  return {
+    property: ga4.property,
+    period,
+    time_zone: res?.metadata?.timeZone ?? timeZone,
+    currency_code: res?.metadata?.currencyCode ?? ga4.currencyCode,
+    data_quality: dataQuality(res?.metadata, res?.propertyQuota, [...notes, ...zoneNotes(timeZone, res?.metadata?.timeZone)]),
+    quota: quotaOf(res?.propertyQuota),
+  };
+}
+
 // ------------------------------------------------------------------------------------------------ running a report
 export interface FixedReport extends ReportHeader {
   rows: ShapedRow[];
@@ -465,12 +477,7 @@ export async function runFixedReport(
   const rows = shapeRows(res);
   const row_count = res.rowCount ?? rows.length;
   return {
-    property: ga4.property,
-    period,
-    time_zone: res.metadata?.timeZone ?? timeZone,
-    currency_code: res.metadata?.currencyCode ?? ga4.currencyCode,
-    data_quality: dataQuality(res.metadata, res.propertyQuota, [...notes, ...zoneNotes(timeZone, res.metadata?.timeZone)]),
-    quota: quotaOf(res.propertyQuota),
+    ...headerFrom(ga4, period, timeZone, notes, res),
     rows,
     totals: totalsOf(res).totals,
     row_count,
