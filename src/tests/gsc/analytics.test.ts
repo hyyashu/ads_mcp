@@ -8,7 +8,12 @@ beforeAll(async () => {
   fake.reset();
   kit = await gscHarness("GSCA", fake);
 });
-beforeEach(() => fake.reset());
+beforeEach(() => {
+  fake.reset();
+  // A fixed "now" (2026-11-10 in Pacific Time) so the explicit dates below never age out of the 16-month window.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-10T20:00:00Z"));
+});
 afterEach(() => vi.useRealTimers());
 
 const dates = { start_date: "2026-10-01", end_date: "2026-10-28" };
@@ -89,8 +94,6 @@ describe("get_search_performance", () => {
   });
 
   it("falls back to three days ago with a note when the probe finds nothing; last_16_months starts at the retention limit", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-10T20:00:00Z"));
     let d = (await kit.run("get_search_performance", { period: "last_28_days" })).data as any;
     expect(d.period).toMatchObject({ end_date: "2026-11-07", start_date: "2026-10-11", end_basis: "fallback_today_minus_3" });
     expect(d.notes.join(" ")).toContain("no final data");

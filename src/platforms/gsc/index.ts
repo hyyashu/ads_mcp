@@ -3,7 +3,7 @@ import { getSearchAppearance, getSearchPerformance, getTopPages, getTopQueries }
 import { compareSearchPeriods } from "./tools/compare";
 import { inspectUrl } from "./tools/inspection";
 import { deleteSitemap, listSitemaps, submitSitemap } from "./tools/sitemaps";
-import { listGscSites } from "./tools/sites";
+import { addGscSite, listGscSites, removeGscSite } from "./tools/sites";
 
 /** Search Console tools. A tool is added here only when it has a real handler, schemas and tests. */
-export const gscTools: AnyTool[] = [listGscSites, listSitemaps, inspectUrl, getSearchPerformance, getTopQueries, getTopPages, getSearchAppearance, compareSearchPeriods, submitSitemap, deleteSitemap] as AnyTool[];
+export const gscTools: AnyTool[] = [listGscSites, listSitemaps, inspectUrl, getSearchPerformance, getTopQueries, getTopPages, getSearchAppearance, compareSearchPeriods, submitSitemap, deleteSitemap, addGscSite, removeGscSite] as AnyTool[];

@@ -8,7 +8,12 @@ beforeAll(async () => {
   fake.reset();
   kit = await gscHarness("GSCC", fake);
 });
-beforeEach(() => fake.reset());
+beforeEach(() => {
+  fake.reset();
+  // A fixed "now" (2026-11-10 in Pacific Time) so the explicit dates below never age out of the 16-month window.
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(new Date("2026-11-10T20:00:00Z"));
+});
 afterEach(() => vi.useRealTimers());
 
 type R = [string, number, number, number];
@@ -101,8 +106,6 @@ describe("compare_search_periods", () => {
   });
 
   it("a named period uses the probe's end date and the previous period before it", async () => {
-    vi.useFakeTimers({ toFake: ["Date"] });
-    vi.setSystemTime(new Date("2026-11-10T20:00:00Z"));
     periods([], []);
     const d = (await kit.run("compare_search_periods", { dimension: "page", period: "last_7_days" })).data as any;
     expect(d.current).toMatchObject({ start_date: "2026-10-31", end_date: "2026-11-06", end_basis: "latest_final_data" });
