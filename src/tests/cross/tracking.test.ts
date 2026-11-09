@@ -58,6 +58,15 @@ describe("audit_tracking_setup", () => {
     expect(h.google.queries.some((q) => q.includes("conversion_action.tag_snippets"))).toBe(true);
   });
 
+  it("a key event a live tag sends but with no events in the period is a gap", async () => {
+    h.ga4.report = ga4Answer({ eventName: { rows: [] } });
+    const d = (await h.run("audit_tracking_setup", { account_id: h.ids.gtm })).data;
+    const atc = d.conversions.find((c: { kind: string; id: string }) => c.kind === "ga4_key_event" && c.id === "add_to_cart");
+    expect(atc).toMatchObject({ status: "gap", defined_in: ["google_analytics", "google_tag_manager"], missing_in: [] });
+    expect(atc.details.join(" ")).toContain("No events named add_to_cart");
+    h.ga4.report = ga4Answer({ eventName: { rows: [{ dims: ["add_to_cart"], m: { eventCount: 100, keyEvents: 100 } }] } });
+  });
+
   it("flags a container tag that matches no conversion action of the account", async () => {
     h.google.search.conversion_action = [{ conversionAction: { id: "2", name: "Lead", type: "WEBPAGE", tagSnippets: snippet("AW-987654/zzzLead") } }];
     const d = (await h.run("audit_tracking_setup", { account_id: h.ids.gtm })).data;

@@ -76,6 +76,29 @@ describe("Search Console combined tools", () => {
       expect((await h.run("analyze_paid_organic_overlap", { account_id: h.ids.gads, start_date: start })).error).toMatchObject({ code: "invalid_argument" });
     });
 
+    it("min_impressions is applied to the organic side", async () => {
+      // "blue shoes" ranks 2 with 500 organic impressions
+      const d = (await h.run("analyze_paid_organic_overlap", { account_id: h.ids.gads, min_impressions: 501 })).data;
+      expect(d.overlap.total).toBe(0);
+      expect(d.summary).toMatchObject({ with_organic_row: 3, overlap_terms: 0 });
+    });
+
+    it("refuses an explicit end_date after Search Console's latest final day, naming the day to use", async () => {
+      const env = await h.run("analyze_paid_organic_overlap", { account_id: h.ids.gads, start_date: addDays(latest, -6), end_date: addDays(latest, 1) });
+      expect(env.error).toMatchObject({ code: "invalid_argument" });
+      expect(env.error!.message).toContain(`Search Console's latest day with final data`);
+      expect(env.error!.message).toContain(`Use end_date ${latest} or earlier`);
+      expect(h.google.queries).toHaveLength(0); // refused before any spend was read
+    });
+
+    it("says when the Google Ads search-term read hit its 10,000-row cap", async () => {
+      h.google.search.search_term_view = Array.from({ length: 10_000 }, (_, i) => term(`t${i}`, 1));
+      const d = (await h.run("analyze_paid_organic_overlap", { account_id: h.ids.gads })).data;
+      const src = d.coverage.sources.find((s: { source: string }) => s.source === "google_ads search_term_view");
+      expect(src).toMatchObject({ rows_read: 10_000, complete: false });
+      expect(src.note).toContain("10,000");
+    });
+
     it("says when Search Console has more query rows than were read", async () => {
       const many: [string, number, number, number][] = Array.from({ length: 25_001 }, (_, i) => [`q${i}`, 1, 10, 5]);
       gscAnalytics(h.gsc, { queries: many });
@@ -99,7 +122,23 @@ describe("Search Console combined tools", () => {
     });
   });
 
+  describe("find_organic_keyword_gaps: existing keywords", () => {
+    it("a query equal to a positive keyword after normalising is not a gap and is counted as already a keyword", async () => {
+      h.google.search.ad_group_criterion = [{ adGroupCriterion: { keyword: { text: "  Running   SOCKS " }, negative: false } }];
+      h.google.search.campaign_criterion = [];
+      const d = (await h.run("find_organic_keyword_gaps", { account_id: h.ids.gads, min_impressions: 300 })).data;
+      expect(d.gaps.items.map((g: { query: string }) => g.query)).toEqual(["cheap socks", "Red Boots"]);
+      expect(d.summary).toMatchObject({ meeting_thresholds: 3, already_keywords: 1, gaps: 2 });
+    });
+  });
+
   describe("find_converting_terms_without_content", () => {
+    it("refuses an end_date after Search Console's latest final day instead of reporting those days as no organic impressions", async () => {
+      const env = await h.run("find_converting_terms_without_content", { account_id: h.ids.gads, start_date: addDays(latest, -6), end_date: addDays(latest, 2) });
+      expect(env.error).toMatchObject({ code: "invalid_argument" });
+      expect(env.error!.message).toContain(`Use end_date ${latest} or earlier`);
+    });
+
     it("lists converting terms with no organic impressions and counts the ones that have them", async () => {
       const d = (await h.run("find_converting_terms_without_content", { account_id: h.ids.gads })).data;
       expect(d.terms.items).toEqual([{ search_term: "green hat", paid: { impressions: 100, clicks: 10, cost: 3, conversions: 1, conversion_value: 20 } }]);
@@ -141,6 +180,24 @@ describe("Search Console combined tools", () => {
       expect(d.coverage.not_checked).toEqual([]);
       const weekly = (await h.run("analyze_brand_search_trend", { account_id: h.ids.site, brand_terms: ["Example"], days: 28 })).data;
       for (const b of weekly.series.slice(1, -1)) expect(new Date(`${b.bucket_start}T00:00:00Z`).getUTCDay()).toBe(1);
+    });
+
+    it("the change compares the second half with the first (a rise is positive)", async () => {
+      h.gsc.reset();
+      const mid = addDays(latest, -7); // first half: latest-13 … latest-7
+      gscAnalytics(h.gsc, { daily: (d, branded) => (branded ? [d > mid ? 3 : 1, 10] : [10, 100]) });
+      const d = (await h.run("analyze_brand_search_trend", { account_id: h.ids.site2, brand_terms: ["shop"], granularity: "day", start_date: addDays(latest, -13), end_date: latest })).data;
+      expect(d.summary).toEqual({ first_half_avg_branded_clicks: 1, second_half_avg_branded_clicks: 3, change: 2 });
+    });
+
+    it("refuses an end_date after Search Console's latest final day (those days would read as a drop to zero)", async () => {
+      h.gsc.reset();
+      gscAnalytics(h.gsc, { daily: () => [10, 100] });
+      const env = await h.run("analyze_brand_search_trend", { account_id: h.ids.site2, brand_terms: ["shop"], granularity: "day", start_date: addDays(latest, -11), end_date: addDays(latest, 2) });
+      expect(env.error).toMatchObject({ code: "invalid_argument" });
+      expect(env.error!.message).toContain(`Use end_date ${latest} or earlier`);
+      const ok = (await h.run("analyze_brand_search_trend", { account_id: h.ids.site2, brand_terms: ["shop"], granularity: "day", start_date: addDays(latest, -11), end_date: latest })).data;
+      expect(ok.summary.change).toBe(0);
     });
 
     it("without linked ad accounts it still shows the trend and says spend was not checked", async () => {

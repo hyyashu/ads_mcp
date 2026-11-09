@@ -153,7 +153,7 @@ export const auditAdLandingPages = crossRead<GoogleServices>()("google_ads", [AD
         p.meta_ads ??= { active_ads: 0 };
         p.meta_ads.active_ads++;
       }
-      coverage.sources.push({ source: "meta_ads ads (creative links)", rows_read: metaRes.ads.length, complete: !metaRes.truncated, note: `${active} ads are ACTIVE now with a link (status today, not over the period).${metaRes.truncated ? ` Only the first ${META_AD_CAP} ads were read.` : ""}` });
+      coverage.sources.push({ source: "meta_ads ads (creative links)", rows_read: metaRes.ads.length, complete: !metaRes.truncated, note: `${active} ads are ACTIVE now with a link (status today, not over the period).${metaRes.truncated ? ` The account has more than ${META_AD_CAP.toLocaleString("en-US")} ads; only the first ${META_AD_CAP.toLocaleString("en-US")} were read, so pages used only by the other ads are missing.` : ""}` });
     } else coverage.not_checked.push({ source: "meta_ads", reason: "No meta_account_id given (a Meta ad account is not linked to a Google Ads account, so it must be named)." });
 
     // GA4 rows by normalised path (several rows can fold into one: trailing slash, encoding)
