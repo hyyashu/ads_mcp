@@ -1,9 +1,9 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 243,
+    "implemented": 246,
     "external_limitation": 1,
-    "pending": 42
+    "pending": 39
   },
   "rows": [
     {
@@ -4459,10 +4459,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ga4_attribution_settings",
@@ -4476,10 +4476,10 @@
         "https://www.googleapis.com/auth/analytics.readonly"
       ],
       "accountScope": "required",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "get_ga4_change_history",
@@ -4494,10 +4494,10 @@
       ],
       "accountScope": "required",
       "notes": "Check the method's scope before building: it may need analytics.edit.",
-      "status": "pending",
-      "verification": "n/a",
-      "tests": "none",
-      "inputSchema": "needs_api_mapping"
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
     },
     {
       "tool": "create_key_event",
