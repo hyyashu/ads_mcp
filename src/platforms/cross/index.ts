@@ -1,7 +1,8 @@
 import type { AnyTool } from "../../mcp/tool";
-import { analyzeBrandSearchTrend, analyzePaidOrganicOverlap, findConvertingTermsWithoutContent, findOrganicKeywordGaps } from "./search";
-import { auditAdLandingPages } from "./landing";
 import { analyzeMetaTrafficQuality, analyzePaidSearchOnSite, checkUtmTagging, compareConversionTracking, getChannelMix } from "./analytics";
+import { auditAdLandingPages } from "./landing";
+import { analyzeBrandSearchTrend, analyzePaidOrganicOverlap, findConvertingTermsWithoutContent, findOrganicKeywordGaps } from "./search";
+import { auditTrackingSetup } from "./tracking";
 
 /**
  * Combined tools: each joins data from more than one product (ads with Search Console, GA4 or Tag Manager). They obtain the
@@ -11,12 +12,13 @@ import { analyzeMetaTrafficQuality, analyzePaidSearchOnSite, checkUtmTagging, co
 export const crossTools: AnyTool[] = [
   analyzePaidOrganicOverlap,
   findOrganicKeywordGaps,
-  findConvertingTermsWithoutContent,
-  analyzeBrandSearchTrend,
   auditAdLandingPages,
+  findConvertingTermsWithoutContent,
   analyzeMetaTrafficQuality,
   compareConversionTracking,
   getChannelMix,
   checkUtmTagging,
   analyzePaidSearchOnSite,
+  analyzeBrandSearchTrend,
+  auditTrackingSetup,
 ] as AnyTool[];
