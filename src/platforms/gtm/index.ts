@@ -1,6 +1,8 @@
 import type { AnyTool } from "../../mcp/tool";
 import { auditGtmContainer } from "./tools/audit";
 import { getGtmLiveVersion, getGtmWorkspaceStatus, listGtmContainers, listGtmTags, listGtmTriggers, listGtmVariables } from "./tools/reads";
+import { createGtmTag, updateGtmTag } from "./tools/tags";
+import { createGtmTrigger } from "./tools/trigger";
 
 /** Tag Manager tools. A tool is added here only when it has a real handler, schemas and tests. */
 export const gtmTools: AnyTool[] = [
@@ -11,6 +13,9 @@ export const gtmTools: AnyTool[] = [
   listGtmVariables,
   getGtmWorkspaceStatus,
   auditGtmContainer,
+  createGtmTag,
+  updateGtmTag,
+  createGtmTrigger,
 ] as AnyTool[];
 
 /**
