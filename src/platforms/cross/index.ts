@@ -1,8 +1,24 @@
 import type { AnyTool } from "../../mcp/tool";
+import { analyzeMetaTrafficQuality, analyzePaidSearchOnSite, checkUtmTagging, compareConversionTracking, getChannelMix } from "./analytics";
+import { auditAdLandingPages } from "./landing";
+import { analyzeBrandSearchTrend, analyzePaidOrganicOverlap, findConvertingTermsWithoutContent, findOrganicKeywordGaps } from "./search";
+import { auditTrackingSetup } from "./tracking";
 
 /**
  * Combined tools: each joins data from more than one product (ads with Search Console, GA4 or Tag Manager). They obtain the
  * second product's clients through ctx.linked(platform) or ctx.accountFor(platform, id), never by building clients
- * themselves. A tool is added here only when it has a real handler, schemas and tests.
+ * themselves. Rules, joins and caps: docs/superpowers/plans/2026-11-10-cross-plan.md.
  */
-export const crossTools: AnyTool[] = [] as AnyTool[];
+export const crossTools: AnyTool[] = [
+  analyzePaidOrganicOverlap,
+  findOrganicKeywordGaps,
+  auditAdLandingPages,
+  findConvertingTermsWithoutContent,
+  analyzeMetaTrafficQuality,
+  compareConversionTracking,
+  getChannelMix,
+  checkUtmTagging,
+  analyzePaidSearchOnSite,
+  analyzeBrandSearchTrend,
+  auditTrackingSetup,
+] as AnyTool[];
