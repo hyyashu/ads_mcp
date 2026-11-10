@@ -79,7 +79,9 @@ export class GoogleAdsClient {
    */
   async sendRpc<T = Row>(path: string, body: Row): Promise<T> {
     const p = path.replace("{customer}", this.o.customerId);
-    if (!new RegExp(`^customers/${this.o.customerId}/[A-Za-z]+:(create|remove|update)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
+    // Resource-level actions: ExperimentService ScheduleExperiment / EndExperiment / PromoteExperiment on one experiment.
+    const action = new RegExp(`^customers/${this.o.customerId}/experiments/\\d{1,20}:(scheduleExperiment|endExperiment|promoteExperiment)$`);
+    if (!new RegExp(`^customers/${this.o.customerId}/[A-Za-z]+:(create|remove|update)$`).test(p) && !action.test(p)) throw new ToolError("internal", "invalid mutating rpc path");
     const base = await this.base();
     this.assertNotAborted();
     this.sent++;

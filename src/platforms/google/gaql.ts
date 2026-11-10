@@ -68,6 +68,7 @@ export class Gaql {
   private conds: string[] = [];
   private order: string[] = [];
   private max?: number;
+  private params: string[] = [];
 
   select(...fields: string[]): this {
     for (const f of fields) if (!FIELD.test(f)) throw new GaqlError(`invalid field name: ${f}`, "internal");
@@ -94,9 +95,14 @@ export class Gaql {
     this.max = n;
     return this;
   }
+  /** Query PARAMETERS from a fixed set, e.g. include_drafts = true (draft and in-design campaigns are hidden without it). */
+  parameters(...params: ("include_drafts = true" | "omit_unselected_resource_names = true")[]): this {
+    this.params.push(...params);
+    return this;
+  }
   toString(): string {
     if (!this.resource || this.fields.length === 0) throw new GaqlError("a query needs fields and a resource", "internal");
-    return [`SELECT ${this.fields.join(", ")}`, `FROM ${this.resource}`, this.conds.length ? `WHERE ${this.conds.join(" AND ")}` : "", this.order.length ? `ORDER BY ${this.order.join(", ")}` : "", this.max ? `LIMIT ${this.max}` : ""].filter(Boolean).join(" ");
+    return [`SELECT ${this.fields.join(", ")}`, `FROM ${this.resource}`, this.conds.length ? `WHERE ${this.conds.join(" AND ")}` : "", this.order.length ? `ORDER BY ${this.order.join(", ")}` : "", this.max ? `LIMIT ${this.max}` : "", this.params.length ? `PARAMETERS ${this.params.join(", ")}` : ""].filter(Boolean).join(" ");
   }
 }
 
