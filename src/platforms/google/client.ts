@@ -87,6 +87,17 @@ export class GoogleAdsClient {
   }
 
   /**
+   * Sends a conversion upload (ConversionUploadService / ConversionAdjustmentUploadService), e.g.
+   * POST customers/{id}:uploadClickConversions. Counted and never retried, exactly like mutate().
+   */
+  async upload<T = Row>(method: "uploadClickConversions" | "uploadCallConversions" | "uploadConversionAdjustments", body: Row): Promise<T> {
+    const base = await this.base();
+    this.assertNotAborted();
+    this.sent++;
+    return this.o.http.call<T>({ ...base, path: `customers/${this.o.customerId}:${method}`, body, idempotent: false });
+  }
+
+  /**
    * Calls a read-only RPC that is not a GAQL search, e.g. "geoTargetConstants:suggest" or
    * "customers/{id}:generateKeywordIdeas" (pass `{customer}` to have the account id filled in). Retried like reads.
    * Never use it for anything that changes an account: those go through mutate().

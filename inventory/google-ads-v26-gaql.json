@@ -7134,6 +7134,51 @@
 "from_metrics_segments": [],
 "segmenting": []
 },
+"conversion_value_rule_set": {
+"attributed": [
+"customer"
+],
+"fields": {
+"conversion_value_rule_set.attachment_type": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.campaign": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.conversion_action_categories": {
+"filterable": false,
+"selectable": true
+},
+"conversion_value_rule_set.conversion_value_rules": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.dimensions": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.id": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.owner_customer": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule_set.status": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "currency_constant": {
 "attributed": [],
 "fields": {
