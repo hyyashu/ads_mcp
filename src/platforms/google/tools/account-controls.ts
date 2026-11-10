@@ -206,9 +206,8 @@ const IP_LIMIT = 500; // CustomerNegativeCriterion.ip_block: "You can exclude up
 export const addAccountExclusions = stateWrite({
   name: "add_account_exclusions",
   title: "Add account-level exclusions",
-  // Declared at the tier inventory/mapping.ts plans (write); the approval's risk comes from the change set, whose effects
-  // make it high impact (see build).
-  risk: "write",
+  // High impact as planned (inventory/mapping.ts); the change set's effects also set each approval's risk (see build).
+  risk: "high_impact",
   description:
     "Adds account-level exclusions after approval. They apply to EVERY campaign in the account, so this is high impact. Types: placement (website domain or URL, at most 250 characters and 2 levels deep), youtube_channel (channel id), youtube_video (11-character video id), mobile_application (1-<App Store id> for iOS, 2-<package name> for Android), mobile_app_category (mobile app category constant id), content_label (e.g. SEXUALLY_SUGGESTIVE, PARKED_DOMAIN, BRAND_SUITABILITY_POLITICS), ip_block (IP address or CIDR block; at most 500 per account), negative_keyword_list (an ACCOUNT_LEVEL_NEGATIVE_KEYWORDS shared set id; at most one per account) and placement_list (a NEGATIVE_PLACEMENTS shared set id). Exclusions already in place are skipped. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, exclusions: z.array(exclusionItem).min(1).max(200) }),
@@ -381,9 +380,8 @@ export const updateTrackingSettings = stateWrite({
 export const setAutoTagging = stateWrite({
   name: "set_auto_tagging",
   title: "Turn auto-tagging on or off",
-  // Declared at the tier inventory/mapping.ts plans (write); the approval's risk comes from the change set, whose effects
-  // make it high impact (see build).
-  risk: "write",
+  // High impact as planned (inventory/mapping.ts); the change set's effects also set each approval's risk (see build).
+  risk: "high_impact",
   description:
     "Turns auto-tagging on or off for the whole account, after approval. Auto-tagging adds a click id (gclid) to ad landing page URLs. Turning it OFF breaks GA4 attribution of Google Ads clicks and conversions imported from GA4, and offline conversion imports matched by gclid; leave it on unless you know why. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, enabled: z.boolean() }),
@@ -418,9 +416,8 @@ const SAME = (x: number | null, y: number | null) => (x === null || y === null ?
 export const setLocationBidModifiers = stateWrite({
   name: "set_location_bid_modifiers",
   title: "Set location bid adjustments",
-  // Declared at the tier inventory/mapping.ts plans (write); the approval's risk comes from the change set, whose effects
-  // make it high impact (see build).
-  risk: "write",
+  // High impact as planned (inventory/mapping.ts); the change set's effects also set each approval's risk (see build).
+  risk: "high_impact",
   description:
     "Sets or clears bid adjustments on a campaign's targeted locations, by criterion id (from get_campaign_targeting), after approval: 1.2 = +20%, 0.8 = -20%, range 0.1 to 10.0; null clears the adjustment. Only targeted (not excluded) LOCATION criteria of that campaign; radius targets are refused. Raising an adjustment is high impact; lowering one is not. Confirmed by re-reading.",
   input: z.object({

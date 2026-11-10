@@ -236,7 +236,7 @@ export const addDisplayKeywords = addDisplayCriteriaTool({
 export const addDisplayPlacements = addDisplayCriteriaTool({
   name: "add_display_placements",
   title: "Add Display placements",
-  description: "Adds managed placements to a Display ad group after approval: websites (domain), YouTube channels (channel id), YouTube videos (video id) or mobile apps (for example 1-com.example.app for Android, 2-123456 for iOS). Placements already on the ad group are skipped. Confirmed by re-reading.",
+  description: "Adds managed placements to a Display ad group after approval: websites (domain), YouTube channels (channel id), YouTube videos (video id) or mobile apps (for example 2-com.example.app for Android, 1-476943146 for iOS). Placements already on the ad group are skipped. Confirmed by re-reading.",
   types: ["PLACEMENT", "YOUTUBE_CHANNEL", "YOUTUBE_VIDEO", "MOBILE_APPLICATION"],
   item: placement,
   key: placementKey,
