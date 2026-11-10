@@ -11,7 +11,10 @@ const fake: FetchLike = async (url, init) => {
   if (url.endsWith("googleAds:search")) {
     queries.push(body.query);
     const from = /FROM ([a-z_]+)/.exec(body.query)![1]!;
-    return J({ results: search[from]?.(body.query) ?? [] });
+    // Phone metrics come from their own query (they cannot be combined with the interaction segment): split each fixture row.
+    const phone = body.query.includes("metrics.phone_calls");
+    const rows = (search[from]?.(body.query) ?? []) as any[];
+    return J({ results: rows.filter((r) => (phone ? r.campaignAsset?.fieldType ?? r.adGroupAsset?.fieldType ?? r.customerAsset?.fieldType : "") === (phone ? "CALL" : "")).map(({ segments, metrics, ...rest }) => ({ ...rest, ...(phone ? { metrics: { phoneCalls: metrics.phoneCalls, phoneImpressions: metrics.phoneImpressions } } : { segments, metrics: { ...metrics, phoneCalls: undefined, phoneImpressions: undefined } }) })) });
   }
   return J({ error: { code: 400, status: "INVALID_ARGUMENT", message: "no handler" } }, 400);
 };
@@ -46,9 +49,11 @@ describe("get_asset_performance", () => {
     expect(d.rows[0]).toMatchObject({ level: "campaign", campaign_id: "11", ad_group_id: null, asset_id: "500", field_type: "SITELINK", status: "ENABLED", content: { link_text: "Sale" }, performance: { impressions: 1000, clicks: 100, cost: 50, conversions: 5 }, clicks_on_asset: 30, conversions_on_asset: 3, phone_calls: 0 });
     expect(d.rows[1]).toMatchObject({ asset_id: "600", field_type: "CALL", phone_calls: 6, phone_impressions: 400 });
     expect(d.by_field_type).toEqual(expect.arrayContaining([expect.objectContaining({ field_type: "SITELINK", links: 1, clicks_on_asset: 30 })]));
-    const q = queries.find((x) => x.includes("FROM campaign_asset"))!;
-    expect(q).toContain("segments.asset_interaction_target.interaction_on_this_asset");
-    expect(q).toContain("campaign_asset.status != 'REMOVED'");
+    const [main, phone] = [queries.find((x) => x.includes("FROM campaign_asset") && !x.includes("phone_calls"))!, queries.find((x) => x.includes("FROM campaign_asset") && x.includes("phone_calls"))!];
+    expect(main).toContain("segments.asset_interaction_target.interaction_on_this_asset");
+    expect(main).toContain("campaign_asset.status != 'REMOVED'");
+    expect(phone).not.toContain("segments.asset_interaction_target");
+    expect(phone).toContain("campaign_asset.field_type = 'CALL'");
   });
 
   it("reads all three levels by default; a campaign filter splits account-level assets by campaign", async () => {
@@ -74,5 +79,11 @@ describe("get_asset_performance", () => {
     expect(d.rows).toEqual([expect.objectContaining({ campaign_id: "12" })]);
     expect(d.truncated).toBe(true);
     expect(queries[0]).toContain("campaign_asset.field_type IN ('CALL')");
+  });
+
+  it("skips the phone query when call assets are not requested", async () => {
+    await data({ level: "campaign", field_types: ["SITELINK"] });
+    expect(queries).toHaveLength(1);
+    expect(queries[0]).not.toContain("phone_calls");
   });
 });

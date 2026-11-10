@@ -11,6 +11,7 @@ const index = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google
 export const SCHEMA_VERSION = index.version;
 /** Selection rules per FROM resource, from the v26 field reference pages (scripts/fetch-google-gaql-rules.py). */
 const rules = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google-ads-v26-gaql.json"), "utf8")) as {
+  segments_selectable_with?: Record<string, string[]>;
   resources: Record<string, { attributed: string[]; segmenting?: string[]; fields: Record<string, { selectable: boolean | null; filterable: boolean | null }>; from_metrics_segments: string[] }>;
 };
 /** Date segments a WHERE clause may filter on without selecting them (developers.google.com/google-ads/api/docs/query/structure). */
@@ -73,6 +74,14 @@ export function checkGaql(query: string): string[] {
       const owner = f.split(".")[0]!;
       const isSegment = (owner === "segments" && !CORE_DATE_SEGMENTS.has(f)) || segmenting.has(owner);
       if (isSegment && !selected.has(f)) problems.push(`${f} is filtered in WHERE but not selected (FROM ${from} treats it as a segment)`);
+    }
+    // Every segment in the query must be selectable with each selected metric and segment (its "Selectable with" list on
+    // the v26 segments reference page). A segment missing from the record is not checked.
+    const compat = rules.segments_selectable_with ?? {};
+    for (const seg of new Set([...selected, ...fieldsIn(where)])) {
+      const ok = seg.startsWith("segments.") ? compat[seg] : undefined;
+      if (!ok) continue;
+      for (const f of selected) if (f !== seg && (f.startsWith("metrics.") || f.startsWith("segments.")) && !ok.includes(f)) problems.push(`${f} cannot be selected with ${seg}`);
     }
     // Selecting a core date segment requires a finite range on one in WHERE.
     if ([...selected].some((f) => CORE_DATE_SEGMENTS.has(f)) && !fieldsIn(where).some((f) => CORE_DATE_SEGMENTS.has(f)))

@@ -2,6 +2,7 @@
 
 Usage: python3 scripts/fetch-google-gaql-rules.py v26 campaign ad_group ...
        python3 scripts/fetch-google-gaql-rules.py v26 --refresh   (refetch every recorded resource)
+       python3 scripts/fetch-google-gaql-rules.py v26 --segments  (record which metrics and segments each segment can be selected with)
 Source pages: https://developers.google.com/google-ads/api/fields/<version>/<resource>
 
 For each resource: the metrics and segments usable with it in FROM, the attributed resources (whose fields may be selected alongside it without segmenting), the
@@ -14,8 +15,10 @@ version, resources = sys.argv[1], sys.argv[2:]
 path = f"inventory/google-ads-{version}-gaql.json"
 data = json.load(open(path)) if os.path.exists(path) else {"version": version, "resources": {}}
 refresh = "--refresh" in resources
+segments = "--segments" in resources
+resources = [r for r in resources if r not in ("--refresh", "--segments")]
 if refresh:
-    resources = sorted(set(r for r in resources if r != "--refresh") | set(data["resources"]))
+    resources = sorted(set(resources) | set(data["resources"]))
 
 def fetch(url):
     with urllib.request.urlopen(url, timeout=120) as r:
@@ -58,3 +61,16 @@ for res in resources:
     data["resources"][res] = {"attributed": attributed, "segmenting": segmenting, "fields": fields, "from_metrics_segments": from_ok}
     print(res, len(attributed), "attributed,", len(segmenting), "segmenting,", len(fields), "fields", flush=True)
     json.dump(data, open(path, "w"), indent=0, sort_keys=True)  # saved after each resource
+
+if segments:
+    # Each segment's "Selectable with" list on the segments reference page: the metrics and segments it can be combined with.
+    # (Resources are listed too but not recorded: attributed resources are never listed, so the FROM rules cover those.)
+    t = " ".join(text(fetch(f"https://developers.google.com/google-ads/api/fields/{version}/segments")))
+    compat = {}
+    for m in re.finditer(r"(segments\.[a-z0-9_.]+) Field description (.*?)(?=segments\.[a-z0-9_.]+ Field description|$)", t):
+        sel = m.group(2).split("can be selected with this field:", 1)
+        if len(sel) == 2:
+            compat[m.group(1)] = sorted(set(re.findall(r"(?<![\w.])((?:metrics|segments)\.[a-z0-9_.]+)", sel[1])) - {m.group(1)})
+    data["segments_selectable_with"] = compat
+    print(len(compat), "segments recorded")
+    json.dump(data, open(path, "w"), indent=0, sort_keys=True)

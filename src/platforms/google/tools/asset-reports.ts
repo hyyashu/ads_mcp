@@ -14,7 +14,9 @@ const REPORT_FIELD_TYPES = ["SITELINK", "CALLOUT", "STRUCTURED_SNIPPET", "CALL",
 const LEVELS = { account: "customer_asset", campaign: "campaign_asset", ad_group: "ad_group_asset" } as const;
 type Level = keyof typeof LEVELS;
 const ON_ASSET = "segments.asset_interaction_target.interaction_on_this_asset";
-const METRICS = ["metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value", "metrics.phone_calls", "metrics.phone_impressions"];
+const METRICS = ["metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value"];
+/** Not selectable with the interaction segment (v26 segments reference), so read in a second query for call assets only. */
+const PHONE_METRICS = ["metrics.phone_calls", "metrics.phone_impressions"];
 
 interface Acc {
   level: Level;
@@ -35,7 +37,7 @@ export const getAssetPerformance = googleRead({
   name: "get_asset_performance",
   title: "Asset (extension) performance",
   description:
-    "Performance of each sitelink, callout, structured snippet, phone number (call asset) and other extension for a period, at account, campaign and ad group level. For each link: impressions, clicks, cost and conversions of the ads it served with, plus clicks and conversions on the asset itself (for example on that sitelink) and phone calls. Optionally one level, some field types or some campaigns; with campaigns, account-level assets are split by campaign. by_field_type adds up the measures that do not double count. Removed links are left out. Fetched live.",
+    "Performance of each sitelink, callout, structured snippet, phone number (call asset) and other extension for a period, at account, campaign and ad group level. For each link: impressions, clicks, cost and conversions of the ads it served with, plus clicks and conversions on the asset itself (for example on that sitelink), and phone calls and phone impressions for call assets. Optionally one level, some field types or some campaigns; with campaigns, account-level assets are split by campaign. by_field_type adds up the measures that do not double count. Removed links are left out. Fetched live.",
   input: z
     .object({
       account_id: accountId,
@@ -72,23 +74,24 @@ export const getAssetPerformance = googleRead({
     const types = a.field_types ?? [...REPORT_FIELD_TYPES];
     const levels: Level[] = a.level === "all" ? ["account", "campaign", "ad_group"] : [a.level];
     const ids = a.campaign_ids?.length ? a.campaign_ids : null;
-    const query = (level: Level) => {
+    const query = (level: Level, phone: boolean) => {
       const res = LEVELS[level];
       // campaign is a segmenting resource of customer_asset and ad_group_asset: filtering on campaign.id requires selecting it.
       const byCampaign = level === "ad_group" || (level === "account" && ids) ? ["campaign.id"] : [];
       const owner = level === "campaign" ? ["campaign_asset.campaign"] : level === "ad_group" ? ["ad_group_asset.ad_group"] : [];
       return ads.query(
         new Gaql()
-          .select(...owner, ...byCampaign, `${res}.field_type`, `${res}.status`, ...assetFields, ON_ASSET, ...METRICS)
+          .select(...owner, ...byCampaign, `${res}.field_type`, `${res}.status`, ...assetFields, ...(phone ? PHONE_METRICS : [ON_ASSET, ...METRICS]))
           .from(res)
           .where(dateClause(a))
-          .where(`${res}.field_type IN ${lit.list(types.map((t) => `'${t}'`))}`)
+          .where(phone ? `${res}.field_type = 'CALL'` : `${res}.field_type IN ${lit.list(types.map((t) => `'${t}'`))}`)
           .where(`${res}.status != 'REMOVED'`)
           .where(!ids ? undefined : level === "campaign" ? `campaign_asset.campaign IN ${lit.list(ids.map((c) => lit.str(`customers/${ads.customerId}/campaigns/${lit.id(c)}`)))}` : `campaign.id IN ${lit.list(ids.map(lit.id))}`),
         { maxRows: 10_000 },
       );
     };
-    const results = await Promise.all(levels.map(async (level) => ({ level, rows: await query(level) })));
+    const withPhone = types.includes("CALL");
+    const results = await Promise.all(levels.flatMap((level) => [query(level, false).then((rows) => ({ level, rows })), ...(withPhone ? [query(level, true).then((rows) => ({ level, rows }))] : [])]));
 
     const acc = new Map<string, Acc>();
     for (const { level, rows } of results) {
@@ -100,6 +103,7 @@ export const getAssetPerformance = googleRead({
         const field_type = str(r, `${res}.field_type`);
         const key = [level, campaign_id, ad_group_id, asset_id, field_type].join("|");
         const g = acc.get(key) ?? { level, campaign_id, ad_group_id, asset_id, field_type, status: str(r, `${res}.status`), content: assetContent(r), t: zero(), clicks_on_asset: 0, conversions_on_asset: 0, phone_calls: 0, phone_impressions: 0 };
+        // Phone rows carry no other metrics, so adding them changes nothing else.
         add(g.t, r);
         if (pick(r, ON_ASSET) === true) {
           g.clicks_on_asset += num(pick(r, "metrics.clicks"));
