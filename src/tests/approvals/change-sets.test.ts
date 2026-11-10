@@ -48,7 +48,7 @@ describe("direction-aware risk", () => {
     expect(r.reason).toContain("destructive");
   });
 
-  it(`more than ${BULK_THRESHOLD} resources needs a second approver even when pausing`, () => {
+  it(`more than ${BULK_THRESHOLD} resources is high impact even when pausing`, () => {
     const many = (n: number) => Array.from({ length: n }, (_, i) => c("pause", String(i)));
     expect(effectiveRisk("write", many(BULK_THRESHOLD)).risk).toBe("write");
     const r = effectiveRisk("write", many(BULK_THRESHOLD + 1));

@@ -44,7 +44,7 @@ export async function googleHarness(label: string, fetch: FetchLike, o: { images
     /** Calls a tool as the tenant owner with read and write scopes, against the connected account. */
     run: (name: string, args: Record<string, unknown>) =>
       runTool(deps, deps.registry.get(name)!, { account_id: accountId, ...args }, { tenantId, userId: owner, role: "owner", scopes: ["ads:read", "ads:write"] }),
-    /** Approves (and executes) a pending request as `userId` (the owner or the second approver). */
+    /** Approves (and executes) a pending request as `userId` (any owner or admin, the requester included). */
     approveAs: (approvalId: string, userId: string) =>
       approvals.decide({ tenantId, approvalId, decider: { userId, role: userId === owner ? "owner" : "admin" }, decision: "approve", execute: createExecutor(deps) }),
   };

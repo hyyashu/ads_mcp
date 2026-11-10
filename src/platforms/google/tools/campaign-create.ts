@@ -9,7 +9,7 @@ import { stateWrite, temp } from "./write-kit";
 /**
  * Campaign creation. Every campaign is created PAUSED, together with its own (non-shared) budget and optional location
  * and language targeting, in one atomic GoogleAdsService.Mutate request with temporary ids (as Google's guides
- * recommend). It starts serving only after resume_campaign, which needs a second approver.
+ * recommend). It starts serving only after resume_campaign, which is high impact.
  *
  * Verified against the v26 guides (2026-11-04): Performance Max supports only MaximizeConversions (optional target CPA)
  * and MaximizeConversionValue (optional target ROAS); brand guidelines are enabled by default for new PMax campaigns

@@ -83,7 +83,7 @@ export const campaignFields = {
     account_id: accountId,
     campaign_id: metaId,
     name: nameInput.optional(),
-    status: statusInput.optional().describe("ACTIVE needs a second approver: it can start spend."),
+    status: statusInput.optional().describe("ACTIVE is high impact: it can start spend."),
     daily_budget: amount.optional().describe("Only for a campaign that already uses a daily campaign budget."),
     lifetime_budget: amount.optional().describe("Only for a campaign that already uses a lifetime campaign budget."),
     spend_cap: z.union([amount, z.literal("remove")]).optional().describe('New spend cap in the account currency, or "remove" to remove the cap.'),
@@ -179,7 +179,7 @@ export const campaignEditDef = stateDef({
   title: "Update Meta campaign",
   risk: "high_impact",
   description:
-    'Changes one Meta campaign after human approval: name, status (ACTIVE or PAUSED), the campaign budget (daily or lifetime, only on a campaign that already uses that kind of campaign budget; budgets on ad sets are changed with update_meta_ad_set), the spend cap (set, change, or "remove"), or the bid strategy (to LOWEST_COST_WITHOUT_CAP only, on a campaign budget). Only fields that differ are sent, in one request. Activating, raising a budget, raising or removing the spend cap and changing the bid strategy need a second approver; pausing, lowering, setting a first cap and renaming do not. End dates are set on ad sets. Amounts are in the account currency. Deleted or archived campaigns are refused. Confirmed by re-reading the campaign; never retried automatically.',
+    'Changes one Meta campaign after human approval: name, status (ACTIVE or PAUSED), the campaign budget (daily or lifetime, only on a campaign that already uses that kind of campaign budget; budgets on ad sets are changed with update_meta_ad_set), the spend cap (set, change, or "remove"), or the bid strategy (to LOWEST_COST_WITHOUT_CAP only, on a campaign budget). Only fields that differ are sent, in one request. Activating, raising a budget, raising or removing the spend cap and changing the bid strategy are high impact; pausing, lowering, setting a first cap and renaming do not. End dates are set on ad sets. Amounts are in the account currency. Deleted or archived campaigns are refused. Confirmed by re-reading the campaign; never retried automatically.',
   input: campaignInput,
   output: z.object({ campaign_id: z.string(), name: z.string().nullable(), status: z.string().nullable(), daily_budget: z.number().nullable(), lifetime_budget: z.number().nullable(), spend_cap: z.number().nullable(), bid_strategy: z.string().nullable() }),
   read: (a, m) => readCampaign(m, a.campaign_id),
@@ -243,12 +243,12 @@ export const adSetFields = {
     account_id: accountId,
     ad_set_id: metaId,
     name: nameInput.optional(),
-    status: statusInput.optional().describe("ACTIVE needs a second approver."),
+    status: statusInput.optional().describe("ACTIVE is high impact."),
     daily_budget: amount.optional().describe("Only for an ad set that owns a daily budget (not under a campaign budget)."),
     lifetime_budget: amount.optional().describe("Only for an ad set that owns a lifetime budget (not under a campaign budget)."),
     bid_amount: amount.optional().describe("Bid cap or cost cap, in the account currency. Only with LOWEST_COST_WITH_BID_CAP or COST_CAP."),
     bid_strategy: z.enum(ADSET_STRATEGIES).optional().describe("Not on ad sets under a campaign budget (set it on the campaign). Cap strategies need a bid_amount."),
-    end_time: isoTime.optional().describe("New end, in the future and after the start. A later end needs a second approver; an earlier one does not."),
+    end_time: isoTime.optional().describe("New end, in the future and after the start. A later end is high impact; an earlier one does not."),
 };
 const adSetInput = editInput(adSetFields);
 type AdSetIn = z.infer<typeof adSetInput>;
@@ -295,7 +295,7 @@ export const adSetEditDef = stateDef({
   title: "Update Meta ad set",
   risk: "high_impact",
   description:
-    "Changes one Meta ad set after human approval: name, status (ACTIVE or PAUSED), its own budget (daily or lifetime, only when the ad set owns the budget and keeps the same type; ad sets under a campaign budget are refused), bid strategy (LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP or COST_CAP; not under a campaign budget; cap strategies need a bid amount), bid amount (with a cap strategy), and end time (future, after the start). Only fields that differ are sent, in one request. Activating, raising a budget or bid, changing the bid strategy and moving the end later need a second approver; pausing, lowering, renaming, setting an end on an open-ended ad set and moving the end earlier do not. Meta rejects budget cuts below 110% of what was already spent. Targeting cannot be edited with this tool. Amounts are in the account currency. Confirmed by re-reading the ad set; never retried automatically.",
+    "Changes one Meta ad set after human approval: name, status (ACTIVE or PAUSED), its own budget (daily or lifetime, only when the ad set owns the budget and keeps the same type; ad sets under a campaign budget are refused), bid strategy (LOWEST_COST_WITHOUT_CAP, LOWEST_COST_WITH_BID_CAP or COST_CAP; not under a campaign budget; cap strategies need a bid amount), bid amount (with a cap strategy), and end time (future, after the start). Only fields that differ are sent, in one request. Activating, raising a budget or bid, changing the bid strategy and moving the end later are high impact; pausing, lowering, renaming, setting an end on an open-ended ad set and moving the end earlier do not. Meta rejects budget cuts below 110% of what was already spent. Targeting cannot be edited with this tool. Amounts are in the account currency. Confirmed by re-reading the ad set; never retried automatically.",
   input: adSetInput,
   output: z.object({ ad_set_id: z.string(), name: z.string().nullable(), status: z.string().nullable(), daily_budget: z.number().nullable(), lifetime_budget: z.number().nullable(), bid_amount: z.number().nullable(), bid_strategy: z.string().nullable(), end_time: z.string().nullable() }),
   read: (a, m) => readAdSet(m, a.ad_set_id),
@@ -332,7 +332,7 @@ export const adEditDef = stateDef({
   title: "Update Meta ad",
   risk: "high_impact",
   description:
-    "Renames one Meta ad or changes its status (ACTIVE or PAUSED) after human approval. Activating needs a second approver; pausing and renaming do not. The creative (image, video, text, link) cannot be edited in place: Meta requires a new creative and a new ad, which the creation tools handle. Deleted or archived ads are refused. Confirmed by re-reading the ad; never retried automatically.",
+    "Renames one Meta ad or changes its status (ACTIVE or PAUSED) after human approval. Activating is high impact; pausing and renaming do not. The creative (image, video, text, link) cannot be edited in place: Meta requires a new creative and a new ad, which the creation tools handle. Deleted or archived ads are refused. Confirmed by re-reading the ad; never retried automatically.",
   input: editInput(adFields),
   output: z.object({ ad_id: z.string(), name: z.string().nullable(), status: z.string().nullable() }),
   read: (a, m) => readAd(m, a.ad_id),

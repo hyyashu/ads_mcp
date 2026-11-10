@@ -165,7 +165,7 @@ export const updateKeyword = googleWrite({
   name: "update_keyword",
   title: "Update keyword",
   risk: "write",
-  description: "Pauses or enables a keyword and/or changes its max CPC bid, after approval. Enabling it or raising the bid needs a second approver. Keyword text and match type are immutable in Google Ads: to change them, remove the keyword and add a new one. Confirmed by re-reading the keyword.",
+  description: "Pauses or enables a keyword and/or changes its max CPC bid, after approval. Enabling it or raising the bid is high impact. Keyword text and match type are immutable in Google Ads: to change them, remove the keyword and add a new one. Confirmed by re-reading the keyword.",
   input: z.object({ account_id: accountId, ad_group_id: id, criterion_id: id, status: z.enum(["ENABLED", "PAUSED"]).optional(), cpc_bid: z.number().positive().max(10_000).optional() }).refine((v) => v.status !== undefined || v.cpc_bid !== undefined, "give status and/or cpc_bid"),
   output: z.object({ criterion_id: z.string(), text: z.string(), match_type: z.string(), status: z.string(), cpc_bid: Money.nullable() }),
   plan: async (a, ctx) => {
@@ -227,7 +227,7 @@ export const bulkUpdateKeywordStatus = googleWrite({
   name: "bulk_update_keyword_status",
   title: "Pause or enable keywords in bulk",
   risk: "high_impact",
-  description: "Pauses or enables several keywords in one ad group after approval. Enabling keywords, or changing more than 20, needs a second approver. Keywords already in the requested status are left alone. Enabling can start spend. Applied in one atomic request and confirmed by re-reading.",
+  description: "Pauses or enables several keywords in one ad group after approval. Enabling keywords, or changing more than 20, is high impact. Keywords already in the requested status are left alone. Enabling can start spend. Applied in one atomic request and confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: id, criterion_ids: z.array(id).min(1).max(50), status: z.enum(["ENABLED", "PAUSED"]) }),
   output: z.object({ updated: z.number(), criterion_ids: z.array(z.string()), status: z.string() }),
   plan: async (a, ctx) => {

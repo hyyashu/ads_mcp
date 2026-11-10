@@ -88,7 +88,7 @@ function bulkStatusTool(o: { name: "bulk_update_campaign_status" | "bulk_update_
     name: o.name,
     title: `Pause or enable ${label}s in bulk`,
     risk: "high_impact",
-    description: `Pauses or enables up to 50 ${label}s in one atomic request, after approval. Enabling (which can start spend) or changing more than 20 needs a second approver. ${label[0]!.toUpperCase()}${label.slice(1)}s already in the requested status are left alone; removed ones are refused. Confirmed by re-reading.`,
+    description: `Pauses or enables up to 50 ${label}s in one atomic request, after approval. Enabling (which can start spend) or changing more than 20 is high impact. ${label[0]!.toUpperCase()}${label.slice(1)}s already in the requested status are left alone; removed ones are refused. Confirmed by re-reading.`,
     input: z.object({ account_id: accountId, ids: z.array(idSchema).min(1).max(50), status: z.enum(["ENABLED", "PAUSED"]) }),
     output: z.object({ status: z.string(), updated: z.array(z.string()), unchanged: z.array(z.string()) }),
     read: async (a, ads) => {
@@ -228,7 +228,7 @@ export const updateConversionAction = stateWrite({
   name: "update_conversion_action",
   title: "Update conversion action",
   risk: "high_impact",
-  description: "Changes a conversion action's name, status (ENABLED or HIDDEN), whether it is a primary goal, counting, default value, or click lookback window, after approval. Changing what counts as a primary goal, counting or value changes what Smart Bidding optimises, so it needs a second approver; a rename does not. Confirmed by re-reading.",
+  description: "Changes a conversion action's name, status (ENABLED or HIDDEN), whether it is a primary goal, counting, default value, or click lookback window, after approval. Changing what counts as a primary goal, counting or value changes what Smart Bidding optimises, so it is high impact; a rename does not. Confirmed by re-reading.",
   input: z
     .object({ account_id: accountId, conversion_action_id: idSchema, name: clean(100).optional(), status: z.enum(["ENABLED", "HIDDEN"]).optional(), primary_for_goal: z.boolean().optional(), counting_type: z.enum(["ONE_PER_CLICK", "MANY_PER_CLICK"]).optional(), default_value: z.number().min(0).max(1_000_000).optional(), click_lookback_days: z.number().int().min(1).max(90).optional() })
     .refine((v) => Object.keys(v).some((k) => !["account_id", "conversion_action_id"].includes(k)), "give at least one setting"),

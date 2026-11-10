@@ -94,7 +94,7 @@ const ok = async (name: string, args: Record<string, unknown>, by?: string) => {
 };
 
 describe("locations and radius", () => {
-  it("adds targets and exclusions, changes match type; widening needs a second approver", async () => {
+  it("adds targets and exclusions, changes match type; widening is high impact", async () => {
     const r = await run("update_location_targeting", { campaign_id: "11", add_targeted: ["2826"], add_excluded: ["1023191"], location_match: "PRESENCE_OR_INTEREST" });
     expect(r.approval?.risk).toBe("high_impact");
     const done = await approve(r.approval!.approval_id);

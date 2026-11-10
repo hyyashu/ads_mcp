@@ -39,7 +39,7 @@ const approve = (id: string, by = kit.second) => kit.approveAs(id, by);
 const common = { daily_budget: 50, contains_eu_political_advertising: false };
 
 describe("campaign creation", () => {
-  it("Search: budget, PAUSED campaign and targeting in one atomic, schema-valid request; second approver", async () => {
+  it("Search: budget, PAUSED campaign and targeting in one atomic, schema-valid request", async () => {
     const r = await run("create_search_campaign", { ...common, name: "Generic", bidding_strategy: "MAXIMIZE_CONVERSIONS", target_cpa: 20, location_ids: ["2840"], language_ids: ["1000"], start_date: "2026-12-01" });
     expect(r.approval).toMatchObject({ risk: "high_impact", change_set: { changes: [{ effect: "create" }, { field: "daily_budget", before: null, after: 50, effect: "increase_spend" }] } });
     const done = await approve(r.approval!.approval_id);

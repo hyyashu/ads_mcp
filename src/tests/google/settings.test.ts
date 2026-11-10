@@ -140,7 +140,7 @@ describe("update_campaign", () => {
     expect(calls).toHaveLength(0);
   });
 
-  it("needs a second approver and refuses on drift", async () => {
+  it("is high impact and refuses on drift", async () => {
     const r = await run("update_campaign", { campaign_id: "11", daily_budget: 70 + n });
     budgets["11"] = "1000000";
     const done = await approve(r.approval!.approval_id);
@@ -157,7 +157,7 @@ describe("ad group settings", () => {
     expect((await run("get_ad_group_settings", { ad_group_ids: ["1 OR 1=1"] })).error?.code).toBe("invalid_argument");
   });
 
-  it("updates name, CPC bid and target CPA after approval (raising bids needs a second approver)", async () => {
+  it("updates name, CPC bid and target CPA after approval (raising bids is high impact)", async () => {
     const r = await run("update_ad_group_settings", { ad_group_id: "21", name: `Core ${n}`, cpc_bid: 2 + n, target_cpa: 12 });
     expect(r.approval?.risk).toBe("high_impact");
     const done = await approve(r.approval!.approval_id, second);

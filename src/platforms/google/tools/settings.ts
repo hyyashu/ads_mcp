@@ -99,7 +99,7 @@ export const updateCampaign = googleWrite({
   name: "update_campaign",
   title: "Update campaign",
   risk: "high_impact",
-  description: "Renames a campaign and/or changes its daily budget after approval. Raising the budget needs a second approver; lowering it or renaming does not. A budget shared by several campaigns is refused, because changing it would change the other campaigns too. Name and budget are applied in one atomic request and confirmed by re-reading.",
+  description: "Renames a campaign and/or changes its daily budget after approval. Raising the budget is high impact; lowering it or renaming does not. A budget shared by several campaigns is refused, because changing it would change the other campaigns too. Name and budget are applied in one atomic request and confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: id, name: z.string().min(1).max(255).regex(/^[^\u0000\n\r]+$/, "no line breaks").optional(), daily_budget: z.number().positive().max(10_000_000).optional().describe("Daily budget in the account's currency.") }).refine((v) => v.name !== undefined || v.daily_budget !== undefined, "give name and/or daily_budget"),
   output: z.object({ campaign_id: z.string(), name: z.string().nullable(), daily_budget: Money.nullable() }),
   plan: async (a, ctx) => {
@@ -179,7 +179,7 @@ export const updateAdGroupSettings = googleWrite({
   name: "update_ad_group_settings",
   title: "Update ad group settings",
   risk: "write",
-  description: "Renames an ad group and/or changes its max CPC bid or target CPA after approval. Raising a bid or target CPA needs a second approver. The bid only takes effect under bidding strategies that use it. Confirmed by re-reading the ad group.",
+  description: "Renames an ad group and/or changes its max CPC bid or target CPA after approval. Raising a bid or target CPA is high impact. The bid only takes effect under bidding strategies that use it. Confirmed by re-reading the ad group.",
   input: z.object({ account_id: accountId, ad_group_id: id, name: z.string().min(1).max(255).regex(/^[^\u0000\n\r]+$/, "no line breaks").optional(), cpc_bid: z.number().positive().max(10_000).optional().describe("Max CPC in the account's currency."), target_cpa: z.number().positive().max(1_000_000).optional().describe("Target CPA in the account's currency.") }).refine((v) => v.name !== undefined || v.cpc_bid !== undefined || v.target_cpa !== undefined, "give at least one setting"),
   output: z.object({ ad_group_id: z.string(), name: z.string().nullable(), cpc_bid: Money.nullable(), target_cpa: Money.nullable() }),
   plan: async (a, ctx) => {

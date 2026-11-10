@@ -83,7 +83,7 @@ describe("pause/resume campaign and ad group", () => {
     expect(state.ad_group["21"]).toBe("PAUSED");
   });
 
-  it("resume needs a second approver", async () => {
+  it("resume is high impact", async () => {
     const r = await request("resume_campaign", { campaign_id: "12" });
     expect(r.approval?.risk).toBe("high_impact");
     expect(state.campaign["12"]).toBe("PAUSED");
