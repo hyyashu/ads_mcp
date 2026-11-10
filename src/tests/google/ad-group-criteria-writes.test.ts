@@ -93,10 +93,9 @@ describe("audiences", () => {
     expect((await run("add_display_audiences", { ad_group_id: "21", audiences: [{ kind: "user_list", id: "1" }] })).error?.message).toContain("SEARCH campaign");
   });
 
-  it("replace_demandgen_audiences swaps the whole set atomically and needs a second approver", async () => {
+  it("replace_demandgen_audiences swaps the whole set atomically and is high impact", async () => {
     const r = await run("replace_demandgen_audiences", { ad_group_id: "71", audiences: [{ kind: "user_list", id: "600" }] });
     expect(r.approval?.risk).toBe("high_impact");
-    await expect(approve(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("executed");
     expect(done.result).toEqual({ ad_group_id: "71", audiences: ["USER_LIST:600"] });
@@ -105,7 +104,7 @@ describe("audiences", () => {
 });
 
 describe("demographics", () => {
-  it("excluding narrows (one approver); including again widens (second approver)", async () => {
+  it("excluding narrows; including again widens", async () => {
     const r = await run("update_display_demographics", { ad_group_id: "61", exclude: { age_ranges: ["AGE_RANGE_18_24"], genders: ["UNDETERMINED"] } });
     expect(r.approval?.risk).toBe("write");
     expect((await approve(r.approval!.approval_id)).status).toBe("executed");

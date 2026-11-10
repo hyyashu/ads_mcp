@@ -302,7 +302,7 @@ export const createMetaCatalogCampaign = metaWrite({
   name: "create_meta_catalog_campaign",
   title: "Create Meta catalog campaign",
   risk: "high_impact",
-  description: `Creates a complete Advantage+ catalog campaign after approval by a second person, all PAUSED: campaign (OUTCOME_SALES, promoted_object = the catalog), ad set (promoted_object = one product set of that catalog), template creative and ad. Optimization: ${GOAL_TEXT}. The catalog must be available to this ad account and be a commerce or home_listings catalog; home listings require the HOUSING special ad category, which enforces Meta's targeting restrictions. Template text may only use the documented tags: commerce ${TAG_TEXT.commerce}; home listings ${TAG_TEXT.home_listings}. Budget on the campaign or the ad set, daily or lifetime (lifetime needs end_time), lowest-cost bidding. Names must be unused. The four objects are created one by one and never retried; if a later step fails the ids already created (all PAUSED) are reported and nothing is deleted. Needs ads_management, business_management, catalog_management and pages_manage_ads.`,
+  description: `Creates a complete Advantage+ catalog campaign after a person approves it, all PAUSED: campaign (OUTCOME_SALES, promoted_object = the catalog), ad set (promoted_object = one product set of that catalog), template creative and ad. Optimization: ${GOAL_TEXT}. The catalog must be available to this ad account and be a commerce or home_listings catalog; home listings require the HOUSING special ad category, which enforces Meta's targeting restrictions. Template text may only use the documented tags: commerce ${TAG_TEXT.commerce}; home listings ${TAG_TEXT.home_listings}. Budget on the campaign or the ad set, daily or lifetime (lifetime needs end_time), lowest-cost bidding. Names must be unused. The four objects are created one by one and never retried; if a later step fails the ids already created (all PAUSED) are reported and nothing is deleted. Needs ads_management, business_management, catalog_management and pages_manage_ads.`,
   input: campaignInput,
   output: createdOut,
   permissions: AD_PERMS,
@@ -355,7 +355,7 @@ export const addMetaCatalogAdSet = metaWrite({
   name: "add_meta_catalog_ad_set",
   title: "Add Meta catalog ad set",
   risk: "high_impact",
-  description: `Adds a PAUSED catalog ad set to an existing OUTCOME_SALES catalog campaign of this ad account, after approval by a second person. The product set must belong to the campaign's catalog (taken from the campaign's existing catalog ad sets). Optimization: ${GOAL_TEXT}. Budget only when the campaign has no campaign budget. The campaign's special ad categories apply to targeting. The name must be unused in the campaign. This is also how to promote a different product set: an ad set's product set cannot be changed. Needs ads_management, business_management and catalog_management.`,
+  description: `Adds a PAUSED catalog ad set to an existing OUTCOME_SALES catalog campaign of this ad account, after a person approves it. The product set must belong to the campaign's catalog (taken from the campaign's existing catalog ad sets). Optimization: ${GOAL_TEXT}. Budget only when the campaign has no campaign budget. The campaign's special ad categories apply to targeting. The name must be unused in the campaign. This is also how to promote a different product set: an ad set's product set cannot be changed. Needs ads_management, business_management and catalog_management.`,
   input: adSetInput,
   output: z.object({ ad_set_id: z.string(), campaign_id: z.string(), status: z.literal("PAUSED") }),
   permissions: AD_SET_PERMS,
@@ -404,7 +404,7 @@ export const addMetaCatalogAd = metaWrite({
   name: "add_meta_catalog_ad",
   title: "Add Meta catalog ad",
   risk: "high_impact",
-  description: `Adds a PAUSED catalog ad to an existing catalog ad set of this ad account, after approval by a second person: a new template creative for the ad set's product set (Page, optional Instagram account, link, and text that may use the documented tags for the catalog's vertical: commerce ${TAG_TEXT.commerce}; home listings ${TAG_TEXT.home_listings}), then the ad. The ad name (also the creative's name) must be unused. The two objects are created one after the other and never retried; if the ad step fails the creative's id is reported. Needs ads_management, business_management, catalog_management and pages_manage_ads.`,
+  description: `Adds a PAUSED catalog ad to an existing catalog ad set of this ad account, after a person approves it: a new template creative for the ad set's product set (Page, optional Instagram account, link, and text that may use the documented tags for the catalog's vertical: commerce ${TAG_TEXT.commerce}; home listings ${TAG_TEXT.home_listings}), then the ad. The ad name (also the creative's name) must be unused. The two objects are created one after the other and never retried; if the ad step fails the creative's id is reported. Needs ads_management, business_management, catalog_management and pages_manage_ads.`,
   input: adInput,
   output: z.object({ ad_id: z.string(), creative_id: z.string(), ad_set_id: z.string(), status: z.literal("PAUSED") }),
   permissions: AD_PERMS,
@@ -450,7 +450,7 @@ export const updateMetaCatalogCampaign = catalogEdit(campaignEditDef, {
   name: "update_meta_catalog_campaign",
   title: "Update Meta catalog campaign",
   description:
-    'Changes one catalog campaign (one whose ad sets promote a product set) after human approval: name, status (ACTIVE or PAUSED), the campaign budget (daily or lifetime, only on a campaign that already uses that kind) and the spend cap (set, change or "remove"). Same rules as update_meta_campaign: only changed fields are sent, in one request; activating, raising a budget and raising or removing the spend cap need a second approver; pausing, lowering, setting a first cap and renaming do not. Other campaigns are refused. Confirmed by re-reading; never retried.',
+    'Changes one catalog campaign (one whose ad sets promote a product set) after human approval: name, status (ACTIVE or PAUSED), the campaign budget (daily or lifetime, only on a campaign that already uses that kind) and the spend cap (set, change or "remove"). Same rules as update_meta_campaign: only changed fields are sent, in one request; activating, raising a budget and raising or removing the spend cap are high impact; pausing, lowering, setting a first cap and renaming do not. Other campaigns are refused. Confirmed by re-reading; never retried.',
   input: editInput(catalogCampaignFields),
   check: async (a, m) => {
     await m.getOwned(a.campaign_id, ["id"], "campaign");
@@ -463,7 +463,7 @@ export const updateMetaCatalogAdSet = catalogEdit(adSetEditDef, {
   name: "update_meta_catalog_ad_set",
   title: "Update Meta catalog ad set",
   description:
-    "Changes one catalog ad set (its promoted_object names a product set) after human approval: name, status (ACTIVE or PAUSED), its own budget (daily or lifetime, not under a campaign budget) and end time. Same rules as update_meta_ad_set: only changed fields are sent; activating, raising the budget and moving the end later need a second approver. The product set cannot be changed: Meta's promoted_object is immutable after creation, so add a new ad set with add_meta_catalog_ad_set instead. Other ad sets are refused. Confirmed by re-reading; never retried.",
+    "Changes one catalog ad set (its promoted_object names a product set) after human approval: name, status (ACTIVE or PAUSED), its own budget (daily or lifetime, not under a campaign budget) and end time. Same rules as update_meta_ad_set: only changed fields are sent; activating, raising the budget and moving the end later are high impact. The product set cannot be changed: Meta's promoted_object is immutable after creation, so add a new ad set with add_meta_catalog_ad_set instead. Other ad sets are refused. Confirmed by re-reading; never retried.",
   input: editInput(catalogAdSetFields),
   check: async (a, m) => {
     const r = await m.getOwned(a.ad_set_id, ["id", "promoted_object"], "ad set");
@@ -475,7 +475,7 @@ export const updateMetaCatalogAd = catalogEdit(adEditDef, {
   name: "update_meta_catalog_ad",
   title: "Update Meta catalog ad",
   description:
-    "Renames one catalog ad (in an ad set that promotes a product set) or changes its status (ACTIVE or PAUSED) after human approval. Activating needs a second approver; pausing and renaming do not. The template creative cannot be edited in place: add a new ad with add_meta_catalog_ad. Other ads are refused. Confirmed by re-reading; never retried.",
+    "Renames one catalog ad (in an ad set that promotes a product set) or changes its status (ACTIVE or PAUSED) after human approval. Activating is high impact; pausing and renaming do not. The template creative cannot be edited in place: add a new ad with add_meta_catalog_ad. Other ads are refused. Confirmed by re-reading; never retried.",
   input: editInput(adFields),
   check: async (a, m) => {
     const ad = await m.getOwned(a.ad_id, ["id", "adset_id"], "ad");

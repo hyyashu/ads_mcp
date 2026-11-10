@@ -21,7 +21,7 @@ Verification labels used below:
 | Platform identity | Google OAuth (PKCE, offline), Meta OAuth (long-lived token, `appsecret_proof`), account discovery, disconnect with revoke, `needs_reauth` | `src/auth/platform-oauth.ts`, `src/auth/token-providers.ts` |
 | Credentials | AES-256-GCM, AAD bound to tenant and row, versioned keyring, redaction of token patterns | `src/security/crypto.ts`, `src/mcp/errors.ts` |
 | Pipeline | one `runTool` path: scope, tenant rate limit, validation, tenant-scoped account resolution, account rate limit, handler, output validation, structured envelope | `src/mcp/pipeline.ts` |
-| Mutations | prepare (plan, read-only) to approve (human, browser, CSRF) to execute; idempotency key over tenant+account+tool+args; row lock; drift re-plan; definite vs unknown outcome; `verify()` reconciliation with backoff; second approver for high-impact/destructive | `src/security/approvals.ts`, `src/web/routes.ts` |
+| Mutations | prepare (plan, read-only) to approve (human, browser, CSRF) to execute; idempotency key over tenant+account+tool+args; row lock; drift re-plan; definite vs unknown outcome; `verify()` reconciliation with backoff; self-approval allowed; the MCP client can never approve | `src/security/approvals.ts`, `src/web/routes.ts` |
 | Registry | rejects tools not in the inventory, with wrong read/write kind, unbounded arrays, undocumented permissions, write tools without `verify()` | `src/mcp/registry.ts` |
 | Google | GAQL builder (injection-safe), REST transport with error mapping and no mutation retries, client with pagination and atomic batch mutate, 39 tools | `src/platforms/google/**` |
 | Limits | Postgres token buckets shared across instances | `src/security/rate-limit-db.ts` |
@@ -216,8 +216,8 @@ refused. Execution re-plans against live state and refuses on drift.
 
 Planned refinements (M3):
 1. **Direction-aware risk**: `plan()` returns a change set; policy derives risk from it. A budget increase or
-   enabling spend is high impact; a decrease or pause is ordinary write; removal is destructive; bulk over N items needs a
-   second approver.
+   enabling spend is high impact; a decrease or pause is ordinary write; removal is destructive; bulk over N items is high
+   impact.
 2. **Structured change set** stored with the approval: account and currency, each resource, existing value, proposed
    value, units (micros converted for display, raw kept), operation count, risks.
 3. **Tenant automation policy**: explicit rules such as "pausing is allowed without approval" or "budget changes up to
@@ -235,7 +235,7 @@ record and usage counter.
 
 **Prepare and approve a budget increase**: same front half with `ads:write` and a write-capable account -> `plan()` reads
 the campaign and budget, refuses shared budgets, produces the summary and snapshot -> approval row (pending, 24 h) ->
-the client is told nothing changed -> a second person signs in, sees the change, approves (CSRF, origin check).
+the client is told nothing changed -> an owner or admin (the requester included) signs in, sees the change, approves (CSRF, origin check).
 
 **Execute an approved change**: approval claimed atomically (pending to executing) -> account resolved again (access
 may have been revoked) -> `plan()` re-run, snapshot must match -> one atomic Google mutate -> read back and compare ->

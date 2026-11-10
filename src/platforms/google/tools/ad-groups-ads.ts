@@ -64,7 +64,7 @@ const groupBase = { account_id: accountId, campaign_id: idSchema, name: text(255
 export const addSearchAdGroup = addGroupTool({
   name: "add_search_ad_group",
   title: "Create Search ad group",
-  description: "Creates a standard Search ad group in a Search campaign, optionally with a default max CPC bid, after approval. In an enabled campaign a new enabled ad group can serve once it has keywords and ads, so that needs a second approver. Add keywords (add_keywords) and an ad (create_ad) next. Confirmed by re-reading.",
+  description: "Creates a standard Search ad group in a Search campaign, optionally with a default max CPC bid, after approval. In an enabled campaign a new enabled ad group can serve once it has keywords and ads, so that is high impact. Add keywords (add_keywords) and an ad (create_ad) next. Confirmed by re-reading.",
   channel: "SEARCH",
   input: z.object({ ...groupBase, cpc_bid: z.number().positive().max(10_000).optional() }),
   group: (a) => ({ type: "SEARCH_STANDARD", ...(a.cpc_bid ? { cpcBidMicros: String(toMicros(a.cpc_bid)) } : {}) }),
@@ -175,7 +175,7 @@ export const addDisplayAd = stateWrite({
   title: "Create responsive display ad",
   risk: "write",
   description:
-    "Creates a responsive display ad in a Display ad group after approval: final URL, 1-5 headlines (30), a long headline (90), 1-5 descriptions (90), business name (25), at least one landscape (1.91:1) and one square (1:1) image (up to 15 combined) and optional logos, from https URLs. Images are downloaded and checked against Google's specs; the exact bytes are pinned at approval. In a serving ad group an enabled ad needs a second approver. Confirmed by re-reading.",
+    "Creates a responsive display ad in a Display ad group after approval: final URL, 1-5 headlines (30), a long headline (90), 1-5 descriptions (90), business name (25), at least one landscape (1.91:1) and one square (1:1) image (up to 15 combined) and optional logos, from https URLs. Images are downloaded and checked against Google's specs; the exact bytes are pinned at approval. In a serving ad group an enabled ad is high impact. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: idSchema, final_url: httpsUrl, headlines: z.array(text(30)).min(1).max(5), long_headline: text(90), descriptions: z.array(text(90)).min(1).max(5), business_name: text(25), images: z.array(image).min(2).max(20), status: z.enum(["ENABLED", "PAUSED"]).default("ENABLED") }),
   output: z.object({ ad_group_id: z.string(), ad_id: z.string() }),
   timeoutMs: 120_000,
@@ -290,7 +290,7 @@ export const removeAppAdAsset = stateWrite({
   name: "remove_app_ad_asset",
   title: "Remove App ad text",
   risk: "destructive",
-  description: "Removes headlines and/or descriptions from the app ad of an App campaign ad group, after approval from a second person. At least one headline and one description must remain. Confirmed by re-reading.",
+  description: "Removes headlines and/or descriptions from the app ad of an App campaign ad group, after a person approves it. At least one headline and one description must remain. Confirmed by re-reading.",
   input: appInput,
   output: appOut,
   read: (a, ads) => readAppAd(ads, a.ad_group_id),

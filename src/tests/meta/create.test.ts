@@ -119,7 +119,6 @@ describe("create_meta_image_campaign", () => {
     expect(ap.change_set!.changes.map((c) => c.resource)).toEqual(["campaign", "ad_set", "ad_creative", "ad", "campaign"]);
     expect(ap.change_set!.changes.at(-1)).toMatchObject({ field: "daily_budget", after: 50, effect: "increase_spend" });
     expect(posts).toHaveLength(0);
-    await expect(approve(ap.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(ap.approval_id);
     expect(done.status).toBe("executed");
     expect(posts.map((p) => p.path)).toEqual(["act_555/campaigns", "act_555/adsets", "act_555/adcreatives", "act_555/ads"]);

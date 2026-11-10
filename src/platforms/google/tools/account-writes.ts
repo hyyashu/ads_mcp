@@ -67,7 +67,7 @@ export const removeCampaignLabel = stateWrite({
   name: "remove_campaign_label",
   title: "Remove label from campaigns",
   risk: "destructive",
-  description: "Detaches a label from campaigns after approval from a second person (the label itself stays in the account). Confirmed by re-reading.",
+  description: "Detaches a label from campaigns after a person approves it (the label itself stays in the account). Confirmed by re-reading.",
   input: labelInput,
   output: z.object({ label_id: z.string(), unlabelled: z.array(z.string()) }),
   read: (a, ads) => readCampaignLabels(ads, [...new Set(a.campaign_ids)].sort()),
@@ -88,7 +88,7 @@ function bulkStatusTool(o: { name: "bulk_update_campaign_status" | "bulk_update_
     name: o.name,
     title: `Pause or enable ${label}s in bulk`,
     risk: "high_impact",
-    description: `Pauses or enables up to 50 ${label}s in one atomic request, after approval. Enabling (which can start spend) or changing more than 20 needs a second approver. ${label[0]!.toUpperCase()}${label.slice(1)}s already in the requested status are left alone; removed ones are refused. Confirmed by re-reading.`,
+    description: `Pauses or enables up to 50 ${label}s in one atomic request, after approval. Enabling (which can start spend) or changing more than 20 is high impact. ${label[0]!.toUpperCase()}${label.slice(1)}s already in the requested status are left alone; removed ones are refused. Confirmed by re-reading.`,
     input: z.object({ account_id: accountId, ids: z.array(idSchema).min(1).max(50), status: z.enum(["ENABLED", "PAUSED"]) }),
     output: z.object({ status: z.string(), updated: z.array(z.string()), unchanged: z.array(z.string()) }),
     read: async (a, ads) => {
@@ -123,7 +123,7 @@ function removeAdGroupTool(name: "remove_ad_group" | "remove_display_ad_group", 
     name,
     title: channel ? "Remove Display ad group" : "Remove ad group",
     risk: "destructive",
-    description: `Permanently removes ${channel ? "a Display" : "an"} ad group and with it its ads and targeting, after approval from a second person. A removed ad group cannot be restored (pause it instead to keep its history). Confirmed by re-reading.`,
+    description: `Permanently removes ${channel ? "a Display" : "an"} ad group and with it its ads and targeting, after a person approves it. A removed ad group cannot be restored (pause it instead to keep its history). Confirmed by re-reading.`,
     input: z.object({ account_id: accountId, ad_group_id: idSchema }),
     output: z.object({ ad_group_id: z.string(), status: z.literal("REMOVED") }),
     read: async (a, ads) => {
@@ -147,7 +147,7 @@ export const removeDisplayAd = stateWrite({
   name: "remove_display_ad",
   title: "Remove Display ad",
   risk: "destructive",
-  description: "Permanently removes one ad from a Display ad group, after approval from a second person. A removed ad cannot be restored and loses its history; pause it to keep the history. Confirmed by re-reading.",
+  description: "Permanently removes one ad from a Display ad group, after a person approves it. A removed ad cannot be restored and loses its history; pause it to keep the history. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: idSchema, ad_id: idSchema }),
   output: z.object({ ad_group_id: z.string(), ad_id: z.string(), status: z.literal("REMOVED") }),
   read: async (a, ads) => {
@@ -188,7 +188,7 @@ export const createConversionAction = stateWrite({
   title: "Create conversion action",
   risk: "high_impact",
   description:
-    "Creates a conversion action after approval from a second person (Smart Bidding may start optimising toward it): WEBPAGE (website tag; the returned tag snippets must be installed on the site), UPLOAD_CLICKS (offline click conversions) or UPLOAD_CALLS. Sets category, counting (one or every conversion per click), default value and currency, and whether it is a primary goal. Names must be unique. Confirmed by re-reading.",
+    "Creates a conversion action after a person approves it (Smart Bidding may start optimising toward it): WEBPAGE (website tag; the returned tag snippets must be installed on the site), UPLOAD_CLICKS (offline click conversions) or UPLOAD_CALLS. Sets category, counting (one or every conversion per click), default value and currency, and whether it is a primary goal. Names must be unique. Confirmed by re-reading.",
   input: z.object({
     account_id: accountId,
     name: clean(100),
@@ -228,7 +228,7 @@ export const updateConversionAction = stateWrite({
   name: "update_conversion_action",
   title: "Update conversion action",
   risk: "high_impact",
-  description: "Changes a conversion action's name, status (ENABLED or HIDDEN), whether it is a primary goal, counting, default value, or click lookback window, after approval. Changing what counts as a primary goal, counting or value changes what Smart Bidding optimises, so it needs a second approver; a rename does not. Confirmed by re-reading.",
+  description: "Changes a conversion action's name, status (ENABLED or HIDDEN), whether it is a primary goal, counting, default value, or click lookback window, after approval. Changing what counts as a primary goal, counting or value changes what Smart Bidding optimises, so it is high impact; a rename does not. Confirmed by re-reading.",
   input: z
     .object({ account_id: accountId, conversion_action_id: idSchema, name: clean(100).optional(), status: z.enum(["ENABLED", "HIDDEN"]).optional(), primary_for_goal: z.boolean().optional(), counting_type: z.enum(["ONE_PER_CLICK", "MANY_PER_CLICK"]).optional(), default_value: z.number().min(0).max(1_000_000).optional(), click_lookback_days: z.number().int().min(1).max(90).optional() })
     .refine((v) => Object.keys(v).some((k) => !["account_id", "conversion_action_id"].includes(k)), "give at least one setting"),

@@ -48,7 +48,7 @@ describe("direction-aware risk", () => {
     expect(r.reason).toContain("destructive");
   });
 
-  it(`more than ${BULK_THRESHOLD} resources needs a second approver even when pausing`, () => {
+  it(`more than ${BULK_THRESHOLD} resources is high impact even when pausing`, () => {
     const many = (n: number) => Array.from({ length: n }, (_, i) => c("pause", String(i)));
     expect(effectiveRisk("write", many(BULK_THRESHOLD)).risk).toBe("write");
     const r = effectiveRisk("write", many(BULK_THRESHOLD + 1));
@@ -99,7 +99,6 @@ describe("change sets on real tools", () => {
       risk_reason: "effects: increase_spend",
     });
     expect((await row(r.approval!.approval_id)).changeSet).toEqual(r.approval!.change_set);
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     expect((await kit.approveAs(r.approval!.approval_id, kit.second)).status).toBe("executed");
     expect(budget).toBe("75000000");
   });

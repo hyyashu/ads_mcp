@@ -141,9 +141,6 @@ export class ApprovalService {
       .where(and(eq(approvalRequest.id, o.approvalId), eq(approvalRequest.tenantId, o.tenantId)));
     if (!row) throw new ToolError("not_found", "No such approval request.");
     if (!APPROVER_ROLES.includes(o.decider.role)) throw new ToolError("permission_denied", "Only owners and admins can approve or reject changes.");
-    if (row.risk !== "write" && row.requestedBy === o.decider.userId) {
-      throw new ToolError("permission_denied", "High-impact and destructive changes must be approved by someone other than the requester.");
-    }
     if (row.status === "pending" && row.expiresAt <= now) {
       await this.db.update(approvalRequest).set({ status: "expired" }).where(and(eq(approvalRequest.id, row.id), eq(approvalRequest.status, "pending")));
       throw new ToolError("conflict", "This approval request expired. Request the change again.");

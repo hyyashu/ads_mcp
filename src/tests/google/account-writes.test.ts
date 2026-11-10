@@ -135,7 +135,7 @@ describe("conversion actions", () => {
     expect((await run("create_conversion_action", { name: "purchase", type: "WEBPAGE", category: "PURCHASE" })).error?.message).toContain("already exists");
   });
 
-  it("a rename is a write; changing the primary goal needs a second approver", async () => {
+  it("a rename is a write; changing the primary goal is high impact", async () => {
     const rename = await run("update_conversion_action", { conversion_action_id: "1", name: "Purchase (web)" });
     expect(rename.approval?.risk).toBe("write");
     expect((await approve(rename.approval!.approval_id)).status).toBe("executed");
