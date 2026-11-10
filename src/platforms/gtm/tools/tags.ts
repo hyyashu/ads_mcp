@@ -130,7 +130,7 @@ export const createGtmTag = gtmStateWrite({
   name: "create_gtm_tag",
   title: "Create a Tag Manager tag",
   description:
-    "Creates a tag in the server's own JackOfAds draft workspace (created on first use). kind like_existing copies the type and parameters of an existing tag of this container (how GA4 event or Google Ads conversion tags are added) and replaces chosen top-level parameters; kind custom_html creates a Custom HTML tag (max 4,000 characters, shown in full to approvers, needs a second approver). Triggers must be ids from list_gtm_triggers. Draft only: nothing changes on the site until a version is created and published.",
+    "Creates a tag in the server's own JackOfAds draft workspace (created on first use). kind like_existing copies the type and parameters of an existing tag of this container (how GA4 event or Google Ads conversion tags are added) and replaces chosen top-level parameters; kind custom_html creates a Custom HTML tag (max 4,000 characters, shown in full to approvers, is high impact). Triggers must be ids from list_gtm_triggers. Draft only: nothing changes on the site until a version is created and published.",
   risk: "high_impact",
   scope: GTM_EDIT_CONTAINERS,
   input: createInput,

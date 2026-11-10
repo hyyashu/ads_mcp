@@ -152,7 +152,7 @@ function demographicsTool(name: "update_ad_group_demographics" | "update_display
     name,
     title: channel ? "Update Display demographics" : "Update ad group demographics",
     risk: "write",
-    description: `Excludes demographic groups from ${channel ? "a Display" : "an"} ad group, or includes previously excluded ones again (age ranges, genders, household income, parental status), after approval. By default every group is reached; excluding narrows reach, including again widens it and needs a second approver. Applied atomically and confirmed by re-reading.`,
+    description: `Excludes demographic groups from ${channel ? "a Display" : "an"} ad group, or includes previously excluded ones again (age ranges, genders, household income, parental status), after approval. By default every group is reached; excluding narrows reach, including again widens it and is high impact. Applied atomically and confirmed by re-reading.`,
     input: z.object({ account_id: accountId, ad_group_id: idSchema, exclude: demo.default({ age_ranges: [], genders: [], income_ranges: [], parental_statuses: [] }), include_again: demo.default({ age_ranges: [], genders: [], income_ranges: [], parental_statuses: [] }) }),
     output: z.object({ ad_group_id: z.string(), excluded: z.array(z.string()) }),
     read: (a, ads) => readGroup(ads, a.ad_group_id, ["AGE_RANGE", "GENDER", "INCOME_RANGE", "PARENTAL_STATUS"], channel),
@@ -321,7 +321,7 @@ export const updateDemandgenChannelControls = stateWrite({
   name: "update_demandgen_channel_controls",
   title: "Update Demand Gen channels",
   risk: "write",
-  description: "Sets where a Demand Gen ad group serves: all_channels (every eligible Google channel and partners), google_owned_only (YouTube, Discover, Gmail and other Google-owned surfaces), or selected (only the listed channels: YouTube in-stream, in-feed, Shorts, Discover, Gmail, Display, Maps), after approval. Widening needs a second approver. Confirmed by re-reading.",
+  description: "Sets where a Demand Gen ad group serves: all_channels (every eligible Google channel and partners), google_owned_only (YouTube, Discover, Gmail and other Google-owned surfaces), or selected (only the listed channels: YouTube in-stream, in-feed, Shorts, Discover, Gmail, Display, Maps), after approval. Widening is high impact. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: idSchema, mode: z.enum(["all_channels", "google_owned_only", "selected"]), channels: z.array(z.enum(CHANNELS)).max(7).default([]) }).refine((v) => (v.mode === "selected") === v.channels.length > 0, "give channels only (and always) with mode: selected"),
   output: z.object({ ad_group_id: z.string(), mode: z.string().nullable(), selected: z.array(z.string()) }),
   read: async (a, ads) => {

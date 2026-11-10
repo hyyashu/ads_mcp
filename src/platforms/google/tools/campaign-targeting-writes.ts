@@ -36,7 +36,7 @@ export const updateLocationTargeting = stateWrite({
   title: "Update location targeting",
   risk: "write",
   description:
-    "Adds or removes targeted and excluded locations on a campaign (Google location ids from resolve_google_locations), and optionally sets whether ads reach people IN the locations (PRESENCE) or also people interested in them (PRESENCE_OR_INTEREST). Needs a second approver when it widens reach. Removing every targeted location would target all countries, so that is refused. Applied atomically and confirmed by re-reading.",
+    "Adds or removes targeted and excluded locations on a campaign (Google location ids from resolve_google_locations), and optionally sets whether ads reach people IN the locations (PRESENCE) or also people interested in them (PRESENCE_OR_INTEREST). Is high impact when it widens reach. Removing every targeted location would target all countries, so that is refused. Applied atomically and confirmed by re-reading.",
   input: z
     .object({
       account_id: accountId,
@@ -124,7 +124,7 @@ export const addCampaignProximity = stateWrite({
   name: "add_campaign_proximity",
   title: "Add radius targeting",
   risk: "write",
-  description: "Targets a radius around a point (latitude/longitude) or an address on a campaign, after approval; it widens reach, so a second approver is needed. Radius in kilometers or miles. An identical radius is refused. Confirmed by re-reading.",
+  description: "Targets a radius around a point (latitude/longitude) or an address on a campaign, after approval; it widens reach, so it is high impact. Radius in kilometers or miles. An identical radius is refused. Confirmed by re-reading.",
   input: proximityInput,
   output: z.object({ campaign_id: z.string(), criterion_id: z.string().nullable() }),
   read: proximityState,
@@ -225,7 +225,7 @@ export const setCampaignDeviceBidModifiers = stateWrite({
   name: "set_campaign_device_bid_modifiers",
   title: "Set campaign device bid adjustments",
   risk: "high_impact",
-  description: "Sets device bid adjustments on a campaign: 1.0 = no change, 1.2 = +20%, 0.5 = -50%, 0 = do not show on that device (max 10). Raising an adjustment needs a second approver; lowering one does not. Confirmed by re-reading.",
+  description: "Sets device bid adjustments on a campaign: 1.0 = no change, 1.2 = +20%, 0.5 = -50%, 0 = do not show on that device (max 10). Raising an adjustment is high impact; lowering one does not. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, modifiers: deviceInput }),
   output: z.object({ campaign_id: z.string(), modifiers: z.record(z.string(), z.number().nullable()) }),
   read: async (a, ads) => {
@@ -255,7 +255,7 @@ export const setAdGroupDeviceBidModifiers = stateWrite({
   name: "set_ad_group_device_bid_modifiers",
   title: "Set ad group device bid adjustments",
   risk: "high_impact",
-  description: "Sets device bid adjustments on an ad group: 1.0 = no change, 1.2 = +20%, 0 = do not show on that device (max 10). Ad group adjustments override the campaign's. Raising an adjustment needs a second approver. Confirmed by re-reading.",
+  description: "Sets device bid adjustments on an ad group: 1.0 = no change, 1.2 = +20%, 0 = do not show on that device (max 10). Ad group adjustments override the campaign's. Raising an adjustment is high impact. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: idSchema, modifiers: deviceInput }),
   output: z.object({ ad_group_id: z.string(), modifiers: z.record(z.string(), z.number().nullable()) }),
   read: async (a, ads) => {
@@ -290,7 +290,7 @@ function frequencyCapsTool(name: "update_campaign_frequency_caps" | "update_disp
     name,
     title: name === "update_display_frequency_caps" ? "Update Display frequency caps" : "Update campaign frequency caps",
     risk: "write",
-    description: `Replaces the frequency caps (how many times one person may see ads per day, week or month) on a ${channels.join(" or ")} campaign, after approval. An empty list removes all caps (needs a second approver because it widens delivery). One cap per level, event type and time unit. Confirmed by re-reading.`,
+    description: `Replaces the frequency caps (how many times one person may see ads per day, week or month) on a ${channels.join(" or ")} campaign, after approval. An empty list removes all caps (high impact because it widens delivery). One cap per level, event type and time unit. Confirmed by re-reading.`,
     input: z.object({ account_id: accountId, campaign_id: idSchema, caps: z.array(capInput).max(10) }),
     output: z.object({ campaign_id: z.string(), frequency_caps: z.array(z.object({ level: z.string().nullable(), event_type: z.string().nullable(), time_unit: z.string().nullable(), time_length: z.number().nullable(), cap: z.number().nullable() })) }),
     read: async (a, ads) => {
@@ -332,7 +332,7 @@ export const updateBidStrategy = stateWrite({
   title: "Update bid strategy",
   risk: "high_impact",
   description:
-    "Changes a campaign's bidding (standard, campaign-level strategies only): MANUAL_CPC, MAXIMIZE_CONVERSIONS (optional target CPA), MAXIMIZE_CONVERSION_VALUE (optional target ROAS, e.g. 4.0 = 400%) or TARGET_SPEND (maximize clicks, optional max CPC). Campaigns on a shared portfolio strategy are refused. Needs a second approver unless only a target is lowered. Confirmed by re-reading.",
+    "Changes a campaign's bidding (standard, campaign-level strategies only): MANUAL_CPC, MAXIMIZE_CONVERSIONS (optional target CPA), MAXIMIZE_CONVERSION_VALUE (optional target ROAS, e.g. 4.0 = 400%) or TARGET_SPEND (maximize clicks, optional max CPC). Campaigns on a shared portfolio strategy are refused. Is high impact unless only a target is lowered. Confirmed by re-reading.",
   input: z
     .object({ account_id: accountId, campaign_id: idSchema, strategy: z.enum(STRATEGIES), target_cpa: z.number().positive().max(1_000_000).optional(), target_roas: z.number().positive().max(1000).optional(), max_cpc: z.number().positive().max(10_000).optional() })
     .refine((v) => v.target_cpa === undefined || v.strategy === "MAXIMIZE_CONVERSIONS", "target_cpa only with MAXIMIZE_CONVERSIONS")
@@ -371,7 +371,7 @@ export const updateDisplayCampaignSchedule = stateWrite({
   name: "update_display_campaign_schedule",
   title: "Update Display campaign dates",
   risk: "write",
-  description: "Changes a Display campaign's start and/or end date (whole days in the account's time zone), or removes the end date, after approval. Starting earlier, ending later or removing the end needs a second approver. For other campaign types use update_campaign_dates. Confirmed by re-reading.",
+  description: "Changes a Display campaign's start and/or end date (whole days in the account's time zone), or removes the end date, after approval. Starting earlier, ending later or removing the end is high impact. For other campaign types use update_campaign_dates. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, start_date: day.optional(), end_date: day.optional(), clear_end_date: z.boolean().default(false) }).refine((v) => v.start_date || v.end_date || v.clear_end_date, "give start_date, end_date or clear_end_date").refine((v) => !(v.end_date && v.clear_end_date), "end_date and clear_end_date conflict"),
   output: z.object({ campaign_id: z.string(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() }),
   read: async (a, ads) => {

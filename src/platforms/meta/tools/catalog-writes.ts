@@ -450,7 +450,7 @@ export const updateMetaCatalogCampaign = catalogEdit(campaignEditDef, {
   name: "update_meta_catalog_campaign",
   title: "Update Meta catalog campaign",
   description:
-    'Changes one catalog campaign (one whose ad sets promote a product set) after human approval: name, status (ACTIVE or PAUSED), the campaign budget (daily or lifetime, only on a campaign that already uses that kind) and the spend cap (set, change or "remove"). Same rules as update_meta_campaign: only changed fields are sent, in one request; activating, raising a budget and raising or removing the spend cap need a second approver; pausing, lowering, setting a first cap and renaming do not. Other campaigns are refused. Confirmed by re-reading; never retried.',
+    'Changes one catalog campaign (one whose ad sets promote a product set) after human approval: name, status (ACTIVE or PAUSED), the campaign budget (daily or lifetime, only on a campaign that already uses that kind) and the spend cap (set, change or "remove"). Same rules as update_meta_campaign: only changed fields are sent, in one request; activating, raising a budget and raising or removing the spend cap are high impact; pausing, lowering, setting a first cap and renaming do not. Other campaigns are refused. Confirmed by re-reading; never retried.',
   input: editInput(catalogCampaignFields),
   check: async (a, m) => {
     await m.getOwned(a.campaign_id, ["id"], "campaign");
@@ -463,7 +463,7 @@ export const updateMetaCatalogAdSet = catalogEdit(adSetEditDef, {
   name: "update_meta_catalog_ad_set",
   title: "Update Meta catalog ad set",
   description:
-    "Changes one catalog ad set (its promoted_object names a product set) after human approval: name, status (ACTIVE or PAUSED), its own budget (daily or lifetime, not under a campaign budget) and end time. Same rules as update_meta_ad_set: only changed fields are sent; activating, raising the budget and moving the end later need a second approver. The product set cannot be changed: Meta's promoted_object is immutable after creation, so add a new ad set with add_meta_catalog_ad_set instead. Other ad sets are refused. Confirmed by re-reading; never retried.",
+    "Changes one catalog ad set (its promoted_object names a product set) after human approval: name, status (ACTIVE or PAUSED), its own budget (daily or lifetime, not under a campaign budget) and end time. Same rules as update_meta_ad_set: only changed fields are sent; activating, raising the budget and moving the end later are high impact. The product set cannot be changed: Meta's promoted_object is immutable after creation, so add a new ad set with add_meta_catalog_ad_set instead. Other ad sets are refused. Confirmed by re-reading; never retried.",
   input: editInput(catalogAdSetFields),
   check: async (a, m) => {
     const r = await m.getOwned(a.ad_set_id, ["id", "promoted_object"], "ad set");
@@ -475,7 +475,7 @@ export const updateMetaCatalogAd = catalogEdit(adEditDef, {
   name: "update_meta_catalog_ad",
   title: "Update Meta catalog ad",
   description:
-    "Renames one catalog ad (in an ad set that promotes a product set) or changes its status (ACTIVE or PAUSED) after human approval. Activating needs a second approver; pausing and renaming do not. The template creative cannot be edited in place: add a new ad with add_meta_catalog_ad. Other ads are refused. Confirmed by re-reading; never retried.",
+    "Renames one catalog ad (in an ad set that promotes a product set) or changes its status (ACTIVE or PAUSED) after human approval. Activating is high impact; pausing and renaming do not. The template creative cannot be edited in place: add a new ad with add_meta_catalog_ad. Other ads are refused. Confirmed by re-reading; never retried.",
   input: editInput(adFields),
   check: async (a, m) => {
     const ad = await m.getOwned(a.ad_id, ["id", "adset_id"], "ad");

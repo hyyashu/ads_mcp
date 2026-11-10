@@ -40,7 +40,7 @@ export const createKeyEvent = ga4Write({
   title: "Mark a GA4 event as a key event",
   risk: "high_impact",
   description:
-    "Marks an event as a key event (GA4's name for a conversion) on the property, counted once per event or once per session, optionally with a default value. Goes through approval by a second person: linked Google Ads accounts that import GA4 key events may change what Smart Bidding optimises for. The approval shows whether the event was recorded in the last 28 days and how many Ads accounts are linked. Key events count from now on, not retroactively. Refused if the event is already a key event or a Standard property already has 30.",
+    "Marks an event as a key event (GA4's name for a conversion) on the property, counted once per event or once per session, optionally with a default value. Goes through approval by a person: linked Google Ads accounts that import GA4 key events may change what Smart Bidding optimises for. The approval shows whether the event was recorded in the last 28 days and how many Ads accounts are linked. Key events count from now on, not retroactively. Refused if the event is already a key event or a Standard property already has 30.",
   input: z.object({
     account_id: accountId,
     event_name: eventName,
@@ -114,7 +114,7 @@ export const removeKeyEvent = ga4Write({
   title: "Stop counting a GA4 event as a key event",
   risk: "destructive",
   description:
-    "Removes the key event marking from an event (the event itself keeps being collected). Destructive: needs a second approver and is never applied automatically. From then on GA4 stops counting it as a key event (earlier reports stay) and any Google Ads conversion imported from it stops receiving data; re-marking it later does not fill the gap. The approval shows how many key events it recorded in the last 28 days and how many Ads accounts are linked. Google may mark some key events as not deletable.",
+    "Removes the key event marking from an event (the event itself keeps being collected). Destructive: never applied automatically. From then on GA4 stops counting it as a key event (earlier reports stay) and any Google Ads conversion imported from it stops receiving data; re-marking it later does not fill the gap. The approval shows how many key events it recorded in the last 28 days and how many Ads accounts are linked. Google may mark some key events as not deletable.",
   input: z.object({ account_id: accountId, event_name: eventName }),
   output: z.object({ removed: z.literal(true), event_name: z.string(), key_event_id: z.string() }),
   plan: async (a, ctx) => {

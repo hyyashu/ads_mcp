@@ -96,7 +96,7 @@ export const removeGscSite = gscWrite({
   title: "Remove a Search Console property",
   risk: "destructive",
   description:
-    "Removes the property named by account_id from the connected Google user's list of Search Console properties, after approval by a second person. confirm_site_url must repeat the property exactly. Google's API docs do not say what this does to the property's other users, its verification or its data.",
+    "Removes the property named by account_id from the connected Google user's list of Search Console properties, after approval by a person. confirm_site_url must repeat the property exactly. Google's API docs do not say what this does to the property's other users, its verification or its data.",
   input: z.object({ account_id: accountId, confirm_site_url: z.string().min(1).max(2048).describe("The property's site URL exactly as Search Console shows it (e.g. sc-domain:example.com), to confirm.") }),
   output: z.object({ site_url: z.string(), removed: z.literal(true), note: z.string() }),
   plan: async (a, ctx) => {

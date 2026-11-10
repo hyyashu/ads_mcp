@@ -232,7 +232,7 @@ export class FakeGtm {
   }
 }
 
-/** A tenant with an owner and a second approver, one connected Tag Manager container, the real GTM tools and approvals. */
+/** A tenant with an owner and a second admin, one connected Tag Manager container, the real GTM tools and approvals. */
 export async function gtmHarness(label: string, fake: FakeGtm, o: { gtmLimiter?: Limiter; access?: "read" | "write" } = {}) {
   const db: Db = await testDb();
   const t = await seedTenant(db, label, "owner");
@@ -263,7 +263,7 @@ export async function gtmHarness(label: string, fake: FakeGtm, o: { gtmLimiter?:
     run,
     approveAs: (approvalId: string, userId: string) => approvals.decide({ tenantId, approvalId, decider: { userId, role: userId === owner ? "owner" : "admin" }, decision: "approve", execute: createExecutor(deps) }),
     verify: createVerifier(deps),
-    /** Requests a write and approves it as the second approver; returns the approval row. */
+    /** Requests a write and approves it as the second admin; returns the approval row. */
     async request(name: string, args: Record<string, unknown>) {
       const r = await run(name, args);
       if (!r.approval) throw new Error(`expected an approval for ${name}: ${JSON.stringify(r.error)}`);

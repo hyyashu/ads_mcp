@@ -202,7 +202,6 @@ describe("publish_gtm_version", () => {
     const page = changeTableForTest(r.approval!.change_set as ChangeSet, "destructive");
     expect(page).toContain("&lt;script src=");
     expect(page).not.toContain("<script src=");
-    await expect(approve(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(r.approval!.approval_id);
     expect(done.status).toBe("executed");
     expect(f.writes()).toEqual([expect.objectContaining({ method: "POST", path: "accounts/1/containers/2/versions/42:publish", query: { fingerprint: "fp-42" }, body: undefined })]);

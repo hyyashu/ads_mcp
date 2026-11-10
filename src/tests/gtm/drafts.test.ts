@@ -129,7 +129,6 @@ describe("create_gtm_tag", () => {
     expect(r.approval!.summary).toContain('type gaawe like tag "GA4 - add_to_cart" (id 12), with eventName = "purchase" (was "add_to_cart")');
     expect(r.approval!.summary).toContain('fires on: "Thank you page" (id 31)');
     expect(writes()).toEqual([]);
-    await expect(approve(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(r.approval!.approval_id);
     expect(done.status).toBe("executed");
     const body = writes()[0]!.body as Record<string, unknown>;
@@ -146,7 +145,7 @@ describe("create_gtm_tag", () => {
     neverWritesDefault();
   });
 
-  it("custom HTML: full code and hosts in the summary, high_impact, second approver; refused in a non-web container", async () => {
+  it("custom HTML: full code and hosts in the summary, high_impact; refused in a non-web container", async () => {
     const r = await run("create_gtm_tag", { name: "Meta Pixel - v2", tag: { kind: "custom_html", html: HTML }, firing_trigger_ids: ["32"] });
     expect(r.approval!.risk).toBe("high_impact");
     expect(r.approval!.summary).toContain(HTML);

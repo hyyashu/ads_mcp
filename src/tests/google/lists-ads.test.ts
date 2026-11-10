@@ -184,7 +184,7 @@ describe("pause_ad / resume_ad", () => {
     expect(done.result).toEqual({ ad_group_id: "21", ad_id: "301", status: "PAUSED", previous_status: "ENABLED" });
   });
 
-  it("resume needs a second approver and warns about a disapproved ad", async () => {
+  it("resume is high impact and warns about a disapproved ad", async () => {
     const r = await run("resume_ad", { ad_group_id: "21", ad_id: "302" });
     expect(r.approval?.risk).toBe("high_impact");
     expect(r.approval?.summary).toContain("DISAPPROVED");

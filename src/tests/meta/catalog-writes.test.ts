@@ -371,7 +371,7 @@ describe("add_meta_catalog_ad", () => {
 
 // ---------------------------------------------------------------------------------------------------------- updates
 describe("catalog updates", () => {
-  it("update_meta_catalog_campaign: rename is a write, activation needs a second approver, landed by read-back", async () => {
+  it("update_meta_catalog_campaign: rename is a write, activation is high impact, landed by read-back", async () => {
     const ren = await planned("update_meta_catalog_campaign", { campaign_id: "200001", name: `Renamed ${n}` });
     expect(ren.risk).toBe("write");
     expect(posts).toHaveLength(0);

@@ -22,7 +22,7 @@ const counts = (rows: [string, string, string][]) => () => reportOf(["eventName"
 const tool = (n: string) => kit.deps.registry.get(n) as WriteTool;
 
 describe("create_key_event", () => {
-  it("plans without sending anything: summary names the 28-day count and linked Ads accounts; high impact; second approver", async () => {
+  it("plans without sending anything: summary names the 28-day count and linked Ads accounts; high impact", async () => {
     f.report = counts([["sign_up", "1234", "0"]]);
     const r = await kit.run("create_key_event", { event_name: "sign_up", default_value: { value: 10, currency_code: "EUR" } });
     expect(r.approval).toMatchObject({ risk: "high_impact", change_set: { changes: [{ resource: "key_event", field: "key_event", before: null, after: "sign_up", effect: "create" }] } });
@@ -31,7 +31,6 @@ describe("create_key_event", () => {
     );
     expect(f.dataCalls(":runReport")[0]!.body).toMatchObject({ dateRanges: [{ startDate: "2026-10-13", endDate: "2026-11-09" }], dimensionFilter: { filter: { fieldName: "eventName", inListFilter: { values: ["sign_up"] } } } });
     expect(f.mutations()).toHaveLength(0);
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await kit.approveAs(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("executed");
     expect(done.result).toMatchObject({ event_name: "sign_up", counting_method: "ONCE_PER_EVENT", default_value: { value: 10, currency_code: "EUR" }, created: true });
@@ -85,7 +84,7 @@ describe("create_key_event", () => {
 });
 
 describe("remove_key_event", () => {
-  it("destructive: summary with 28-day key events and Ads consequence, second approver, DELETE once, read back", async () => {
+  it("destructive: summary with 28-day key events and Ads consequence, DELETE once, read back", async () => {
     f.report = counts([["purchase", "600", "512"]]);
     f.adsLinks = f.adsLinks.slice(0, 1);
     const r = await kit.run("remove_key_event", { event_name: "purchase" });
@@ -93,7 +92,6 @@ describe("remove_key_event", () => {
     expect(r.approval!.summary).toBe(
       'Stop counting "purchase" as a key event. It recorded 512 key events in the last 28 days. From now on GA4 will not count it as a key event (reports from before stay). 1 Google Ads account is linked: any conversion it imports from this key event will stop receiving data. This cannot be undone through the API; create_key_event can re-mark it, but the gap is not back-filled.',
     );
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await kit.approveAs(r.approval!.approval_id, kit.second);
     expect(done).toMatchObject({ status: "executed", result: { removed: true, event_name: "purchase", key_event_id: "1" } });
     expect(f.mutations()).toEqual([expect.objectContaining({ method: "DELETE", path: "/v1beta/properties/123/keyEvents/1" })]);

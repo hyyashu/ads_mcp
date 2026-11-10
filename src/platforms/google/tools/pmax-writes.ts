@@ -161,7 +161,7 @@ export const updatePmaxAssetGroup = stateWrite({
   name: "update_pmax_asset_group",
   title: "Update asset group",
   risk: "write",
-  description: "Changes a Performance Max asset group's name, final URL, display paths or status (ENABLED or PAUSED), after approval. Enabling needs a second approver. Confirmed by re-reading.",
+  description: "Changes a Performance Max asset group's name, final URL, display paths or status (ENABLED or PAUSED), after approval. Enabling is high impact. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, asset_group_id: idSchema, name: text(255).optional(), final_url: httpsUrl.optional(), path1: text(15).optional(), path2: text(15).optional(), status: z.enum(["ENABLED", "PAUSED"]).optional() }).refine((v) => v.name || v.final_url || v.path1 || v.path2 || v.status, "give at least one setting"),
   output: z.object({ asset_group_id: z.string(), name: z.string().nullable(), status: z.string(), final_urls: z.array(z.string()), path1: z.string().nullable(), path2: z.string().nullable() }),
   read: (a, ads) => readGroup(ads, a.asset_group_id),

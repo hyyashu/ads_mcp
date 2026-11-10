@@ -46,7 +46,7 @@ export const createGtmVersion = gtmStateWrite({
   name: "create_gtm_version",
   title: "Create a Tag Manager version",
   description:
-    "Turns the server's JackOfAds workspace (the drafts made with create_gtm_tag, update_gtm_tag, create_gtm_trigger) into a new container version. Nothing changes on the site: publishing is a separate step (publish_gtm_version, second approver). Refused when the workspace has merge conflicts (resolve them in Tag Manager). Tag Manager removes the workspace afterwards; the next draft starts a new one.",
+    "Turns the server's JackOfAds workspace (the drafts made with create_gtm_tag, update_gtm_tag, create_gtm_trigger) into a new container version. Nothing changes on the site: publishing is a separate step (publish_gtm_version, destructive). Refused when the workspace has merge conflicts (resolve them in Tag Manager). Tag Manager removes the workspace afterwards; the next draft starts a new one.",
   risk: "write",
   scope: GTM_EDIT_VERSIONS,
   input: z.object({ account_id: accountId, name: entityName.max(200), notes: notesText.optional() }),
@@ -64,7 +64,7 @@ export const createGtmVersion = gtmStateWrite({
     if (s.conflicts.length) throw new ToolError("conflict", `The ${SERVER_WS_NAME} workspace has merge conflicts with the latest version: ${s.conflicts.map((c) => `${KIND_TEXT[c.kind] ?? c.kind} ${q(c.name ?? c.id ?? "?")}`).join(", ")}. Resolve the conflicts in Tag Manager (Workspace → Update) first. Nothing was changed.`, { definite: true });
     if (!s.changes.length) throw new ToolError("invalid_argument", `Nothing to version: the ${SERVER_WS_NAME} workspace has no changes.`);
     return {
-      summary: `Create version ${q(a.name)} of container ${s.public_id ?? ""} from workspace ${SERVER_WS_NAME} with ${s.changes.length} change(s): ${s.changes.map(changeText).join(", ")}. Tag Manager first brings the workspace up to date with the latest version, so the version also contains everything published since. The live site does not change: publishing is a separate step (publish_gtm_version, second approver). Tag Manager removes the ${SERVER_WS_NAME} workspace after this; the next change starts a new one.`,
+      summary: `Create version ${q(a.name)} of container ${s.public_id ?? ""} from workspace ${SERVER_WS_NAME} with ${s.changes.length} change(s): ${s.changes.map(changeText).join(", ")}. Tag Manager first brings the workspace up to date with the latest version, so the version also contains everything published since. The live site does not change: publishing is a separate step (publish_gtm_version, destructive). Tag Manager removes the ${SERVER_WS_NAME} workspace after this; the next change starts a new one.`,
       changes: s.changes.map((c) => ({ resource: `gtm_${c.kind}`, id: c.id ?? c.name ?? "?", name: c.name, field: "change", before: null, after: c.change_status, unit: "text" as const, effect: "neutral" as const })),
     };
   },
@@ -90,7 +90,7 @@ export const createGtmVersion = gtmStateWrite({
         compiler_error: res.compilerError === true,
         counts: { tags: v.tag?.length ?? 0, triggers: v.trigger?.length ?? 0, variables: v.variable?.length ?? 0 },
         new_workspace_path: res.newWorkspacePath ? res.newWorkspacePath.slice(0, 200) : null,
-        next_step: "Review and publish it with publish_gtm_version (needs a second approver).",
+        next_step: "Review and publish it with publish_gtm_version (destructive).",
       };
     });
   },
@@ -146,7 +146,7 @@ export const publishGtmVersion = gtmStateWrite({
   name: "publish_gtm_version",
   title: "Publish a Tag Manager version",
   description:
-    "Publishes a container version to the LIVE website: the only Tag Manager tool that changes the site. Any version of the container can be published, including an older one (rollback). The approval lists every difference from the live version, one row per setting: added and removed tags, triggers and variables with all their settings and parameters, changed ones with each differing setting before and after, built-in variables, and folders, templates, clients, zones, Google tag configs and transformations with their settings. Code is shown in full in its own row: custom HTML tags, Custom JavaScript variables and custom template code (other values are cut at 2,000 characters). Refused when any code is over 20,000 characters or the list is over 300 rows (publish those in Tag Manager). Needs a second approver. There is no undo through the API: roll back by publishing the previous version.",
+    "Publishes a container version to the LIVE website: the only Tag Manager tool that changes the site. Any version of the container can be published, including an older one (rollback). The approval lists every difference from the live version, one row per setting: added and removed tags, triggers and variables with all their settings and parameters, changed ones with each differing setting before and after, built-in variables, and folders, templates, clients, zones, Google tag configs and transformations with their settings. Code is shown in full in its own row: custom HTML tags, Custom JavaScript variables and custom template code (other values are cut at 2,000 characters). Refused when any code is over 20,000 characters or the list is over 300 rows (publish those in Tag Manager). Destructive. There is no undo through the API: roll back by publishing the previous version.",
   risk: "destructive",
   scope: GTM_PUBLISH,
   input: z.object({ account_id: accountId, version_id: gtmId.describe("Container version to publish (create_gtm_version returns it).") }),

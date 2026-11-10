@@ -38,7 +38,7 @@ function statusTool(k: Kind, to: Status, risk: "write" | "high_impact", name: st
     name,
     title: `${verb} ${k.label}`,
     risk,
-    description: `${verb}s one Google Ads ${k.label} after human approval. ${to === "ENABLED" ? "Resuming can start spend immediately, so it needs a second approver. " : ""}Removed ${k.label}s cannot be changed. Confirmed by re-reading the status from Google Ads.`,
+    description: `${verb}s one Google Ads ${k.label} after human approval. ${to === "ENABLED" ? "Resuming can start spend immediately, so it is high impact. " : ""}Removed ${k.label}s cannot be changed. Confirmed by re-reading the status from Google Ads.`,
     input: z.object({ account_id: accountId, [k.idField]: z.string().regex(/^\d{1,20}$/, "numeric id") }),
     output,
     read: (a, ads) => readStatus(ads, k, a[k.idField] as string),

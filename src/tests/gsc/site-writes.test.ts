@@ -77,7 +77,7 @@ describe("add_gsc_site", () => {
 });
 
 describe("remove_gsc_site", () => {
-  it("is destructive, needs the exact confirmation, and a second approver; DELETE then read back", async () => {
+  it("is destructive, needs the exact confirmation; DELETE then read back", async () => {
     let r = await kit.run("remove_gsc_site", { account_id: kit.shopId, confirm_site_url: "https://shop.example.com" });
     expect(r.error?.code).toBe("invalid_argument");
     r = await kit.run("remove_gsc_site", { account_id: kit.shopId, confirm_site_url: "https://shop.example.com/" });
@@ -85,7 +85,6 @@ describe("remove_gsc_site", () => {
     expect(r.approval!.summary).toContain("Remove https://shop.example.com/ from the connected Google user's list of Search Console properties (their permission: full user)");
     expect(r.approval!.summary).toContain("do not say what this does");
     expect(r.approval!.change_set!.changes[0]).toMatchObject({ effect: "remove", before: "siteFullUser", after: null });
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await kit.approveAs(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("executed");
     expect(writes().map((c) => `${c.method} ${c.url.pathname}`)).toEqual(["DELETE /webmasters/v3/sites/https%3A%2F%2Fshop.example.com%2F"]);

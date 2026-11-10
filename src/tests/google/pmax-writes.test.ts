@@ -122,7 +122,7 @@ describe("asset groups", () => {
     expect(done.result).toMatchObject({ campaign_id: "81", status: "PAUSED", assets: 10 });
   });
 
-  it("enabling at creation needs a second approver; missing required assets and bad images are refused", async () => {
+  it("enabling at creation is high impact; missing required assets and bad images are refused", async () => {
     expect((await run("add_pmax_asset_group", { ...newGroup, name: "Live", status: "ENABLED" })).approval?.risk).toBe("high_impact");
     expect((await run("add_pmax_asset_group", { ...newGroup, business_name: undefined })).error?.message).toContain("business_name is required");
     expect((await run("add_pmax_asset_group", { ...newGroup, images: newGroup.images.filter((i) => i.field_type !== "LOGO") })).error?.message).toContain("LOGO");

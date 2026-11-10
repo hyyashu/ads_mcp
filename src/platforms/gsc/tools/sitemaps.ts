@@ -115,7 +115,7 @@ export const deleteSitemap = gscWrite({
   title: "Remove a sitemap",
   risk: "destructive",
   description:
-    "Removes a submitted sitemap from a Search Console site's sitemap list after approval by a second person. The sitemap file on the website is not changed. Only sitemaps in the top-level list can be removed (not ones listed inside a sitemap index). The connected user must be an owner or full user.",
+    "Removes a submitted sitemap from a Search Console site's sitemap list after approval by a person. The sitemap file on the website is not changed. Only sitemaps in the top-level list can be removed (not ones listed inside a sitemap index). The connected user must be an owner or full user.",
   input: z.object({ account_id: accountId, sitemap_url: sitemapUrl }),
   output: z.object({ site_url: z.string(), sitemap_url: z.string(), removed: z.literal(true) }),
   plan: async (a, ctx) => {

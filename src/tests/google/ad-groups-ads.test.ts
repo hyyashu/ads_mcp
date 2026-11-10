@@ -80,7 +80,7 @@ const exec = async (name: string, args: Record<string, unknown>, by?: string) =>
 };
 
 describe("ad groups", () => {
-  it("Search ad group in a paused campaign is a write; in a live campaign it needs a second approver", async () => {
+  it("Search ad group in a paused campaign is a write; in a live campaign it is high impact", async () => {
     const { r, done } = await exec("add_search_ad_group", { campaign_id: "11", name: "Core", cpc_bid: 1.5 });
     expect(r.approval?.risk).toBe("write");
     expect(done.result).toMatchObject({ campaign_id: "11", name: "Core", status: "ENABLED" });

@@ -159,7 +159,7 @@ describe("add_keywords", () => {
 });
 
 describe("update_keyword", () => {
-  it("pauses and changes the bid with the right mask (a bid increase needs a second approver)", async () => {
+  it("pauses and changes the bid with the right mask (a bid increase is high impact)", async () => {
     const r = await run("update_keyword", { ad_group_id: "21", criterion_id: "1", status: "PAUSED", cpc_bid: 3 + n });
     expect(r.approval?.risk).toBe("high_impact");
     expect(r.approval?.change_set?.changes.map((c) => [c.field, c.effect])).toEqual([["status", "pause"], ["cpc_bid", "increase_spend"]]);
@@ -179,7 +179,7 @@ describe("update_keyword", () => {
 });
 
 describe("remove_keywords", () => {
-  it("is destructive: needs a second approver, then removes by resource name and confirms", async () => {
+  it("is destructive: is high impact, then removes by resource name and confirms", async () => {
     const r = await run("remove_keywords", { ad_group_id: "21", criterion_ids: ["2", "3"] });
     expect(r.approval?.risk).toBe("destructive");
     expect(r.approval?.summary).toContain("Permanently remove 2");

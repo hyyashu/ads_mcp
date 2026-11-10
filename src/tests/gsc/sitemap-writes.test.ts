@@ -121,14 +121,13 @@ describe("delete_sitemap", () => {
     fake.sitemaps["sc-domain:example.com"] = [{ path: u, lastSubmitted: "2026-10-01T00:00:00Z", type: "sitemap", lastDownloaded: "2026-10-03T00:00:00Z", errors: "0", warnings: "2", contents: [{ type: "web", submitted: "120" }], ...extra }];
   };
 
-  it("is destructive: the requester cannot approve it; a second person can, and it is removed and checked", async () => {
+  it("is destructive: after approval it is removed and checked", async () => {
     const u = url();
     seed(u);
     const r = await kit.run("delete_sitemap", { sitemap_url: u });
     expect(r.approval).toMatchObject({ risk: "destructive" });
     expect(r.approval!.summary).toBe(`Remove sitemap ${u} from Search Console property sc-domain:example.com (type sitemap, 120 URLs submitted, last read 2026-10-03T00:00:00Z, 0 errors, 2 warnings). The file on the website is not changed. Google's API docs do not say whether Google stops reading the URLs it lists.`);
     expect(r.approval!.change_set!.changes[0]).toMatchObject({ effect: "remove", after: null });
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await kit.approveAs(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("executed");
     expect(done.result).toEqual({ site_url: "sc-domain:example.com", sitemap_url: u, removed: true });

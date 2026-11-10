@@ -160,7 +160,7 @@ export const updateProductGroup = stateWrite({
   name: "update_product_group",
   title: "Update product group bid or exclusion",
   risk: "write",
-  description: "Changes a Standard Shopping product group's max CPC bid, or excludes / includes it again, after approval. Raising a bid or including a group again needs a second approver. Only unit (leaf) groups have bids. Confirmed by re-reading.",
+  description: "Changes a Standard Shopping product group's max CPC bid, or excludes / includes it again, after approval. Raising a bid or including a group again is high impact. Only unit (leaf) groups have bids. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, ad_group_id: idSchema, criterion_id: idSchema, cpc_bid: z.number().positive().max(10_000).optional(), excluded: z.boolean().optional() }).refine((v) => v.cpc_bid !== undefined || v.excluded !== undefined, "give cpc_bid or excluded").refine((v) => !(v.excluded === true && v.cpc_bid !== undefined), "an excluded group has no bid"),
   output: z.object({ criterion_id: z.string(), excluded: z.boolean(), cpc_bid: z.number().nullable() }),
   read: (a, ads) => readProductGroups(ads, a.ad_group_id),

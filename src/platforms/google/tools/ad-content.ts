@@ -197,7 +197,7 @@ export const createAd = googleWrite({
   name: "create_ad",
   title: "Create responsive search ad",
   risk: "write",
-  description: "Creates a responsive search ad in an ad group after approval. The ad is always created PAUSED, so it cannot spend until it is resumed with resume_ad (which needs a second approver). Needs 3 to 15 headlines, 2 to 4 descriptions and a final URL; path2 needs path1. Google validates the text (length limits, policy) before this is queued. Refuses an exact copy of an existing ad in the ad group. Only responsive search ads are supported here.",
+  description: "Creates a responsive search ad in an ad group after approval. The ad is always created PAUSED, so it cannot spend until it is resumed with resume_ad (high impact). Needs 3 to 15 headlines, 2 to 4 descriptions and a final URL; path2 needs path1. Google validates the text (length limits, policy) before this is queued. Refuses an exact copy of an existing ad in the ad group. Only responsive search ads are supported here.",
   input: z.object({ account_id: accountId, ad_group_id: id.describe("An ad group id (not a campaign id)."), final_urls: finalUrls, headlines, descriptions, path1: path.optional(), path2: path.optional() }).refine((v) => !v.path2 || !!v.path1, "path2 can only be set when path1 is also set"),
   output: z.object({ ad_group_id: z.string(), ad_id: z.string(), status: z.literal("PAUSED"), headline_count: z.number(), description_count: z.number() }),
   plan: async (a, ctx) => {

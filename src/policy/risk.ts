@@ -16,12 +16,12 @@ const EFFECT_RISK: Record<Effect, WriteRisk> = {
   neutral: "write",
 };
 
-/** More distinct resources than this in one request needs a second approver, whatever the direction. */
+/** More distinct resources than this in one request is high impact, whatever the direction. */
 export const BULK_THRESHOLD = 20;
 
 /**
  * Direction-aware risk. Without a change set the tool's declared risk applies unchanged. With one, the risk follows what
- * the change actually does: raising spend or enabling delivery needs a second approver, lowering or pausing does not.
+ * the change actually does: raising spend or enabling delivery is high impact, lowering or pausing does not.
  * A change set can raise any declared risk, and can lower high_impact to write, but never lowers a destructive tool:
  * the inventory marks those irreversible regardless of what a plan reports.
  */
