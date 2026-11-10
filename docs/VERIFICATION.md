@@ -544,3 +544,49 @@ contains a query string (the join strips one if present).
   `aggregation=event_total_counts`, the seven-day window and a `data` list of `AdsPixelStatsResult`, not its fields, so
   `get_meta_pixel_stats` still reads both shapes seen); video `length` on ad videos; whether a targeting update replaces or merges
   (targeting edits are not offered); and an objective-to-optimization-goal table.
+
+## Google Ads gap tools (2026-11-11)
+
+Asset tools (`get_asset_performance`, `link_existing_assets`, `update_extension_asset`,
+`exclude_account_assets_from_campaign`, account and ad group link levels) and 57 more tools in seven groups: insights,
+conversion ops, account controls, bidding and experiments, audiences, more assets, account admin. Every field, enum,
+resource name and REST path was checked against the v26 reference (reference/rpc/v26, fields/v26) and guides. The test
+schema guard now also checks segmenting resources (fields filtered in WHERE must be selected) and each segment's
+"Selectable with" list (metric/segment pairs), and a static sweep checks every GAQL query in the Google source.
+
+Defects found by the docs check:
+- `get_segment_performance` with `campaign_ids` on country, region and city: `campaign` is a segmenting resource of
+  `geographic_view`, so `campaign.id` must be selected (live error). Fixed.
+- `get_asset_performance`: `metrics.phone_calls` / `phone_impressions` are not selectable with
+  `segments.asset_interaction_target.interaction_on_this_asset`. Phone metrics come from a second query. Fixed.
+- In-design (experiment treatment) campaigns are returned only with `PARAMETERS include_drafts = true`; structural
+  lookups by campaign or ad group now add it, so existing tools can edit a treatment before scheduling. Fixed.
+- `add_display_placements` described mobile app id prefixes reversed (`1` is iOS, `2` is Android). Fixed.
+
+Restricted by Google (tools pass Google's error through; see README):
+- `UploadClickConversions` and Customer Match upload jobs: `CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE` for projects
+  without earlier use (since 2026-06-15 and 2026-04-01); Google points to the Data Manager API.
+- `metrics.auction_insight_search_*`: "not publicly available".
+- SET conversion value rules and itinerary conditions: allowlist only (not offered).
+- Keyword policy exemptions: an existing keyword exposes no exemptible violation keys in v26 (ads only).
+
+To check on the first live runs (the docs did not settle these):
+- Assets: re-linking an asset whose link was removed (possible `RESOURCE_ALREADY_EXISTS`); editing a call asset's
+  number in place; clearing `excluded_parent_asset_field_types` and sitelink descriptions through the update mask.
+- Insights: an applied recommendation disappears on re-read; recommendation id format; change history date bounds
+  (`>= start`, `< tomorrow`) and changed-field paths; whether your own domain is a row in auction insights.
+- Conversion ops: temporary resource names for a value rule and its rule set in one mutate; whether removed value rules
+  read back as REMOVED; the currency of an ADD rule's value; upload error location field names.
+- Account controls: clearing a bid modifier or tracking fields through the mask; placement "2 levels deep" read as URL
+  path depth; label views filtered by label resource name.
+- Bidding and experiments: status INITIATED right after scheduling; HALTED or end date after ending; promotion from
+  running and ended experiments, and IN_PROGRESS right after; removing an experiment with no arms
+  (`CANNOT_REMOVE_IN_CREATION_EXPERIMENT`); manager-shared strategies read back by the manager's resource name.
+- Audiences: `membership_life_span` ignored for rule-based lists (sent with the same `lookback_window_days`); removed
+  lists no longer returned by `FROM user_list`.
+- More assets: undocumented text limits (loose caps, Google enforces its own); lead form webhook payload version 3;
+  `lead_form_submission_data.submission_date_time` string bounds; `GENERATE_IMAGE_EXTRACTION` per campaign and
+  `AUTOMATED_VIDEO_CRAWL` opt-in without crawl sources.
+- Account admin: resubmitting an ad with an unchanged status triggers a new review; `multi_party_auth_review` returns
+  no rows on accounts without multi-party approval; a new client appears in `customer_client` right away; the last
+  ADMIN rule on serving accounts (only warned).
