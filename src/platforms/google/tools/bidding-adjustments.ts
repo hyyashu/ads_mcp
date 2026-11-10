@@ -183,7 +183,7 @@ function createTool(kind: Kind) {
     name: seasonality ? "create_seasonality_adjustment" : "create_data_exclusion",
     title: seasonality ? "Create seasonality adjustment" : "Create data exclusion",
     // inventory/mapping.ts plans this tool as "write"; its change set marks the effect, so approvals come out high_impact.
-    risk: "write",
+    risk: "high_impact",
     description: seasonality
       ? `Creates a Smart Bidding seasonality adjustment after approval: tells automated bidding to expect a conversion-rate change (conversion_rate_modifier 0.1 to 10.0) during a short future event, for listed campaigns (scope CAMPAIGN, up to 2,000) or whole channel types (scope CHANNEL: SEARCH, DISPLAY, SHOPPING), optionally only some devices. Start must be in the future; the interval is at most ${MAX_DAYS} days (Google recommends 1 to 7). High impact: it changes bids. Confirmed by re-reading.`
       : `Creates a Smart Bidding data exclusion after approval: automated bidding ignores conversion data from a past period with tracking problems (start in the past, at most ${MAX_DAYS} days), for listed campaigns (scope CAMPAIGN, up to 2,000) or whole channel types (scope CHANNEL: SEARCH, DISPLAY, SHOPPING), optionally only some devices. Google allows 500 active data exclusions per account and advises using them rarely. High impact: it changes what bidding learns from. Confirmed by re-reading.`,

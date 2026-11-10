@@ -117,9 +117,8 @@ const NOTE =
 export const uploadCustomerMatchMembers = googleWrite({
   name: "upload_customer_match_members",
   title: "Upload Customer Match members",
-  // The tier inventory/mapping.ts plans. Every request carries a change set, and its effect sets the approval's risk:
-  // adding members is "create" (high_impact, a second approver), removing them is "remove" (destructive).
-  risk: "write",
+  // Sends customer data to Google. The change set's effect still raises a removal to destructive.
+  risk: "high_impact",
   timeoutMs: 120_000,
   description:
     "Adds people to, or removes them from, a Customer Match list (a CRM-based contact-info list from create_customer_match_list), after a person approves it. Give up to 1,000 members, each with an email, a phone number in E.164 form (+ country code), or both. " +

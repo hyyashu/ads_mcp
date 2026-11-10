@@ -135,7 +135,8 @@ export function requestSchemaFor(path: string): string | null {
   if (onResource) {
     const [, collection, verb, rest] = onResource;
     const name = `Services__${verb![0]!.toUpperCase()}${verb!.slice(1)}${collection![0]!.toUpperCase()}${collection!.slice(1).replace(/s$/, "")}${rest}Request`;
-    return index.schemas[name] ? name : null;
+    // Otherwise the method names its own request (experiments/1:scheduleExperiment -> ScheduleExperimentRequest): below.
+    if (index.schemas[name]) return name;
   }
   const m = /(?:^|\/)([A-Za-z]+|\d+):([A-Za-z]+)$/.exec(path);
   if (!m) return null;

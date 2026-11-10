@@ -439,8 +439,8 @@ function toChange(a: AssignArgs, s: { campaigns: Camp[]; strategy: Target | null
 export const assignBidStrategy = stateWrite({
   name: "assign_bid_strategy",
   title: "Assign portfolio bid strategy",
-  // inventory/mapping.ts plans this tool as "write"; its change set marks the effect, so approvals come out high_impact.
-  risk: "write",
+  // Moving campaigns between bidding strategies changes how they spend, as update_bid_strategy does.
+  risk: "high_impact",
   description:
     "Attaches campaigns to a portfolio bid strategy (bidding_strategy_id from list_bid_strategies, including one shared by a manager account), or with detach_to takes them off their portfolio onto a standard per-campaign strategy (MANUAL_CPC, MAXIMIZE_CONVERSIONS with optional target_cpa, MAXIMIZE_CONVERSION_VALUE with optional target_roas, TARGET_SPEND with optional max_cpc) in the same update. Checks documented compatibility: portfolio MAXIMIZE_CONVERSIONS only for Search, Shopping and Performance Max; TARGET_IMPRESSION_SHARE only for Search; a strategy aligned with a budget only for campaigns on that budget. Campaigns already on the strategy are skipped. The change set shows each campaign's bidding before and after. High impact: it changes how campaigns bid. Applied atomically and confirmed by re-reading.",
   input: assignInput,

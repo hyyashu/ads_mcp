@@ -237,7 +237,7 @@ export const createExperiment = googleWrite({
   name: "create_experiment",
   title: "Create experiment",
   // inventory/mapping.ts plans this tool as "write"; its change set marks the effect, so approvals come out high_impact.
-  risk: "write",
+  risk: "high_impact",
   description:
     "Creates a campaign experiment (A/B test) after approval: SEARCH_CUSTOM for a Search campaign or DISPLAY_CUSTOM for a Display one. Google copies the base campaign into an editable in-design treatment campaign and splits traffic between control and treatment (each 1-99%, summing to 100). Returns the in-design campaign id: make at least one change to it (Google requires that), then call schedule_experiment. Nothing serves until then. The base campaign must not use a shared budget. Takes two requests (the experiment, then both arms in one request, as Google's guide requires); if Google rejects the arms, the empty experiment is removed again and the result says so; an unconfirmed step is reported as unknown outcome, never as success. Confirmed by re-reading.",
   input: createInput,
@@ -318,7 +318,7 @@ export const scheduleExperiment = stateWrite({
   name: "schedule_experiment",
   title: "Schedule experiment",
   // inventory/mapping.ts plans this tool as "write"; its change set marks the effect, so approvals come out high_impact.
-  risk: "write",
+  risk: "high_impact",
   description:
     "Schedules an experiment in SETUP after approval (ExperimentService.ScheduleExperiment): Google turns the in-design treatment campaign into a real experiment campaign that serves from the start date with the agreed traffic split. Google requires at least one change to the in-design campaign first. This is a long-running operation: the result reports what Google shows right after the call (INITIATED = still materializing, ENABLED = done) and never claims completion it cannot see. If materializing fails, Google lists the reasons in the experiment's asynchronous errors (Google Ads UI); list_experiments shows the status. High impact: it starts serving a new campaign.",
   input: experimentInput,
@@ -358,7 +358,7 @@ export const endExperiment = stateWrite({
   name: "end_experiment",
   title: "End experiment",
   // inventory/mapping.ts plans this tool as "write"; its change set marks the effect, so approvals come out high_impact.
-  risk: "write",
+  risk: "high_impact",
   description:
     "Ends a running experiment immediately after approval (ExperimentService.EndExperiment; the end date becomes now and the experiment is HALTED). The treatment campaign stops serving (it is not removed) and the base campaign gets all of its traffic back; the treatment's changes are NOT applied (use promote_experiment for that). Cannot be undone. Confirmed by re-reading.",
   input: experimentInput,
@@ -388,7 +388,7 @@ export const promoteExperiment = stateWrite({
   name: "promote_experiment",
   title: "Promote experiment",
   // inventory/mapping.ts plans this tool as "write"; its change set marks the effect, so approvals come out high_impact.
-  risk: "write",
+  risk: "high_impact",
   description:
     "Promotes an experiment after approval (ExperimentService.PromoteExperiment): copies the treatment campaign's changes onto the base campaign and stops the treatment from serving. Cannot be undone. PMAX_REPLACEMENT_SHOPPING experiments cannot be promoted. This is a long-running operation: the result reports Google's promote_status right after the call (IN_PROGRESS or COMPLETED) and never claims completion it cannot see; list_experiments shows later progress. If it fails, Google lists the reasons in the experiment's asynchronous errors (Google Ads UI). High impact: it changes the live base campaign.",
   input: experimentInput,
