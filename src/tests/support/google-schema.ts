@@ -141,7 +141,10 @@ export function requestSchemaFor(path: string): string | null {
   if (index.schemas[name]) return name;
   // Single-resource services name the request in the singular: productLinks:create -> CreateProductLinkRequest.
   const singular = `Services__${M}${pascal.replace(/s$/, "")}Request`;
-  return index.schemas[singular] ? singular : null;
+  if (index.schemas[singular]) return singular;
+  // customerUserAccesses:mutate -> MutateCustomerUserAccessRequest.
+  const sses = `Services__${M}${pascal.replace(/sses$/, "ss")}Request`;
+  return index.schemas[sses] ? sses : null;
 }
 
 /** All problems with one Google Ads REST request (path and JSON body). */

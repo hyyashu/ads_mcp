@@ -79,7 +79,8 @@ export class GoogleAdsClient {
    */
   async sendRpc<T = Row>(path: string, body: Row): Promise<T> {
     const p = path.replace("{customer}", this.o.customerId);
-    if (!new RegExp(`^customers/${this.o.customerId}/[A-Za-z]+:(create|remove|update)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
+    // Also the services whose Mutate takes a single `operation` (not `operations`), and CustomerService.CreateCustomerClient.
+    if (!new RegExp(`^customers/${this.o.customerId}(/[A-Za-z]+:(create|remove|update)|/(customerUserAccesses|customerUserAccessInvitations|customerClientLinks):mutate|:createCustomerClient)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
     const base = await this.base();
     this.assertNotAborted();
     this.sent++;
@@ -95,6 +96,16 @@ export class GoogleAdsClient {
     const p = path.replace("{customer}", this.o.customerId);
     if (!/^(customers\/\d+[:/])?[A-Za-z/0-9]*:?[A-Za-z]+$/.test(p) || /:mutate$/i.test(p)) throw new ToolError("internal", "invalid read-only rpc path");
     return this.o.http.call<T>({ ...(await this.base()), path: p, body, idempotent: true });
+  }
+
+  /**
+   * A read-only REST GET on this account, e.g. get("invoices", { billingSetup, issueYear, issueMonth }) for
+   * InvoiceService.ListInvoices (GET customers/{id}/invoices). Retried like reads.
+   */
+  async get<T = Row>(collection: string, params: Record<string, string>): Promise<T> {
+    if (!/^[A-Za-z]+$/.test(collection)) throw new ToolError("internal", "invalid read-only collection");
+    const qs = new URLSearchParams(params).toString();
+    return this.o.http.call<T>({ ...(await this.base()), path: `customers/${this.o.customerId}/${collection}${qs ? `?${qs}` : ""}`, method: "GET", idempotent: true });
   }
 
   /**
