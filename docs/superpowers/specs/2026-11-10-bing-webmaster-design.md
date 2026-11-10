@@ -1,6 +1,8 @@
 # Bing Webmaster Tools in JackOfAds: design
 
 Date: 2026-11-10. Status: approved in chat by the owner (scope: "add all"; combined tools gain a Google / Bing / both choice).
+**Built 2026-11-10** on `feat/bing-webmaster`: 54 of the 56 tools are implemented and the combined tools have the choice.
+Tested against a fake API only, not a live site. Section 8 records how the build turned out.
 
 ## 1. Intent
 
@@ -81,3 +83,22 @@ full suite.
 
 Register the Bing OAuth client with redirect `${PUBLIC_URL}/connect/bing/callback`, set the two env vars, and run one live
 read-only check (it confirms the API host accepts Bearer tokens at www.bing.com).
+
+## 8. Outcome of the build (2026-11-10)
+
+- **Not built (documented limitations, `inventory/limitations.json`):** `add_bing_preview_block` (Microsoft has no page for
+  the BlockReason enum, and a guessed value could record a false reason such as illegal content against the site) and
+  `add_bing_sitelink_block` (the market format and the "all markets" value are not documented). Listing and removing
+  existing blocks of both kinds works.
+- **Risk tiers as built:** every Delete is destructive (repo rule, enforced in `src/tests/inventory/mapping.test.ts`),
+  including lifting a block or removing a URL parameter or country setting. `update_bing_crawl_settings` is high impact
+  when it raises the crawl rate or turns crawl boost on. A request that only lowers crawling is approved as a plain
+  write, because the shared risk policy scores changes by direction for every tool.
+- **Combined tools:** `search_engine` defaults to `google` with unchanged output; Bing results are a separate `bing` block
+  listing the weekly buckets used. `audit_ad_landing_pages` reads Bing index details only when `bing` or `both` is chosen
+  (a linked Bing site alone does not trigger Bing calls). Brand trend on Bing uses GetQueryTrafficStats for Bing's top
+  queries containing a brand term (at most 20) and says branded traffic is undercounted.
+- **Readings to confirm live:** each section's subsection in `docs/VERIFICATION.md` lists where Microsoft's pages were
+  silent or contradictory and which conservative reading was used.
+- **Known duplication:** `src/platforms/cross/bing.ts` has its own GetUrlInfo and GetQueryTrafficStats calls next to
+  `src/platforms/bing/api/indexing.ts` and `api/performance.ts`. To be folded together later.

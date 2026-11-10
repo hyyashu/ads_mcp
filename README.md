@@ -1,28 +1,31 @@
 # ads-mcp
 
 A remote MCP server (Streamable HTTP), product name JackOfAds, for Google Ads, Meta Ads, Google Search Console, Google
-Analytics 4 and Google Tag Manager: 286 tools from `inventory/tool-registry.json`, implemented against the official
+Analytics 4, Google Tag Manager and Bing Webmaster Tools: 342 tools from `inventory/tool-registry.json`, implemented against the official
 platform APIs. Advertising and analytics data is fetched on demand and never stored.
 
 ## Status (read this first)
 
-**285 of 286 tools are implemented**: 171 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
-`get_property_links`), 12 Tag Manager, and 11 combined tools that join ad data with Search Console and GA4 (for example
-paid vs organic overlap, conversion tracking gaps, landing page quality, tracking setup audit). The remaining one,
-`create_youtube_campaign`, is a documented external limitation. Search Console, GA4 and Tag Manager each have their own
-Connect button and Google grant; a workspace links a site, property and container to its ad accounts on the Connections
-page, and the combined tools use those links. Design: `docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md`. `docs/TRACKING.md` (generated) lists every tool, its plan and its status. A tool is exposed only
+**339 of 342 tools are implemented**: 171 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
+`get_property_links`), 12 Tag Manager, 54 Bing Webmaster Tools, and 11 combined tools that join ad data with Search
+Console (or Bing, or both) and GA4 (for example paid vs organic overlap, conversion tracking gaps, landing page quality,
+tracking setup audit). The remaining three are documented external limitations: `create_youtube_campaign` (the Google
+Ads API cannot create Video campaigns), and `add_bing_preview_block` and `add_bing_sitelink_block` (Microsoft does not
+document values they must send). Search Console, GA4 and Tag Manager each have their own Connect button and Google
+grant; Bing Webmaster has its own Connect button on Bing's OAuth. A workspace links a site, property and container to
+its ad accounts on the Connections page, and the combined tools use those links. Designs:
+`docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md`, `docs/superpowers/specs/2026-11-10-bing-webmaster-design.md`. `docs/TRACKING.md` (generated) lists every tool, its plan and its status. A tool is exposed only
 when it has a real handler, input and output schemas, documented permissions and tests; there are no stub or
 fake-success tools.
 
 **"Implemented" means tested against crafted API responses, not against a real account.** Google tools are checked
 against Google's published v26 schema ("schema-checked (v26), not live"); Meta tools were built from Meta's reference
-docs ("docs-checked, not live"); Search Console, GA4 and Tag Manager tools were built from Google's reference pages,
-recorded per product in `docs/VERIFICATION.md`. Nothing has run against a live ad account yet (`inventory/live-verified.json` is
+docs ("docs-checked, not live"); Search Console, GA4 and Tag Manager tools were built from Google's reference pages
+and Bing Webmaster tools from Microsoft's API reference, recorded per product in `docs/VERIFICATION.md`. Nothing has run against a live ad account yet (`inventory/live-verified.json` is
 empty). See `docs/VERIFICATION.md` for what was checked against which page.
 
 Tests (`npm test`) cover the MCP transport (2026-07-28 and 2025-era clients), the tool registry and its rules, the
-MCP-client OAuth server, Google/Meta connection flows, human approvals, crash reconciliation, shared rate limiting,
+MCP-client OAuth server, Google/Meta/Bing connection flows, human approvals, crash reconciliation, shared rate limiting,
 the GAQL builder, both platform clients and every tool.
 
 ## Architecture
@@ -40,11 +43,13 @@ MCP client (Claude, ChatGPT, Cursor)             Human in a browser
 | Module | Role |
 |---|---|
 | `src/mcp` | MCP server and Streamable HTTP transport, tool registry (rejects non-compliant tools), call pipeline, structured errors |
-| `src/auth` | **MCP-client OAuth** (`oauth-server.ts`) and, separately, **platform OAuth** (`platform-oauth.ts`: connect Google/Meta), web sessions, token providers |
+| `src/auth` | **MCP-client OAuth** (`oauth-server.ts`) and, separately, **platform OAuth** (`platform-oauth.ts`: connect Google/Meta/Bing), web sessions, token providers |
 | `src/platforms/google` | GAQL builder, REST transport and error mapping, Ads client, tool definitions |
+| `src/platforms/{meta,gsc,ga4,gtm,bing}` | One folder per other product: transport or client, services, tool definitions |
+| `src/platforms/cross` | Combined tools that join ad accounts with their linked Search Console / Bing site and GA4 property |
 | `src/security` | AES-256-GCM credentials, approval service, rate limiters (memory and Postgres), audit |
 | `src/db` | Drizzle schema (Postgres). Stores tenants, users, encrypted connection credentials, account associations, approvals, usage counters, minimal audit. **No campaign, metric, creative or lead data.** |
-| `inventory` | The 227-tool source of truth, the implementation plan (`mapping.ts`), documented limitations |
+| `inventory` | The 342-tool source of truth, the implementation plan (`mapping.ts`), documented limitations |
 
 ### Two separate OAuth systems
 
@@ -53,9 +58,11 @@ MCP client (Claude, ChatGPT, Cursor)             Human in a browser
    public clients, Client ID Metadata Documents (SSRF-hardened fetch) and dynamic registration, rotating refresh tokens
    with reuse detection, revocation. Tokens are audience-bound; there is no token passthrough. Clients can be granted
    `ads:read` and `ads:write` only. **Approval is never grantable to a client.**
-2. **Platform OAuth** (connecting ad accounts): Google (authorization code + PKCE, offline access) and Meta (long-lived
-   token, `appsecret_proof`). Credentials are encrypted at rest, bound to their row, revoked at the platform on
-   disconnect, and a revoked/expired grant flips the connection to `needs_reauth`.
+2. **Platform OAuth** (connecting ad accounts): Google (authorization code + PKCE, offline access), Meta (long-lived
+   token, `appsecret_proof`) and Bing Webmaster (authorization code with Bing's own OAuth client, refresh token).
+   Credentials are encrypted at rest, bound to their row, revoked at the platform on disconnect (Bing documents no
+   revoke call, so a Bing disconnect is local and the user removes the app in Bing Webmaster Tools), and a
+   revoked/expired grant flips the connection to `needs_reauth`.
 
 ### Writes and approvals
 
@@ -82,11 +89,11 @@ set -a; . ./.env; set +a
 npm run db:migrate                # embedded Postgres in .data/pglite, or set DATABASE_URL
 ADS_MCP_OWNER_PASSWORD='a-long-password' npm run tenant:create -- "My Agency" owner@example.com
 npm start                         # MCP endpoint: $PUBLIC_URL/mcp
-npm test                          # 288 tests
+npm test                          # 1,239 tests
 npm run inventory:matrix          # regenerate docs/TRACKING.md
 ```
 
-Sign in at `$PUBLIC_URL/login`, open **Connections** to connect Google/Meta, and point an MCP client at `$PUBLIC_URL/mcp`
+Sign in at `$PUBLIC_URL/login`, open **Connections** to connect Google/Meta/Bing, and point an MCP client at `$PUBLIC_URL/mcp`
 (it discovers OAuth through the 401 challenge). Cursor and other header-capable clients can also use a personal token
 issued with `issueApiToken` (read/write scopes only).
 
@@ -98,9 +105,12 @@ issued with `issueApiToken` (read/write scopes only).
 - Multiple instances: keep `RATE_LIMIT_STORE=db` (shared, atomic Postgres token buckets). The server is otherwise stateless.
 - Register redirect URIs: Google `${PUBLIC_URL}/connect/google/callback`, `${PUBLIC_URL}/connect/gsc/callback`,
   `${PUBLIC_URL}/connect/ga4/callback`, `${PUBLIC_URL}/connect/gtm/callback` (same Google OAuth client), Meta
-  `${PUBLIC_URL}/connect/meta/callback`. Enable the Search Console, Google Analytics Data, Google Analytics Admin and Tag
-  Manager APIs on the Google Cloud project.
+  `${PUBLIC_URL}/connect/meta/callback`, Bing `${PUBLIC_URL}/connect/bing/callback`. Enable the Search Console, Google
+  Analytics Data, Google Analytics Admin and Tag Manager APIs on the Google Cloud project.
 - Google: create a Cloud project, enable the Google Ads API, request Basic/Standard access for that project, set the OAuth consent screen (the `adwords` scope is sensitive and needs verification for external users).
+- Bing: in Bing Webmaster Tools open Settings → API Access → OAuth Client, register the client with the redirect URI
+  above, and set `BING_OAUTH_CLIENT_ID` and `BING_OAUTH_CLIENT_SECRET`. Without them the Bing Connect button shows
+  "not configured".
 - Meta: a Meta app with Business Verification and App Review for `ads_management` and the other requested permissions.
 
 ### Docker / Dokploy
@@ -119,7 +129,7 @@ already applied ones are skipped) and then starts the server. It refuses to star
    ADS_MCP_KEYS=1:<openssl rand -base64 32>
    PUBLIC_URL=https://ads.example.com     # the domain from step 4, no trailing slash
    ```
-   Add the `GOOGLE_*`, `META_*` and `YOUTUBE_API_KEY` values from `.env.example` as needed. The image already sets
+   Add the `GOOGLE_*`, `META_*`, `BING_*` and `YOUTUBE_API_KEY` values from `.env.example` as needed. The image already sets
    `NODE_ENV=production`, `PORT=8787`, `TRUST_PROXY=1` (Dokploy's Traefik is the trusted proxy) and `RATE_LIMIT_STORE=db`.
    Set `RUN_MIGRATIONS=false` to skip the automatic migrations.
 4. **Domain:** add the domain with **container port 8787** and HTTPS (Let's Encrypt) enabled. Register the OAuth
@@ -150,4 +160,13 @@ Back up the Postgres service (Dokploy → Backups): it holds the encrypted platf
 - Google must verify the OAuth app for the Search Console, Analytics and Tag Manager scopes before outside customers can
   connect them. Tag Manager allows 25 requests per 100 seconds per Cloud project, shared by every tenant; the server
   enforces that limit (`GTM_RATE_BURST`, `GTM_RATE_PER_SEC`), and a higher quota should be requested before launch.
+- Bing Webmaster tools have not run against a live site. Two things to confirm on the first live read: that
+  `www.bing.com/webmaster/api.svc/json` accepts the OAuth Bearer token (Microsoft's OAuth page shows it; its protocol
+  page shows only `ssl.bing.com` with an API key), and the readings recorded in `docs/VERIFICATION.md` where Microsoft's
+  pages are silent or contradict themselves (for example quoting of text parameters, date parameters of the keyword
+  methods, what the submission quota numbers mean, and the site-move rules taken from Bing's help).
+- Bing's query and page reports have no date range: they cover Bing's own window in weekly buckets. Bing figures say
+  which buckets they use and are never presented as covering an exact period; the combined tools show Bing beside
+  Google and never add the two together. Bing keyword volumes are Bing-wide demand, not the site's traffic.
+- Bing's AI Performance (Copilot citation) report is not in Bing's API, so it is not available.
 - Web UI is deliberately minimal (login, consent, approvals, connections). No self-serve signup: tenants are created with `tenant:create`.
