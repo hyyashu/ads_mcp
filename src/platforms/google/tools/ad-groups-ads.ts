@@ -290,7 +290,7 @@ export const removeAppAdAsset = stateWrite({
   name: "remove_app_ad_asset",
   title: "Remove App ad text",
   risk: "destructive",
-  description: "Removes headlines and/or descriptions from the app ad of an App campaign ad group, after approval from a second person. At least one headline and one description must remain. Confirmed by re-reading.",
+  description: "Removes headlines and/or descriptions from the app ad of an App campaign ad group, after a person approves it. At least one headline and one description must remain. Confirmed by re-reading.",
   input: appInput,
   output: appOut,
   read: (a, ads) => readAppAd(ads, a.ad_group_id),

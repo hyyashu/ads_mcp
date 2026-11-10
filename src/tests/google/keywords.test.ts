@@ -183,7 +183,6 @@ describe("remove_keywords", () => {
     const r = await run("remove_keywords", { ad_group_id: "21", criterion_ids: ["2", "3"] });
     expect(r.approval?.risk).toBe("destructive");
     expect(r.approval?.summary).toContain("Permanently remove 2");
-    await expect(approve(r.approval!.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     expect(calls).toHaveLength(0);
     const done = await approve(r.approval!.approval_id, second);
     expect(done.status).toBe("executed");

@@ -118,13 +118,13 @@ describe("decisions", () => {
     await expect(svc.decide({ tenantId: row.tenantId, approvalId: row.id, decider: { userId: member.id, role: "member" }, decision: "approve", execute: async () => ({}) })).rejects.toMatchObject({ code: "permission_denied" });
   });
 
-  it("high-impact and destructive changes need a different approver than the requester", async () => {
-    for (const risk of ["high_impact", "destructive"] as const) {
-      const { row } = await svc.request({ ...base(), risk, args: { campaign_id: risk } });
-      await expect(svc.decide({ tenantId: row.tenantId, approvalId: row.id, decider: asAdmin(t1.user), decision: "approve", execute: async () => ({}) })).rejects.toMatchObject({ code: "permission_denied" });
-      const other = await addUser(db, t1.tenant.id, `admin-${risk}`, "admin");
-      const done = await svc.decide({ tenantId: row.tenantId, approvalId: row.id, decider: asAdmin(other), decision: "approve", execute: async () => ({}) });
+  it("the requester may approve their own change at every risk level (the MCP client itself can never approve)", async () => {
+    for (const risk of ["write", "high_impact", "destructive"] as const) {
+      const { row } = await svc.request({ ...base(), risk, args: { campaign_id: `self-${risk}` } });
+      expect(row.requestedBy).toBe(t1.user.id);
+      const done = await svc.decide({ tenantId: row.tenantId, approvalId: row.id, decider: asAdmin(t1.user), decision: "approve", execute: async () => ({}) });
       expect(done.status).toBe("executed");
+      expect(done.decidedBy).toBe(t1.user.id);
     }
   });
 

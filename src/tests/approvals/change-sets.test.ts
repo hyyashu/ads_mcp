@@ -99,7 +99,6 @@ describe("change sets on real tools", () => {
       risk_reason: "effects: increase_spend",
     });
     expect((await row(r.approval!.approval_id)).changeSet).toEqual(r.approval!.change_set);
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     expect((await kit.approveAs(r.approval!.approval_id, kit.second)).status).toBe("executed");
     expect(budget).toBe("75000000");
   });

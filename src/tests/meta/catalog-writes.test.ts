@@ -211,7 +211,6 @@ describe("create_meta_catalog_campaign", () => {
     const ap = await planned("create_meta_catalog_campaign", camp());
     expect(ap.risk).toBe("high_impact");
     expect(posts).toHaveLength(0);
-    await expect(approve(ap.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(ap.approval_id);
     expect(done.status).toBe("executed");
     expect(posts.map((p) => p.path)).toEqual(["act_555/campaigns", "act_555/adsets", "act_555/adcreatives", "act_555/ads"]);

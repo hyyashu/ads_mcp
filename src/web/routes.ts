@@ -393,7 +393,7 @@ ${hidden("csrf", csrfToken(s, "consent"))}
     const other = rows.filter((r) => !pending.includes(r)).slice(0, 15);
     const card = (r: (typeof rows)[number]) => `<div class="card"><div class="muted">${esc(r.platform)} · ${esc(r.name || r.ext)} · ${esc(r.a.tool)} · risk: <strong>${esc(r.a.risk)}</strong></div><p>${esc(r.a.summary)}</p>${changeTable(r.a.changeSet as ChangeSet | null, r.a.risk)}${
       canDecide
-        ? `<form method="post" action="/approvals/${esc(r.a.id)}/decision">${hidden("csrf", csrfToken(s, `approval:${r.a.id}`))}<button class="primary" name="decision" value="approve">Approve</button> <button class="danger" name="decision" value="reject">Reject</button></form>${r.a.risk !== "write" ? `<p class="muted">Needs someone other than the requester.</p>` : ""}`
+        ? `<form method="post" action="/approvals/${esc(r.a.id)}/decision">${hidden("csrf", csrfToken(s, `approval:${r.a.id}`))}<button class="primary" name="decision" value="approve">Approve</button> <button class="danger" name="decision" value="reject">Reject</button></form>`
         : `<p class="muted">Only an owner or admin can decide.</p>`
     }</div>`;
     this.html(res, 200, page("Approvals", `${flash(url.searchParams.get("msg"))}<h2>Waiting</h2>${pending.length ? pending.map(card).join("") : `<p class="muted">Nothing is waiting.</p>`}<h2>Recent</h2>${other.map((r) => `<p class="muted">${esc(r.a.tool)} · ${esc(r.a.summary)} · <strong>${esc(r.a.status)}</strong>${r.a.approvedByRule ? ` · applied by rule: ${esc(r.a.approvedByRule)}` : ""}</p>`).join("") || `<p class="muted">Nothing yet.</p>`}`, this.navFor(s)));

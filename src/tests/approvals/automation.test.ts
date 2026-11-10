@@ -122,7 +122,7 @@ describe("automation rules through the pipeline", () => {
     expect(mutations).toBe(0);
   });
 
-  it("budget increases within limits apply; above them they wait for a second person", async () => {
+  it("budget increases within limits apply; above them they wait for a person", async () => {
     await setRules(rules({ budget: { max_increase_pct: 10, max_increase_amount: 50 } }));
     const ok = await kit.run("update_campaign", { campaign_id: "11", daily_budget: 110 });
     expect(ok.meta.auto_approval?.rule).toBe("budget");

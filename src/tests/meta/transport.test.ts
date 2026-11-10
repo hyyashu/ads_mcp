@@ -185,10 +185,9 @@ describe("pause / resume Meta campaign", () => {
     expect(new URLSearchParams(posts[0]!.body).get("status")).toBe("PAUSED");
   });
 
-  it("resuming is high impact and needs a second person", async () => {
+  it("resuming is high impact and waits for a person", async () => {
     const r = await run("resume_meta_campaign", { campaign_id: "120003" });
     expect(r.approval).toMatchObject({ risk: "high_impact", change_set: { changes: [{ effect: "enable" }] } });
-    await expect(approve(r.approval!.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     expect((await approve(r.approval!.approval_id, second)).status).toBe("executed");
     expect(camps["120003"]!.status).toBe("ACTIVE");
   });

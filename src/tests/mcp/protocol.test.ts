@@ -293,13 +293,12 @@ describe("write tools and approval", () => {
     await c.close();
   });
 
-  it("destructive changes need a second person to approve", async () => {
+  it("the requester can approve their own destructive change: the MCP client can never approve, only a signed-in person", async () => {
     const c = await client(env.base, env.A.tokens.full);
     const { env: e } = await call(c, "remove_ad", { account_id: env.A.account, campaign_id: "ad-1" });
     expect(e.approval.risk).toBe("destructive");
-    expect(String(await decide(env, env.A.ownerEmail, e.approval.approval_id, "approve"))).toMatch(/someone other than the requester/);
     expect(await statusOf(env, env.A.tenantId, e.approval.approval_id)).toBe("pending");
-    expect(await decide(env, env.A.admin2Email, e.approval.approval_id, "approve")).toMatch(/executed/);
+    expect(await decide(env, env.A.ownerEmail, e.approval.approval_id, "approve")).toMatch(/executed/);
     await c.close();
   });
 

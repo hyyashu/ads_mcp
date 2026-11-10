@@ -189,7 +189,6 @@ describe("pause_ad / resume_ad", () => {
     expect(r.approval?.risk).toBe("high_impact");
     expect(r.approval?.summary).toContain("DISAPPROVED");
     expect(r.approval?.summary).toContain("will not serve");
-    await expect(approve(r.approval!.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     expect((await approve(r.approval!.approval_id, second)).status).toBe("executed");
     expect(adRows.find((a) => a.ad === "302")!.status).toBe("ENABLED");
   });
@@ -226,7 +225,6 @@ describe("remove_ad", () => {
     const r = await run("remove_ad", { ad_group_id: "21", ad_id: "303" });
     expect(r.approval?.risk).toBe("destructive");
     expect(r.approval?.summary).toContain("cannot be undone");
-    await expect(approve(r.approval!.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(r.approval!.approval_id, second);
     expect(done.status).toBe("executed");
     expect(calls[0]!.body.operations).toEqual([{ remove: `${C}/adGroupAds/21~303` }]);

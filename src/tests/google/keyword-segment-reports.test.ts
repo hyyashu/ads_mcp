@@ -104,7 +104,6 @@ describe("negative keyword list maintenance", () => {
   it("removes keywords from a list (destructive, case-insensitive match) and refuses unknown ones", async () => {
     const r = await kit.run("remove_negative_keywords_from_list", { shared_set_id: "70", keywords: [{ text: "FREE", match_type: "BROAD" }] });
     expect(r.approval).toMatchObject({ risk: "destructive", summary: expect.stringContaining("used by 2 campaign") });
-    await expect(kit.approveAs(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await kit.approveAs(r.approval!.approval_id, kit.second);
     expect(done.result).toEqual({ shared_set_id: "70", removed: 1, campaigns_affected: 2 });
     expect(mutates[0]).toEqual([{ sharedCriterionOperation: { remove: `${C}/sharedCriteria/70~1` } }]);

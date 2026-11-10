@@ -197,7 +197,7 @@ export const removeNegativeKeywordsFromList = stateWrite({
   name: "remove_negative_keywords_from_list",
   title: "Remove keywords from a negative keyword list",
   risk: "destructive",
-  description: "Removes keywords from a shared negative keyword list after approval from a second person. Every campaign the list is attached to may then show ads for those searches again. Give the keywords (text and match type, matched case-insensitively) to remove. Confirmed by re-reading the list.",
+  description: "Removes keywords from a shared negative keyword list after a person approves it. Every campaign the list is attached to may then show ads for those searches again. Give the keywords (text and match type, matched case-insensitively) to remove. Confirmed by re-reading the list.",
   input: z.object({ account_id: accountId, shared_set_id: idSchema, keywords: z.array(keywordItem).min(1).max(100) }),
   output: z.object({ shared_set_id: z.string(), removed: z.number(), campaigns_affected: z.number() }),
   read: async (a, ads) => {
@@ -225,7 +225,7 @@ export const detachNegativeKeywordListFromCampaign = stateWrite({
   name: "detach_negative_keyword_list_from_campaign",
   title: "Detach a negative keyword list from a campaign",
   risk: "destructive",
-  description: "Stops applying a shared negative keyword list to a campaign, after approval from a second person: the campaign may then show ads for searches the list blocked. The list itself and its other campaigns are unchanged. Confirmed by re-reading.",
+  description: "Stops applying a shared negative keyword list to a campaign, after a person approves it: the campaign may then show ads for searches the list blocked. The list itself and its other campaigns are unchanged. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, shared_set_id: idSchema }),
   output: z.object({ campaign_id: z.string(), shared_set_id: z.string(), detached: z.literal(true) }),
   read: async (a, ads) => {

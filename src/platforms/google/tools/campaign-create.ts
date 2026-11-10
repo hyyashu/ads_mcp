@@ -127,7 +127,7 @@ export const createSearchCampaign = createTool({
   name: "create_search_campaign",
   title: "Create Search campaign",
   description:
-    "Creates a Search campaign, PAUSED, with its own daily budget, bidding (MANUAL_CPC, MAXIMIZE_CONVERSIONS with optional target CPA, MAXIMIZE_CONVERSION_VALUE with optional target ROAS, or TARGET_SPEND with optional max CPC), Google Search plus optionally search partners and Display, and optional locations, languages and dates, in one atomic request after approval from a second person. Add ad groups, keywords and ads next; it serves only after resume_campaign.",
+    "Creates a Search campaign, PAUSED, with its own daily budget, bidding (MANUAL_CPC, MAXIMIZE_CONVERSIONS with optional target CPA, MAXIMIZE_CONVERSION_VALUE with optional target ROAS, or TARGET_SPEND with optional max CPC), Google Search plus optionally search partners and Display, and optional locations, languages and dates, in one atomic request after a person approves it. Add ad groups, keywords and ads next; it serves only after resume_campaign.",
   input: z.object({ ...base, ...bidding(["MANUAL_CPC", "MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE", "TARGET_SPEND"]), search_partners: z.boolean().default(false), display_expansion: z.boolean().default(false) }).refine(biddingOk, biddingMsg),
   type: "SEARCH",
   fields: (a) => ({ advertisingChannelType: "SEARCH", networkSettings: { targetGoogleSearch: true, targetSearchNetwork: a.search_partners, targetContentNetwork: a.display_expansion, targetPartnerSearchNetwork: false }, geoTargetTypeSetting: { positiveGeoTargetType: "PRESENCE" } }),
@@ -138,7 +138,7 @@ export const createSearchCampaign = createTool({
 export const createShoppingCampaign = createTool({
   name: "create_shopping_campaign",
   title: "Create Shopping campaign",
-  description: "Creates a Standard Shopping campaign, PAUSED, linked to a Merchant Center account that is already linked to this Google Ads account (get_merchant_center_links), with its own daily budget, bidding (MANUAL_CPC, TARGET_SPEND or MAXIMIZE_CONVERSION_VALUE), priority (0 low, 1 medium, 2 high), optional feed label, locations and languages, in one atomic request after approval from a second person. It serves only after resume_campaign.",
+  description: "Creates a Standard Shopping campaign, PAUSED, linked to a Merchant Center account that is already linked to this Google Ads account (get_merchant_center_links), with its own daily budget, bidding (MANUAL_CPC, TARGET_SPEND or MAXIMIZE_CONVERSION_VALUE), priority (0 low, 1 medium, 2 high), optional feed label, locations and languages, in one atomic request after a person approves it. It serves only after resume_campaign.",
   input: z.object({ ...base, ...bidding(["MANUAL_CPC", "TARGET_SPEND", "MAXIMIZE_CONVERSION_VALUE"]), merchant_center_id: idSchema, feed_label: z.string().trim().min(1).max(20).optional(), campaign_priority: z.number().int().min(0).max(2).default(0), enable_local: z.boolean().default(false) }).refine(biddingOk, biddingMsg),
   type: "SHOPPING",
   extraRead: async (a, ads) => {
@@ -154,7 +154,7 @@ export const createShoppingCampaign = createTool({
 export const createPmaxCampaign = createTool({
   name: "create_pmax_campaign",
   title: "Create Performance Max campaign",
-  description: "Creates a Performance Max campaign, PAUSED, with its own daily budget, MAXIMIZE_CONVERSIONS (optional target CPA) or MAXIMIZE_CONVERSION_VALUE (optional target ROAS) bidding, optional Merchant Center feed, locations and languages, in one atomic request after approval from a second person. Brand guidelines are turned off, so the business name and logos go into each asset group. Add an asset group (add_pmax_asset_group) before resuming it.",
+  description: "Creates a Performance Max campaign, PAUSED, with its own daily budget, MAXIMIZE_CONVERSIONS (optional target CPA) or MAXIMIZE_CONVERSION_VALUE (optional target ROAS) bidding, optional Merchant Center feed, locations and languages, in one atomic request after a person approves it. Brand guidelines are turned off, so the business name and logos go into each asset group. Add an asset group (add_pmax_asset_group) before resuming it.",
   input: z.object({ ...base, ...bidding(["MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE"]), merchant_center_id: idSchema.optional() }).refine(biddingOk, biddingMsg),
   type: "PERFORMANCE_MAX",
   fields: (a) => ({ advertisingChannelType: "PERFORMANCE_MAX", brandGuidelinesEnabled: false, ...(a.merchant_center_id ? { shoppingSetting: { merchantId: a.merchant_center_id } } : {}) }),
@@ -165,7 +165,7 @@ export const createPmaxCampaign = createTool({
 export const createDemandgenCampaign = createTool({
   name: "create_demandgen_campaign",
   title: "Create Demand Gen campaign",
-  description: "Creates a Demand Gen campaign (YouTube, Discover, Gmail and more), PAUSED, with its own non-shared daily budget (Google enforces a minimum, about 5 USD or the equivalent), bidding (MAXIMIZE_CONVERSIONS with optional target CPA, MAXIMIZE_CONVERSION_VALUE with optional target ROAS, or TARGET_SPEND for clicks), in one atomic request after approval from a second person. Locations and languages are set on Demand Gen ad groups, not here. This is also the way to create YouTube video ads through the API.",
+  description: "Creates a Demand Gen campaign (YouTube, Discover, Gmail and more), PAUSED, with its own non-shared daily budget (Google enforces a minimum, about 5 USD or the equivalent), bidding (MAXIMIZE_CONVERSIONS with optional target CPA, MAXIMIZE_CONVERSION_VALUE with optional target ROAS, or TARGET_SPEND for clicks), in one atomic request after a person approves it. Locations and languages are set on Demand Gen ad groups, not here. This is also the way to create YouTube video ads through the API.",
   input: z.object({ ...base, location_ids: z.array(idSchema).max(0).default([]).describe("Not used for Demand Gen: set locations on ad groups."), language_ids: z.array(idSchema).max(0).default([]), ...bidding(["MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE", "TARGET_SPEND"]) }).refine(biddingOk, biddingMsg),
   type: "DEMAND_GEN",
   fields: () => ({ advertisingChannelType: "DEMAND_GEN" }),
@@ -176,7 +176,7 @@ export const createDemandgenCampaign = createTool({
 export const createAppCampaign = createTool({
   name: "create_app_campaign",
   title: "Create App campaign",
-  description: "Creates an App campaign for installs of an Android (Google Play package name) or iOS (App Store id) app, PAUSED, with its own daily budget and a target cost per install, plus its ad group and an app ad with 2-5 headlines (30 chars) and 1-5 descriptions (90 chars), in one atomic request after approval from a second person. It serves only after resume_campaign.",
+  description: "Creates an App campaign for installs of an Android (Google Play package name) or iOS (App Store id) app, PAUSED, with its own daily budget and a target cost per install, plus its ad group and an app ad with 2-5 headlines (30 chars) and 1-5 descriptions (90 chars), in one atomic request after a person approves it. It serves only after resume_campaign.",
   input: z.object({
     ...base,
     bidding_strategy: z.literal("TARGET_CPA").default("TARGET_CPA"),
