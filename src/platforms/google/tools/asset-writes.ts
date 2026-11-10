@@ -13,11 +13,18 @@ import { rn, stateWrite, temp } from "./write-kit";
  * removing deletes the link only (assets themselves cannot be deleted in Google Ads). Text limits are Google Ads'
  * published limits; Google enforces them too.
  */
-const clean = (max: number) => z.string().trim().min(1).max(max).regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters");
-const url = z.string().url().max(2048).refine((u) => /^https?:\/\//i.test(u), "http(s) URL");
+export const clean = (max: number) => z.string().trim().min(1).max(max).regex(/^[^\u0000-\u001f\u007f]+$/, "no control characters");
+export const url = z.string().url().max(2048).refine((u) => /^https?:\/\//i.test(u), "http(s) URL");
 type FieldType = "SITELINK" | "CALLOUT" | "STRUCTURED_SNIPPET" | "CALL" | "BUSINESS_NAME";
+/** Field types other tool files link with these helpers (more-assets.ts); they pass their own LinkContent. */
+export type LinkFieldType = FieldType | "PROMOTION" | "PRICE" | "LEAD_FORM" | "BUSINESS_MESSAGE";
+/** The asset fields to read with each link and how to turn a row into its identity (key) and display label. */
+export interface LinkContent {
+  fields: string[];
+  key: (r: Row) => { key: string; label: string };
+}
 
-interface Link {
+export interface Link {
   asset_id: string;
   status: string;
   key: string;
@@ -50,42 +57,43 @@ function contentKey(fieldType: FieldType, r: Row): { key: string; label: string 
   return { key: low(pick(r, "asset.text_asset.text")), label: str(r, "asset.text_asset.text") ?? "" };
 }
 
-async function readCampaignAssets(ads: GoogleAdsClient, campaignId: string, fieldType: FieldType): Promise<CampaignAssets> {
+const defaultContent = (fieldType: LinkFieldType): LinkContent => ({ fields: CONTENT_FIELDS, key: (r) => contentKey(fieldType as FieldType, r) });
+export async function readCampaignAssets(ads: GoogleAdsClient, campaignId: string, fieldType: LinkFieldType, content: LinkContent = defaultContent(fieldType)): Promise<CampaignAssets> {
   const [c] = await ads.query(new Gaql().select("campaign.id", "campaign.name", "campaign.status").from("campaign").where(`campaign.id = ${lit.id(campaignId)}`).limit(1), { maxRows: 1 });
   if (!c) throw new ToolError("not_found", `No campaign ${campaignId} in this account.`);
   if (str(c, "campaign.status") === "REMOVED") throw new ToolError("invalid_argument", "The campaign is removed and cannot be changed.");
   const rows = await ads.query(
-    new Gaql().select("asset.id", "campaign_asset.status", ...CONTENT_FIELDS).from("campaign_asset").where(`campaign_asset.campaign = ${lit.str(rn(ads, "campaigns", campaignId))}`).where(`campaign_asset.field_type = '${fieldType}'`).where("campaign_asset.status != 'REMOVED'"),
+    new Gaql().select("asset.id", "campaign_asset.status", ...content.fields).from("campaign_asset").where(`campaign_asset.campaign = ${lit.str(rn(ads, "campaigns", campaignId))}`).where(`campaign_asset.field_type = '${fieldType}'`).where("campaign_asset.status != 'REMOVED'"),
     { maxRows: 2000 },
   );
-  const links = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), status: str(r, "campaign_asset.status") ?? "", ...contentKey(fieldType, r) })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
+  const links = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), status: str(r, "campaign_asset.status") ?? "", ...content.key(r) })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
   return { campaign: { id: campaignId, name: str(c, "campaign.name"), status: str(c, "campaign.status")! }, links };
 }
 
 // ------------------------------------------------------------------------------- link levels: account, campaign, ad group
 /** Where an extension is linked. An account-level link applies to every campaign that does not exclude its field type. */
 type Level = "account" | "campaign" | "ad_group";
-interface Scope {
+export interface Scope {
   level: Level;
   campaign_id?: string | undefined;
   ad_group_id?: string | undefined;
 }
-const scopeFields = {
+export const scopeFields = {
   level: z.enum(["campaign", "ad_group", "account"]).default("campaign").describe("campaign (default, give campaign_id), ad_group (give ad_group_id) or account (give neither; applies to every campaign that does not exclude the type)."),
   campaign_id: idSchema.optional(),
   ad_group_id: idSchema.optional(),
 };
-const scopeOk = (v: Scope) => (v.level === "campaign" ? v.campaign_id !== undefined && v.ad_group_id === undefined : v.level === "ad_group" ? v.ad_group_id !== undefined && v.campaign_id === undefined : v.campaign_id === undefined && v.ad_group_id === undefined);
-const scopeMsg = { message: "give campaign_id for level campaign, ad_group_id for level ad_group, and neither for level account" };
+export const scopeOk = (v: Scope) => (v.level === "campaign" ? v.campaign_id !== undefined && v.ad_group_id === undefined : v.level === "ad_group" ? v.ad_group_id !== undefined && v.campaign_id === undefined : v.campaign_id === undefined && v.ad_group_id === undefined);
+export const scopeMsg = { message: "give campaign_id for level campaign, ad_group_id for level ad_group, and neither for level account" };
 
 /** Links of one field type at a level. Campaign level keeps readCampaignAssets' shape, so pending approvals still match. */
-interface ScopedLinks {
+export interface ScopedLinks {
   campaign?: { id: string; name: string | null; status: string };
   ad_group?: { id: string; name: string | null; status: string };
   links: Link[];
 }
-async function readLinks(ads: GoogleAdsClient, s: Scope, fieldType: FieldType): Promise<ScopedLinks> {
-  if (s.level === "campaign") return readCampaignAssets(ads, s.campaign_id!, fieldType);
+export async function readLinks(ads: GoogleAdsClient, s: Scope, fieldType: LinkFieldType, content: LinkContent = defaultContent(fieldType)): Promise<ScopedLinks> {
+  if (s.level === "campaign") return readCampaignAssets(ads, s.campaign_id!, fieldType, content);
   let owner: ScopedLinks["ad_group"];
   if (s.level === "ad_group") {
     const [g] = await ads.query(new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status").from("ad_group").where(`ad_group.id = ${lit.id(s.ad_group_id!)}`).limit(1), { maxRows: 1 });
@@ -96,29 +104,29 @@ async function readLinks(ads: GoogleAdsClient, s: Scope, fieldType: FieldType): 
   const res = s.level === "ad_group" ? "ad_group_asset" : "customer_asset";
   const rows = await ads.query(
     new Gaql()
-      .select("asset.id", `${res}.status`, ...CONTENT_FIELDS)
+      .select("asset.id", `${res}.status`, ...content.fields)
       .from(res)
       .where(s.level === "ad_group" ? `ad_group_asset.ad_group = ${lit.str(rn(ads, "adGroups", s.ad_group_id!))}` : undefined)
       .where(`${res}.field_type = '${fieldType}'`)
       .where(`${res}.status != 'REMOVED'`),
     { maxRows: 2000 },
   );
-  const links = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), status: str(r, `${res}.status`) ?? "", ...contentKey(fieldType, r) })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
+  const links = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), status: str(r, `${res}.status`) ?? "", ...content.key(r) })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
   return { ...(owner ? { ad_group: owner } : {}), links };
 }
 /** "the account", campaign "Brand" or ad group "Shoes", for summaries and errors. */
-const where = (s: Scope, snap: ScopedLinks) => (s.level === "account" ? "the account" : s.level === "campaign" ? `campaign "${snap.campaign?.name ?? s.campaign_id}"` : `ad group "${snap.ad_group?.name ?? s.ad_group_id}"`);
-const ownerRef = (ads: GoogleAdsClient, s: Scope, snap: ScopedLinks) =>
+export const where = (s: Scope, snap: ScopedLinks) => (s.level === "account" ? "the account" : s.level === "campaign" ? `campaign "${snap.campaign?.name ?? s.campaign_id}"` : `ad group "${snap.ad_group?.name ?? s.ad_group_id}"`);
+export const ownerRef = (ads: GoogleAdsClient, s: Scope, snap: ScopedLinks) =>
   s.level === "account" ? { resource: "account", id: ads.customerId } : s.level === "campaign" ? { resource: "campaign", id: s.campaign_id!, name: snap.campaign?.name ?? null } : { resource: "ad_group", id: s.ad_group_id!, name: snap.ad_group?.name ?? null };
 /** The mutate operation that creates or removes one link at the scope's level. */
-function linkOp(ads: GoogleAdsClient, s: Scope, assetId: string, fieldType: FieldType, action: "create" | "remove"): Row {
+export function linkOp(ads: GoogleAdsClient, s: Scope, assetId: string, fieldType: LinkFieldType, action: "create" | "remove"): Row {
   const c = ads.customerId;
   if (s.level === "account") return { customerAssetOperation: action === "create" ? { create: { asset: rn(ads, "assets", assetId), fieldType } } : { remove: `customers/${c}/customerAssets/${assetId}~${fieldType}` } };
   if (s.level === "ad_group") return { adGroupAssetOperation: action === "create" ? { create: { asset: rn(ads, "assets", assetId), adGroup: rn(ads, "adGroups", s.ad_group_id!), fieldType } } : { remove: `customers/${c}/adGroupAssets/${s.ad_group_id}~${assetId}~${fieldType}` } };
   return { campaignAssetOperation: action === "create" ? { create: { asset: rn(ads, "assets", assetId), campaign: rn(ads, "campaigns", s.campaign_id!), fieldType } } : { remove: `customers/${c}/campaignAssets/${s.campaign_id}~${assetId}~${fieldType}` } };
 }
-const scopeResult = (s: Scope) => ({ level: s.level, campaign_id: s.campaign_id ?? null, ad_group_id: s.ad_group_id ?? null });
-const scopeOutput = { level: z.string(), campaign_id: z.string().nullable(), ad_group_id: z.string().nullable() };
+export const scopeResult = (s: Scope) => ({ level: s.level, campaign_id: s.campaign_id ?? null, ad_group_id: s.ad_group_id ?? null });
+export const scopeOutput = { level: z.string(), campaign_id: z.string().nullable(), ad_group_id: z.string().nullable() };
 
 /** Builds "add extensions" tools: new items become asset + link pairs; items whose content is already linked are skipped. */
 function addTool<T>(o: {
