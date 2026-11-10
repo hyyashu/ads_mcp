@@ -191,7 +191,7 @@ export const optimizeBudgetAllocation = googleRead({
     const ads = ctx.services.ads;
     const [rows, recs] = await Promise.all([
       ads.query(new Gaql().select("campaign.id", "campaign.name", "campaign.advertising_channel_type", "campaign_budget.amount_micros", "campaign_budget.explicitly_shared", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value", "metrics.search_budget_lost_impression_share").from("campaign").where("campaign.status = 'ENABLED'").where(`segments.date DURING ${lit.enumOf(a.date_range, ["LAST_7_DAYS", "LAST_14_DAYS", "LAST_30_DAYS"] as const)}`), { maxRows: 5000 }),
-      ads.query(new Gaql().select("recommendation.campaign", "recommendation.type", "recommendation.campaign_budget_recommendation.current_budget_amount_micros", "recommendation.campaign_budget_recommendation.recommended_budget_amount_micros").from("recommendation").where("recommendation.type = 'CAMPAIGN_BUDGET'"), { maxRows: 500 }),
+      ads.query(new Gaql().select("recommendation.campaign", "recommendation.type", "recommendation.campaign_budget_recommendation").from("recommendation").where("recommendation.type = 'CAMPAIGN_BUDGET'"), { maxRows: 500 }),
     ]);
     const campaigns = rows.map((r) => {
       const cost = fromMicros(pick(r, "metrics.cost_micros")), conv = num(pick(r, "metrics.conversions")), value = num(pick(r, "metrics.conversions_value"));
