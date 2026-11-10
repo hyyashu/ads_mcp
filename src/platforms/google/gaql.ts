@@ -100,10 +100,35 @@ export class Gaql {
     this.params.push(...params);
     return this;
   }
+  /**
+   * A read of settings or structure (no metrics or segments) that names specific campaigns or ad groups. Reports and the change
+   * history are left unchanged: drafts have no metrics, and include_drafts is documented for entity reads.
+   */
+  private isStructuralLookup(): boolean {
+    if (this.resource === "change_event" || this.resource === "change_status") return false;
+    if (this.fields.some((f) => f.startsWith("metrics.") || f.startsWith("segments."))) return false;
+    return namesCampaignsOrAdGroups(this.conds);
+  }
   toString(): string {
     if (!this.resource || this.fields.length === 0) throw new GaqlError("a query needs fields and a resource", "internal");
-    return [`SELECT ${this.fields.join(", ")}`, `FROM ${this.resource}`, this.conds.length ? `WHERE ${this.conds.join(" AND ")}` : "", this.order.length ? `ORDER BY ${this.order.join(", ")}` : "", this.max ? `LIMIT ${this.max}` : "", this.params.length ? `PARAMETERS ${this.params.join(", ")}` : ""].filter(Boolean).join(" ");
+    const params = [...this.params];
+    if (!params.includes("include_drafts = true") && this.isStructuralLookup()) params.push("include_drafts = true");
+    return [`SELECT ${this.fields.join(", ")}`, `FROM ${this.resource}`, this.conds.length ? `WHERE ${this.conds.join(" AND ")}` : "", this.order.length ? `ORDER BY ${this.order.join(", ")}` : "", this.max ? `LIMIT ${this.max}` : "", params.length ? `PARAMETERS ${params.join(", ")}` : ""].filter(Boolean).join(" ");
   }
+}
+
+/**
+ * True when the conditions name specific campaigns or ad groups (by id, or by resource name in a link field such as
+ * campaign_asset.campaign). Lookups like these also return draft and in-design campaigns and their ad groups, which Google
+ * hides without PARAMETERS include_drafts = true: an experiment's treatment is one, and it must be edited before the
+ * experiment can be scheduled (experiments guide, system-managed). Lists without such a filter return regular entities only.
+ */
+function namesCampaignsOrAdGroups(conds: string[]): boolean {
+  return conds.some((c) => {
+    const noStrings = c.replace(/'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g, "''");
+    if (/\b(campaign|ad_group)\.id\s*(=|IN)\s/.test(noStrings)) return true;
+    return /\.(campaign|ad_group)\s*(=|IN)\s*\(?\s*'customers\/\d+\/(campaigns|adGroups)\/\d+'/.test(c);
+  });
 }
 
 /** Reads a GAQL field ("campaign.start_date") from a REST result row, which uses camelCase JSON names. */
