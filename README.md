@@ -1,12 +1,12 @@
 # ads-mcp
 
 A remote MCP server (Streamable HTTP), product name JackOfAds, for Google Ads, Meta Ads, Google Search Console, Google
-Analytics 4 and Google Tag Manager: 290 tools from `inventory/tool-registry.json`, implemented against the official
+Analytics 4 and Google Tag Manager: 347 tools from `inventory/tool-registry.json`, implemented against the official
 platform APIs. Advertising and analytics data is fetched on demand and never stored.
 
 ## Status (read this first)
 
-**289 of 290 tools are implemented**: 175 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
+**346 of 347 tools are implemented**: 232 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
 `get_property_links`), 12 Tag Manager, and 11 combined tools that join ad data with Search Console and GA4 (for example
 paid vs organic overlap, conversion tracking gaps, landing page quality, tracking setup audit). The remaining one,
 `create_youtube_campaign`, is a documented external limitation. Search Console, GA4 and Tag Manager each have their own
@@ -150,4 +150,11 @@ Back up the Postgres service (Dokploy → Backups): it holds the encrypted platf
 - Google must verify the OAuth app for the Search Console, Analytics and Tag Manager scopes before outside customers can
   connect them. Tag Manager allows 25 requests per 100 seconds per Cloud project, shared by every tenant; the server
   enforces that limit (`GTM_RATE_BURST`, `GTM_RATE_PER_SEC`), and a higher quota should be requested before launch.
+- Some Google Ads features are restricted by Google, not by this server. The tools are built per the v26 docs and pass
+  Google's own error through:
+  - `upload_click_conversions` and `upload_customer_match_members`: Google refuses API projects without earlier use
+    (`CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE`) and points new integrations to its Data Manager API.
+  - `get_auction_insights`: the `auction_insight_search_*` metrics are marked "not publicly available".
+  - Conversion value rules that set a fixed value, and itinerary conditions, are allowlist-only and not offered.
+- `request_policy_exemption` covers ads only: in v26 an existing keyword exposes no exemptible policy violation keys.
 - Web UI is deliberately minimal (login, consent, approvals, connections). No self-serve signup: tenants are created with `tenant:create`.

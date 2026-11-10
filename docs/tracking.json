@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 289,
+    "implemented": 346,
     "external_limitation": 1,
     "pending": 0
   },
@@ -2501,6 +2501,975 @@
       "action": "Read",
       "domain": "assets_extensions",
       "api": "GAQL: customer_asset, campaign_asset, ad_group_asset with metrics, segmented by segments.asset_interaction_target.interaction_on_this_asset",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_recommendations",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: recommendation (type, impact, campaign)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "apply_recommendations",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "RecommendationService.ApplyRecommendation",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "dismiss_recommendations",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "RecommendationService.DismissRecommendation",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_change_history",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: change_event (who, when, what, old/new values; last 30 days) and change_status",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_auction_insights",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: customer / campaign / ad_group with metrics.auction_insight_search_* segmented by segments.auction_insight_domain (access may be restricted by Google)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_click_conversions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_call_conversions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionUploadService.UploadCallConversions",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_conversion_adjustments",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "conversions",
+      "api": "ConversionAdjustmentUploadService.UploadConversionAdjustments (retraction, restatement)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_conversion_goals",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "conversions",
+      "api": "GAQL: customer_conversion_goal, campaign_conversion_goal, conversion_goal_campaign_config",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_conversion_goals",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "conversions",
+      "api": "CustomerConversionGoalService / CampaignConversionGoalService (biddable)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_conversion_value_rules",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "conversions",
+      "api": "GAQL: conversion_value_rule",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_conversion_value_rule",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionValueRuleService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_conversion_value_rule",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "conversions",
+      "api": "ConversionValueRuleService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_account_exclusions",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: customer_negative_criterion",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_account_exclusions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerNegativeCriterionService create (placements, YouTube channels and videos, mobile applications and app categories, content labels, IP blocks, the account-level negative keyword list, placement lists)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_account_exclusions",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "other",
+      "api": "CustomerNegativeCriterionService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_tracking_settings",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "CampaignService / AdGroupService update: tracking_url_template, final_url_suffix, url_custom_parameters",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "set_auto_tagging",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "GoogleAdsService.Mutate customer_operation (CustomerOperation, as CustomerService.MutateCustomer): customer.auto_tagging_enabled",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "set_location_bid_modifiers",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService update: bid_modifier on LOCATION criteria",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_entity_labels",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "labels",
+      "api": "GAQL: ad_group_label, ad_group_ad_label, ad_group_criterion_label",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_entity_labels",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "labels",
+      "api": "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService create",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_entity_labels",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "labels",
+      "api": "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bid_strategies",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: bidding_strategy and accessible_bidding_strategy (portfolio strategies, including ones a manager account shares) and the campaigns using them",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_bid_strategy",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService create (portfolio)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "assign_bid_strategy",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignService update: campaign.bidding_strategy, or a standard scheme to detach (campaign_bidding_strategy union)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bid_strategy",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bidding_adjustments",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: bidding_seasonality_adjustment, bidding_data_exclusion",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_seasonality_adjustment",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "BiddingSeasonalityAdjustmentService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_data_exclusion",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "BiddingDataExclusionService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bidding_adjustment",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingSeasonalityAdjustmentService / BiddingDataExclusionService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_experiments",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: experiment, experiment_arm",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_experiment",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "ExperimentService + ExperimentArmService create (control and treatment arms, in-design campaign)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "schedule_experiment",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "ExperimentService.ScheduleExperiment (long-running; status read back via GAQL)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "end_experiment",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "ExperimentService.EndExperiment",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "promote_experiment",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "ExperimentService.PromoteExperiment (long-running; promote_status read back via GAQL)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_user_lists",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: user_list (type, size, membership status)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_remarketing_list",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "UserListService create (rule-based website visitors)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_customer_match_list",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "UserListService create (CRM-based)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_customer_match_members",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "OfflineUserDataJobService create, add operations, run (SHA-256 hashed emails and phone numbers)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_user_list",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "other",
+      "api": "UserListService remove; GAQL ad_group_criterion, campaign_criterion, audience and user_list to check where the list is used",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_promotion_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (PromotionAsset) + CustomerAsset / CampaignAsset / AdGroupAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_price_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (PriceAsset) + CustomerAsset / CampaignAsset / AdGroupAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_lead_form_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (LeadFormAsset) + CampaignAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_lead_form_submissions",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: lead_form_submission_data",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_business_message_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (BusinessMessageAsset) + CustomerAsset / CampaignAsset / AdGroupAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_asset_automation_settings",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: campaign.asset_automation_settings",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_asset_automation_settings",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "CampaignService update: campaign.asset_automation_settings",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_automated_asset_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: campaign_aggregate_asset_view, channel_aggregate_asset_view (asset source: advertiser or automatically created)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "request_policy_exemption",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "AdGroupAdService with policy_validation_parameter.ignorable_policy_topics (ads only; existing keywords expose no exemptible violation keys in v26)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_account_users",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: customer_user_access, customer_user_access_invitation",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_user_access",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "CustomerUserAccessService update (access_role)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_user_access",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "other",
+      "api": "CustomerUserAccessService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "invite_user",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerUserAccessInvitationService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_billing_info",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: billing_setup, account_budget; InvoiceService.ListInvoices",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_client_account",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerService.CreateCustomerClient (manager account)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "link_client_account",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerClientLinkService mutate (single operation, create, status PENDING; the client accepts outside this server)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_local_services_leads",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: local_services_lead, local_services_lead_conversation",
       "risk": "read",
       "feasibility": "api",
       "platformPermissions": [
