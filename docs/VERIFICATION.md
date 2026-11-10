@@ -577,6 +577,45 @@ reading had to be chosen, the "Reading used" column says so.
 | SiteMoveSettings.Scope / .Type | enums | Scope: Domain 0, Host 1, Directory 2. Type: Local 0, Global 1 (no descriptions) | Meanings taken from Bing's Site Move help (archived 2014 copy; Bing's current help link is reported broken): moves "from one place to another within the current site" (read as Local) or to "any other domain that you have verified as a site in Bing Webmaster Tools" (read as Global); Domain "if you are moving an entire root domain" and only between sites; Subdomain (Host); Directory "all URLs in a directory (folder)". | `API.sitemovesettings.scope`, `API.sitemovesettings.type`, help `webarchive.library.unt.edu/web/20140924024129/http://www.bing.com/webmaster/help/how-to-use-the-site-move-tool-bb8f5112` |
 | SubmitSiteMove | `POST {"siteUrl", "settings": SiteMoveSettings}` | none (void) | **No sample and no remarks; the API reference states no verification rule.** From the help page: the destination must be a site "you have verified"; "The Site Move tool does not replace the need for permanent redirection"; keep redirects "for at least several months"; "you will not be able to notify of another move for either locations for at least 180 days"; "you will not be able to edit them later"; no guaranteed time for the index. Conservative reading used: refuse unless this site and (for Global) the target site are in the user's GetUserSites list and verified; Local only as a Directory move inside the site; Domain only Global from a whole-domain site; Domain/Host from root to root, Directory between paths ending in `/`; no query strings; refuse when GetSiteMoves lists a move from the last 180 days touching either URL. Body sends enums as numbers, `Date` as the submission time (`/Date(ms)/`), no `__type`. Read-back: the move must appear in GetSiteMoves; whether Bing lists it immediately is not documented (first live run should confirm). | `API.iwebmasterapi.submitsitemove`, help (above) |
 
+### Search performance and keyword research (2026-11-10)
+
+Tools in `src/platforms/bing/tools/performance.ts` and `keywords.ts`, calls in `src/platforms/bing/api/performance.ts` and `keywords.ts`
+(plus `api/traffic.ts` from the groundwork). Every method below is `WebGet` (GET, parameters in the query string) and returns `{"d": ...}`.
+Method pages fetched 2026-11-10 at `API.iwebmasterapi.<method>`; data contracts at `API.<type>` and their property pages.
+
+| Method | Verb, parameters | Returns (fields) | Remarks / notes | Source |
+|---|---|---|---|---|
+| GetRankAndTrafficStats | GET `siteUrl` | `RankAndTrafficStats {Clicks, Date, Impressions}` | "The data will be updated every day. The traffic data includes Impressions and Clicks from all verticals i.e. Web, Chat, News, Images, Videos and Knowledge Panel from March 24th, 2023 onwards." (Its XML sample is a copy of GetQueryTrafficStats.) Used by get_bing_search_performance and compare_bing_search_periods (site_totals). | `API.iwebmasterapi.getrankandtrafficstats` |
+| GetQueryStats | GET `siteUrl` | `QueryStats {AvgClickPosition, AvgImpressionPosition, Clicks, Date, Impressions, Query}`; positions are Int32 on the property pages | "The data will be updated every week." No date range. | `API.iwebmasterapi.getquerystats`, `API.querystats`, `API.querystats.avgclickposition` |
+| GetPageStats | GET `siteUrl` | `QueryStats` (XML sample `<Query>PageURL</Query>`) | "The data will be updated every week." | `API.iwebmasterapi.getpagestats` |
+| GetQueryPageStats | GET `siteUrl`, `query` | `QueryStats` | "Get detailed traffic statistics for specific query." "The data will be updated every week." **Unclear:** both samples put the query text (`"query"`) in `Query`, not a page URL. get_bing_query_pages reads `Query` as the page and, when every row only repeats the query, returns no page split (`rows_keyed_by_query: true`) and only per-bucket totals. | `API.iwebmasterapi.getquerypagestats` |
+| GetPageQueryStats | GET `siteUrl`, `page` | `QueryStats` (`Query` = query) | "Get detailed traffic statistics for specific site's page." "The data will be updated every week." The page goes in the parameter named `page`. | `API.iwebmasterapi.getpagequerystats` |
+| GetQueryPageDetailStats | GET `siteUrl`, `query`, `page` | `DetailedQueryStats {Clicks, Date, Impressions, Position}` (Position Int32) | "The data will be updated every week." | `API.iwebmasterapi.getquerypagedetailstats`, `API.detailedquerystats`, `API.detailedquerystats.position` |
+| GetQueryTrafficStats | GET `siteUrl`, `query` | `RankAndTrafficStats {Clicks, Date, Impressions}` | "The data will be updated every day. Only top-queries will be saved and returned by this method." | `API.iwebmasterapi.getquerytrafficstats` |
+| GetKeyword | GET `q`, `country`, `language`, `startDate` (DateTime), `endDate` (DateTime); **no siteUrl** | `Keyword {BroadImpressions (Int64), Impressions (Int64), Query}` (a single object) | "Get keyword impressions for selected period." No sample, no remarks, no country/language format, no date-range limit, no definition of Impressions vs BroadImpressions. | `API.iwebmasterapi.getkeyword`, `API.keyword`, `API.keyword.broadimpressions`, `API.keyword.impressions` |
+| GetKeywordStats | GET `q`, `country`, `language`; no siteUrl, no dates | `KeywordStats {BroadImpressions, Date, Impressions, Query}` (list) | "Get keyword historical statistics." No sample, no remarks; row granularity not documented. | `API.iwebmasterapi.getkeywordstats`, `API.keywordstats` |
+| GetRelatedKeywords | GET `q`, `country`, `language`, `startDate`, `endDate`; no siteUrl | `Keyword` list | Summary copied from GetKeyword ("Get keyword impressions for selected period"); its request/response samples are a copy of **GetSiteRoles** and say nothing about this method. | `API.iwebmasterapi.getrelatedkeywords` |
+
+Readings chosen where the docs are silent or contradictory:
+
+- **String parameters are sent unquoted.** The JSON GET samples write `query=%22query1%22` and `page=%22http%3a%5c%2f...%22` (JSON-quoted
+  strings), while `siteUrl` is unquoted in the same requests and every XML sample is unquoted. Values are sent unquoted, like `siteUrl`
+  (which the groundwork already sends that way). Confirm on the first live run.
+- **DateTime GET parameters (GetKeyword, GetRelatedKeywords) are sent as ISO days `YYYY-MM-DD`.** No page shows a DateTime in a query
+  string; the WCF JSON body form (`/Date(ms)/`, `toBingDate`) is for POST bodies. Confirm on the first live run.
+- **Country and language are sent exactly as given**, validated only loosely (country: two letters; language: `en` or `en-US` shape).
+  Microsoft documents no format; third-party pages (not used as a source) suggest lowercase ISO 3166 country (`us`) and an IETF tag
+  (`en-US`), which is what the tool descriptions suggest trying. No date-range limit is documented, so none is enforced beyond start ≤
+  end and end not in the future.
+- **Keyword data is search-wide**: the three keyword methods take no `siteUrl`, so the tools call them with `site: false` and every
+  output says the numbers are Bing-wide demand, not the site's traffic. Impressions/BroadImpressions are reported under Bing's names.
+- **Buckets, not date ranges**: query/page methods take no dates. Outputs list the bucket dates used (first, last, count, all dates);
+  sums for clicks/impressions, impression-weighted impression position, click-weighted click position (`sumByKey`), CTR from the sums.
+  compare_bing_search_periods matches each requested range to the buckets dated inside it and refuses a period with none; the named
+  comparison is the latest N buckets vs the N before (site totals: latest N×7 days vs the N×7 before, exact days).
+- **Top lists, not totals**: GetQueryStats/GetPageStats return only Bing's top rows, so "new"/"lost" in a comparison can mean "below
+  Bing's cut-off" rather than zero; the outputs say so.
+
 ## Meta fields still unconfirmed (checked again 2026-11-10 with Meta's docs search)
 
 - **Confirmed:** campaign copies (`POST /{campaign}/copies`) copy at most 3 child ads in a synchronous call and 51 in an asynchronous
