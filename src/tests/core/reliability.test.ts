@@ -303,3 +303,24 @@ describe("Google Ads transport", () => {
     expect(e.message).not.toMatch(/ya29|1\/\/0g/);
   });
 });
+
+// ------------------------------------------------------------------ R9: simultaneous identical requests ----
+describe("two identical requests at the same moment (review item R9)", () => {
+  it("the second gets the first request back, never a database error", async () => {
+    const h = await harness();
+    const t = await seedTenant(h.db, "R9", "owner");
+    const acc = await seedAccount(h.db, t.tenant.id, "google_ads");
+    const req = { tenantId: t.tenant.id, accountId: acc.id, tool: "pause_campaign", risk: "write" as const, args: { account_id: acc.id, campaign_id: "9" }, summary: "s", snapshot: { s: 1 }, requestedBy: t.user.id };
+    let winnerId = "";
+    // Between this request's read (no row yet) and its insert, a concurrent identical request commits its row.
+    const svc = new ApprovalService(h.db, {
+      afterExistingRead: async (tx, key) => {
+        const [w] = await tx.insert(schema.approvalRequest).values({ tenantId: req.tenantId, accountId: req.accountId, tool: req.tool, risk: req.risk, args: req.args, argsHash: "concurrent", summary: "s", planSnapshot: req.snapshot, idempotencyKey: key, requestedBy: req.requestedBy, expiresAt: new Date(Date.now() + 3_600_000) }).returning();
+        winnerId = w!.id;
+      },
+    });
+    const r = await svc.request(req);
+    expect(r.deduplicated).toBe(true);
+    expect(r.row.id).toBe(winnerId);
+  });
+});

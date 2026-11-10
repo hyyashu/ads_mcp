@@ -2,11 +2,19 @@ import { safeFetchBytes } from "../auth/ssrf";
 import type { GoogleTokenProvider, MetaTokenProvider } from "../auth/token-providers";
 import type { Db } from "../db";
 import { ToolError } from "../mcp/errors";
+import type { Limiter } from "../security/rate-limit";
 import { GoogleAdsClient } from "./google/client";
 import type { GoogleAdsHttp } from "./google/http";
 import { type ImageFetcher, fetchImageSafely } from "./google/media";
 import type { GoogleServices } from "./google/services";
 import type { YouTubeClient } from "./google/youtube";
+import { Ga4Client } from "./ga4/client";
+import type { Ga4Services } from "./ga4/services";
+import type { GoogleApiHttp } from "./gapi/http";
+import { GscClient } from "./gsc/client";
+import type { GscServices } from "./gsc/services";
+import { GtmClient } from "./gtm/client";
+import type { GtmServices } from "./gtm/services";
 import { MetaAdsClient } from "./meta/client";
 import type { MetaGraphHttp } from "./meta/http";
 import type { MetaServices } from "./meta/services";
@@ -15,6 +23,10 @@ export interface ServiceFactoryDeps {
   db: Db;
   google?: { tokens: GoogleTokenProvider; http: GoogleAdsHttp };
   meta?: { tokens: MetaTokenProvider; http: MetaGraphHttp };
+  /** Search Console, GA4 and Tag Manager: the same Google OAuth client (token provider) as Ads, one shared transport. */
+  /** gtmLimiter: Tag Manager's quota is per Cloud project (25 requests per 100 s, Tag Manager "Limits and quotas"), shared by
+   * every tenant, so one limiter for the whole server keeps a busy tenant from failing everyone's calls at Google. */
+  gapi?: { tokens: Pick<GoogleTokenProvider, "getAccessToken">; http: GoogleApiHttp; gtmLimiter?: Limiter };
   fetchImage?: ImageFetcher;
   youtube?: YouTubeClient;
   fetchPage?: (url: string) => Promise<string>;
@@ -41,7 +53,7 @@ export const fetchMetaImageSafely: ImageFetcher = async (url) => {
 
 /** Builds platform clients for one authorized account (the platform adapter seam: one branch per platform). Handlers never see tokens: they only get these clients. */
 export function createServicesFactory(d: ServiceFactoryDeps) {
-  return async (o: { tenantId: string; account: { platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null }; signal?: AbortSignal }): Promise<unknown> => {
+  return async (o: { tenantId: string; account: { platform: string; externalId: string; loginCustomerId: string | null; connectionId: string; currencyCode?: string | null; timeZone?: string | null }; signal?: AbortSignal }): Promise<unknown> => {
     if (o.account.platform === "google_ads") {
       if (!d.google) throw new ToolError("unsupported", "Google Ads is not configured on this server.");
       const { tokens, http } = d.google;
@@ -73,6 +85,29 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         signal: o.signal,
       });
       return { meta, mutationsSent: () => meta.mutationsSent, fetchImage: d.fetchImage ?? fetchMetaImageSafely } satisfies MetaServices;
+    }
+    if (o.account.platform === "google_search_console" || o.account.platform === "google_analytics" || o.account.platform === "google_tag_manager") {
+      if (!d.gapi) throw new ToolError("unsupported", "Google connections are not configured on this server.");
+      const { tokens, http } = d.gapi;
+      // Each product connection is its own Google grant: the token is always the one of this account's connection.
+      const base = { http, getAccessToken: () => tokens.getAccessToken(o.tenantId, o.account.connectionId), signal: o.signal };
+      if (o.account.platform === "google_search_console") {
+        const gsc = new GscClient({ ...base, siteUrl: o.account.externalId });
+        return { gsc, mutationsSent: () => gsc.mutationsSent } satisfies GscServices;
+      }
+      if (o.account.platform === "google_analytics") {
+        const ga4 = new Ga4Client({ ...base, property: o.account.externalId, currencyCode: o.account.currencyCode ?? null, timeZone: o.account.timeZone ?? null });
+        return { ga4, mutationsSent: () => ga4.mutationsSent } satisfies Ga4Services;
+      }
+      const lim = d.gapi.gtmLimiter;
+      const beforeCall = lim
+        ? async () => {
+            const r = await lim.take("project");
+            if (!r.ok) throw new ToolError("quota_exceeded", `Tag Manager's request limit for this server is reached (Google allows 25 requests per 100 seconds per project). Try again in ${r.retryAfterSeconds} seconds. Nothing was sent.`, { retryAfterSeconds: r.retryAfterSeconds, definite: true });
+          }
+        : undefined;
+      const gtm = new GtmClient({ ...base, containerPath: o.account.externalId, ...(beforeCall ? { beforeCall } : {}) });
+      return { gtm, mutationsSent: () => gtm.mutationsSent } satisfies GtmServices;
     }
     throw new ToolError("unsupported", `Platform ${o.account.platform} is not available yet.`);
   };

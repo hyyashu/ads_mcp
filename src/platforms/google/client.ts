@@ -5,6 +5,11 @@ import { Gaql } from "./gaql";
 export type Row = Record<string, unknown>;
 const HARD_ROW_CAP = 10_000;
 
+/** The error for a read that matched more rows than the tool can safely work with. Nothing was changed. */
+export function tooManyRows(cap: number, what: string): ToolError {
+  return new ToolError("unsupported", `This needs more than ${cap.toLocaleString("en-US")} ${what} rows, which is more than this tool reads in one call, so it stopped rather than work from a partial list. Narrow the request (for example to fewer campaigns or a shorter period) and try again. Nothing was changed.`, { definite: true, details: { reason: "row_cap", cap, resource: what } });
+}
+
 /**
  * One Google Ads account, reached with the connecting user's credentials. Reads fetch on demand and are retried on
  * transient failures; mutations are sent once and never retried automatically (see GoogleAdsHttp).
@@ -41,8 +46,15 @@ export class GoogleAdsClient {
     return { accessToken: await this.o.getAccessToken(), loginCustomerId: this.o.loginCustomerId, signal: this.o.signal };
   }
 
-  /** Runs a GAQL query and follows pagination up to maxRows (hard cap 10,000). */
-  async query(q: Gaql | string, opts: { maxRows?: number } = {}): Promise<Row[]> {
+  /**
+   * Runs a GAQL query and follows pagination up to maxRows (hard cap 10,000).
+   *
+   * Rows are never dropped silently. When the query matches more than maxRows rows, the call fails with `unsupported`,
+   * because a caller that uses the rows as the full picture (totals, duplicate checks, the state a change is planned on)
+   * would otherwise be wrong without knowing it. A caller that shows a page and reports `truncated` itself passes
+   * `partial: true` to get the first maxRows rows (it asks for one extra row to detect the cut).
+   */
+  async query(q: Gaql | string, opts: { maxRows?: number; partial?: boolean } = {}): Promise<Row[]> {
     const maxRows = Math.min(opts.maxRows ?? 1000, HARD_ROW_CAP);
     const query = typeof q === "string" ? q : q.toString();
     const rows: Row[] = [];
@@ -56,7 +68,8 @@ export class GoogleAdsClient {
       });
       rows.push(...(res.results ?? []));
       pageToken = res.nextPageToken || undefined;
-    } while (pageToken && rows.length < maxRows);
+    } while (pageToken && rows.length <= maxRows);
+    if (!opts.partial && (rows.length > maxRows || pageToken)) throw tooManyRows(maxRows, /\bFROM\s+([a-z_]+)/i.exec(query)?.[1] ?? "rows");
     return rows.slice(0, maxRows);
   }
 

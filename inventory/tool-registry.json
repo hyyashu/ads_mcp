@@ -5,7 +5,8 @@
     "Names and classifications copied from supplied inventory; descriptions and argument schemas not supplied.",
     "These are implementation targets, not registered or operational MCP tools.",
     "Live mutations should require authorization and server-enforced approval.",
-    "Four Google tools were added by the project owner on 2026-11-04 beyond the Adspirer extract: get_keyword_performance, get_segment_performance, remove_negative_keywords_from_list, detach_negative_keyword_list_from_campaign. On 2026-11-05 the owner added list_accounts (workspace-level), because no inventoried tool returned the account_id the other tools require."
+    "Four Google tools were added by the project owner on 2026-11-04 beyond the Adspirer extract: get_keyword_performance, get_segment_performance, remove_negative_keywords_from_list, detach_negative_keyword_list_from_campaign. On 2026-11-05 the owner added list_accounts (workspace-level), because no inventoried tool returned the account_id the other tools require.",
+    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names."
   ],
   "tools": [
     {
@@ -2327,6 +2328,546 @@
       "implementation_status": "pending",
       "input_schema_status": "needs_api_mapping",
       "approval_required": true
+    },
+    {
+      "platform": "google_search_console",
+      "name": "list_gsc_sites",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "get_search_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "get_top_queries",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "get_top_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "compare_search_periods",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "get_search_appearance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "inspect_url",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "list_sitemaps",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "submit_sitemap",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_search_console",
+      "name": "delete_sitemap",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_search_console",
+      "name": "add_gsc_site",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_search_console",
+      "name": "remove_gsc_site",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_analytics",
+      "name": "list_ga4_properties",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_ga4_metadata",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "run_ga4_report",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "run_ga4_pivot_report",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "run_ga4_funnel_report",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_ga4_realtime",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_traffic_by_channel",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_campaign_traffic",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_landing_page_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_google_ads_traffic_in_ga4",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_conversion_events",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_ga4_ads_links",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_ga4_attribution_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_ga4_change_history",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "create_key_event",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_analytics",
+      "name": "remove_key_event",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_analytics",
+      "name": "create_custom_dimension",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_analytics",
+      "name": "create_ga4_audience",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "list_gtm_containers",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "get_gtm_live_version",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "list_gtm_tags",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "list_gtm_triggers",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "list_gtm_variables",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "get_gtm_workspace_status",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "audit_gtm_container",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "create_gtm_tag",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "update_gtm_tag",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "create_gtm_trigger",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "create_gtm_version",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "publish_gtm_version",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_property_links",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "analyze_paid_organic_overlap",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "find_organic_keyword_gaps",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "audit_ad_landing_pages",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "compare_conversion_tracking",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "meta_ads",
+      "name": "analyze_meta_traffic_quality",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "get_channel_mix",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "check_utm_tagging",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_search_console",
+      "name": "analyze_brand_search_trend",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "find_converting_terms_without_content",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_tag_manager",
+      "name": "audit_tracking_setup",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_analytics",
+      "name": "analyze_paid_search_on_site",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
     }
   ]
 }

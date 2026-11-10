@@ -38,8 +38,8 @@ export async function catalogsOf(m: MetaAdsClient): Promise<{ business_id: strin
   const bid = s(obj(acct.business), "id");
   if (!bid || !/^\d{1,25}$/.test(bid)) return { business_id: null, catalogs: [], truncated: false };
   const [owned, client] = await Promise.all([
-    m.list(`${bid}/owned_product_catalogs`, { fields: CATALOG_FIELDS }, EDGE_CAP),
-    m.list(`${bid}/client_product_catalogs`, { fields: CATALOG_FIELDS }, EDGE_CAP),
+    m.list(`${bid}/owned_product_catalogs`, { fields: CATALOG_FIELDS }, EDGE_CAP, { partial: true }),
+    m.list(`${bid}/client_product_catalogs`, { fields: CATALOG_FIELDS }, EDGE_CAP, { partial: true }),
   ]);
   const seen = new Set<string>();
   const catalogs: CatalogRow[] = [];
@@ -68,7 +68,8 @@ export async function requireCatalog(m: MetaAdsClient, catalogId: string): Promi
 
 const SET_FIELDS = "id,name,filter,product_count";
 /** A catalog's product sets (the catalog is not checked here). */
-export const productSetsOf = (m: MetaAdsClient, catalogId: string) => m.list(`${catalogId}/product_sets`, { fields: SET_FIELDS }, EDGE_CAP);
+/** Complete (refused past EDGE_CAP) unless `partial`, for callers that report truncation themselves. */
+export const productSetsOf = (m: MetaAdsClient, catalogId: string, partial = false) => m.list(`${catalogId}/product_sets`, { fields: SET_FIELDS }, EDGE_CAP, { partial });
 
 /** The product set must be on the product_sets edge of a catalog available to this ad account. */
 export async function requireProductSet(m: MetaAdsClient, catalogId: string, setId: string): Promise<MetaRow> {
@@ -83,9 +84,9 @@ export async function requireProductSet(m: MetaAdsClient, catalogId: string, set
 export type CatalogAdSet = { ad_set_id: string; name: string | null; campaign_id: string | null; effective_status: string | null; product_set_id: string };
 export async function catalogAdSets(m: MetaAdsClient, catalogId: string) {
   const catalog = await requireCatalog(m, catalogId);
-  const sets = await productSetsOf(m, catalogId);
+  const sets = await productSetsOf(m, catalogId, true);
   const setIds = new Set(sets.map((r) => String(r.id)));
-  const rows = await m.list(`${m.adAccountId}/adsets`, { fields: "id,name,campaign_id,effective_status,promoted_object" }, EDGE_CAP);
+  const rows = await m.list(`${m.adAccountId}/adsets`, { fields: "id,name,campaign_id,effective_status,promoted_object" }, EDGE_CAP, { partial: true });
   const adSets: CatalogAdSet[] = [];
   for (const r of rows) {
     const ps = s(obj(r.promoted_object), "product_set_id");
@@ -136,7 +137,7 @@ export const listMetaProductSets = metaRead({
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
     await requireCatalog(m, a.catalog_id);
-    const rows = await m.list(`${a.catalog_id}/product_sets`, { fields: SET_FIELDS }, a.limit + 1);
+    const rows = await m.list(`${a.catalog_id}/product_sets`, { fields: SET_FIELDS }, a.limit + 1, { partial: true });
     const shown = rows.slice(0, a.limit).map((r) => ({ product_set_id: String(r.id ?? ""), name: s(r, "name"), filter: s(r, "filter"), product_count: num(r.product_count) }));
     return { catalog_id: a.catalog_id, product_sets: shown, returned: shown.length, truncated: rows.length > a.limit };
   },
@@ -188,7 +189,7 @@ export const listMetaProducts = metaRead({
     if (a.product_set_id) await requireProductSet(m, a.catalog_id, a.product_set_id);
     else await requireCatalog(m, a.catalog_id);
     const path = `${a.product_set_id ?? a.catalog_id}/products`;
-    const rows = await m.list(path, { fields: PRODUCT_FIELDS, ...(a.issue ? { error_type: a.issue } : {}) }, a.limit + 1);
+    const rows = await m.list(path, { fields: PRODUCT_FIELDS, ...(a.issue ? { error_type: a.issue } : {}) }, a.limit + 1, { partial: true });
     const shown = rows.slice(0, a.limit).map(toProduct);
     return { catalog_id: a.catalog_id, product_set_id: a.product_set_id ?? null, issue: a.issue ?? null, products: shown, returned: shown.length, truncated: rows.length > a.limit };
   },
@@ -254,7 +255,7 @@ export const analyzeMetaCatalogPerformance = metaRead({
   output: z.object({
     ...reportHeaderShape,
     rules: z.array(z.string()),
-    totals: metrics,
+    totals: metrics.describe("Over every insights row read. When truncated is true, Meta had more rows than this tool reads, so totals are partial."),
     campaigns: z.array(z.object({ campaign_id: z.string(), campaign_name: U, ad_sets: z.number(), metrics, flags: flagList })),
     ad_sets: z.array(z.object({ ad_set_id: z.string(), name: U, campaign_id: z.string().nullable(), product_set_id: z.string(), effective_status: z.string().nullable(), metrics, flags: flagList })),
     product_sets: z.array(z.object({ product_set_id: z.string(), name: U, ad_sets: z.number(), metrics, flags: flagList })),
@@ -306,7 +307,7 @@ export const compareMetaCatalogProductSets = metaRead({
   input: z.object({ ...periodFields, conversion_action: conversionActionInput, include_unpromoted: z.boolean().default(false) }).refine(datesOk, datesMsg),
   output: z.object({
     ...reportHeaderShape,
-    totals: metrics,
+    totals: metrics.describe("Over every insights row read. When truncated is true, Meta had more rows than this tool reads, so totals are partial."),
     product_sets: z.array(
       z.object({
         product_set_id: z.string(),
@@ -396,7 +397,7 @@ export const getMetaProductPerformance = metaRead({
 
 // detect_meta_catalog_waste ---------------------------------------------------------------------------------------
 /** Products of a catalog matching an error_type or a filter rule, capped. */
-const productsWhere = (m: MetaAdsClient, catalogId: string, where: Record<string, string>) => m.list(`${catalogId}/products`, { fields: "id,retailer_id,name,availability", ...where }, EDGE_CAP);
+const productsWhere = (m: MetaAdsClient, catalogId: string, where: Record<string, string>) => m.list(`${catalogId}/products`, { fields: "id,retailer_id,name,availability", ...where }, EDGE_CAP, { partial: true });
 
 export const detectMetaCatalogWaste = metaRead({
   name: "detect_meta_catalog_waste",

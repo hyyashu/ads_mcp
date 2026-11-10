@@ -61,7 +61,7 @@ export const listMetaAdSets = metaRead({
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
     const path = await edgePath(m, "adsets", a.campaign_id ? { id: a.campaign_id, label: "campaign" } : undefined);
-    const rows = await m.list(path, { fields: ADSET_FIELDS.join(",") }, EDGE_CAP);
+    const rows = await m.list(path, { fields: ADSET_FIELDS.join(",") }, EDGE_CAP, { partial: true });
     const wanted = rows.filter((r) => keep(r, a));
     const shown = wanted.slice(0, a.limit).map((r) => ({
       ad_set_id: String(r.id ?? ""),
@@ -113,7 +113,7 @@ export const listMetaAds = metaRead({
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
     const parent = a.ad_set_id ? { id: a.ad_set_id, label: "ad set" as const } : a.campaign_id ? { id: a.campaign_id, label: "campaign" as const } : undefined;
-    const rows = await m.list(await edgePath(m, "ads", parent), { fields: AD_FIELDS.join(",") }, EDGE_CAP);
+    const rows = await m.list(await edgePath(m, "ads", parent), { fields: AD_FIELDS.join(",") }, EDGE_CAP, { partial: true });
     const wanted = rows.filter((r) => keep(r, a));
     const shown = wanted.slice(0, a.limit).map((r) => {
       const cr = (r.creative && typeof r.creative === "object" ? r.creative : {}) as MetaRow;
@@ -142,7 +142,7 @@ const countsShape = z.object({
 });
 
 async function countByStatus(m: MetaAdsClient, path: string): Promise<z.infer<typeof countsShape>> {
-  const rows = await m.list(path, { fields: "effective_status" }, EDGE_CAP);
+  const rows = await m.list(path, { fields: "effective_status" }, EDGE_CAP, { partial: true });
   const by: Record<string, number> = {};
   for (const r of rows) {
     const k = s(r, "effective_status") ?? "UNKNOWN";

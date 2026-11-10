@@ -39,7 +39,7 @@ export const listMetaCampaigns = metaRead({
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
     // Filtering is done here on the configured status, which is documented; nothing depends on undocumented edge filters.
-    const rows = await m.list(`${m.adAccountId}/campaigns`, { fields: LIST_FIELDS.join(",") }, 5_000);
+    const rows = await m.list(`${m.adAccountId}/campaigns`, { fields: LIST_FIELDS.join(",") }, 5_000, { partial: true });
     const wanted = rows.filter((r) => {
       const st = s(r, "status");
       if (!a.include_archived && (st === "DELETED" || st === "ARCHIVED")) return false;

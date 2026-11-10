@@ -6,22 +6,35 @@ import { ToolError } from "../mcp/errors";
 import type { ResolvedAccount } from "../mcp/tool";
 
 /**
- * Resolves the caller-supplied account_id to an account THIS TENANT may use. A foreign or unknown id
- * is reported as not_found, so ids of other tenants cannot be probed.
+ * Resolves the caller-supplied account_id to an account THIS TENANT may use. A foreign or unknown id is reported as
+ * not_found, so ids of other tenants cannot be probed.
+ *
+ * An account can be named by this server's id (from list_accounts) or by the platform's own id: a Google Ads customer id
+ * ("488-059-4061" or "4880594061"), a Meta ad account id ("act_123" or "123"), a Search Console site exactly as Search
+ * Console returns it ("https://example.com/" or "sc-domain:example.com"), a GA4 property ("properties/123" or "123") or a
+ * Tag Manager container path ("accounts/1/containers/2"). Either way the lookup stays scoped to the caller's workspace and
+ * platform, and (tenant, platform, external id) is unique, so this cannot reach another workspace's account.
  */
-/**
- * An account can be named by this server's id (from list_accounts) or by the platform's own id: a Google Ads customer
- * id ("488-059-4061" or "4880594061") or a Meta ad account id ("act_123" or "123"). Either way the lookup stays scoped to
- * the caller's workspace and platform, and (tenant, platform, external id) is unique, so this cannot reach another
- * workspace's account.
- */
-function accountMatch(accountId: string, platform: Platform) {
+export function externalIdFor(accountId: string, platform: Platform): string | null {
   const raw = accountId.trim();
-  const external =
-    platform === "google_ads" && /^\d{3}-?\d{3}-?\d{4}$/.test(raw) ? raw.replace(/-/g, "")
-    : platform === "meta_ads" && /^(act_)?\d{1,20}$/.test(raw) ? (raw.startsWith("act_") ? raw : `act_${raw}`)
-    : null;
-  return external ? and(eq(connectedAccount.platform, platform), eq(connectedAccount.externalId, external))! : eq(connectedAccount.id, raw);
+  switch (platform) {
+    case "google_ads":
+      return /^\d{3}-?\d{3}-?\d{4}$/.test(raw) ? raw.replace(/-/g, "") : null;
+    case "meta_ads":
+      return /^(act_)?\d{1,20}$/.test(raw) ? (raw.startsWith("act_") ? raw : `act_${raw}`) : null;
+    case "google_search_console":
+      // Exactly as stored: a URL-prefix property's trailing slash is part of its identity in Search Console.
+      return /^(https?:\/\/\S+|sc-domain:\S+)$/.test(raw) ? raw : null;
+    case "google_analytics":
+      return /^(properties\/)?\d{1,20}$/.test(raw) ? (raw.startsWith("properties/") ? raw : `properties/${raw}`) : null;
+    case "google_tag_manager":
+      return /^accounts\/\d{1,20}\/containers\/\d{1,20}$/.test(raw) ? raw : null;
+  }
+}
+
+function accountMatch(accountId: string, platform: Platform) {
+  const external = externalIdFor(accountId, platform);
+  return external ? and(eq(connectedAccount.platform, platform), eq(connectedAccount.externalId, external))! : eq(connectedAccount.id, accountId.trim());
 }
 
 export async function resolveAccount(

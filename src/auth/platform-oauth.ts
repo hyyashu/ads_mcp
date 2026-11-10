@@ -3,7 +3,14 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { connectedAccount, platformConnection, platformOauthState } from "../db/schema";
 import { ToolError } from "../mcp/errors";
+import { discoverGa4Properties } from "../platforms/ga4/client";
+import { GoogleApiClient } from "../platforms/gapi/client";
+import type { Discovery } from "../platforms/gapi/discovery";
+import { GoogleApiHttp } from "../platforms/gapi/http";
+import { PRODUCT_SCOPES, type ProductPlatform } from "../platforms/gapi/scopes";
 import { GoogleAdsHttp } from "../platforms/google/http";
+import { discoverGscSites } from "../platforms/gsc/client";
+import { discoverGtmContainers } from "../platforms/gtm/client";
 import { audit } from "../security/audit";
 import { sha256 } from "../security/canonical";
 import { type CredentialCipher, credentialAad } from "../security/crypto";
@@ -24,7 +31,23 @@ export const META_SCOPES = {
 } as const;
 
 export type Access = "read" | "write";
-export type PlatformKey = "google_ads" | "meta_ads";
+export type PlatformKey = "google_ads" | "meta_ads" | ProductPlatform;
+
+/**
+ * Search Console, GA4 and Tag Manager: each its own Connect button and its own Google grant (own refresh token and
+ * platform_connection) on the same Google OAuth client as Ads. No include_granted_scopes, so disconnecting one product
+ * never affects another, and each grant asks only for its product's scopes.
+ */
+const PRODUCTS: Record<ProductPlatform, { slug: string; label: string; discover: (api: GoogleApiClient) => Promise<Discovery> }> = {
+  google_search_console: { slug: "gsc", label: "Search Console", discover: discoverGscSites },
+  google_analytics: { slug: "ga4", label: "Google Analytics", discover: discoverGa4Properties },
+  google_tag_manager: { slug: "gtm", label: "Tag Manager", discover: discoverGtmContainers },
+};
+export const isProduct = (p: string): p is ProductPlatform => Object.hasOwn(PRODUCTS, p);
+/** URL slug of each platform's /connect/{slug}/start and /callback routes. */
+export const CONNECT_SLUGS: Record<PlatformKey, string> = { google_ads: "google", meta_ads: "meta", google_search_console: "gsc", google_analytics: "ga4", google_tag_manager: "gtm" };
+/** Names shown on the Connections page. */
+export const PLATFORM_LABELS: Record<PlatformKey, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics", google_tag_manager: "Tag Manager" };
 const STATE_TTL_MS = 10 * 60_000;
 const MAX_ACCOUNTS = 500;
 /** Meta ad account fields read at connect time. `currency` and `timezone_name` are the reporting units of every insight. */
@@ -70,11 +93,11 @@ export class PlatformOAuth {
   }
 
   enabled(platform: PlatformKey) {
-    return platform === "google_ads" ? !!this.cfg.google : !!this.cfg.meta;
+    return platform === "meta_ads" ? !!this.cfg.meta : !!this.cfg.google;
   }
 
   private redirectUri(platform: PlatformKey) {
-    return `${this.cfg.publicUrl}/connect/${platform === "google_ads" ? "google" : "meta"}/callback`;
+    return `${this.cfg.publicUrl}/connect/${CONNECT_SLUGS[platform]}/callback`;
   }
 
   private assertCanConnect(actor: Actor, access: Access) {
@@ -84,7 +107,7 @@ export class PlatformOAuth {
 
   /** Creates single-use state (bound to this user) and returns the URL to send the browser to. */
   async start(platform: PlatformKey, actor: Actor, access: Access): Promise<string> {
-    if (!this.enabled(platform)) throw new ToolError("unsupported", `${platform === "google_ads" ? "Google" : "Meta"} connections are not configured on this server.`);
+    if (!this.enabled(platform)) throw new ToolError("unsupported", `${platform === "meta_ads" ? "Meta" : "Google"} connections are not configured on this server.`);
     this.assertCanConnect(actor, access);
 
     const state = b64u(randomBytes(32));
@@ -100,13 +123,14 @@ export class PlatformOAuth {
       expiresAt: new Date(this.now().getTime() + STATE_TTL_MS),
     });
 
-    if (platform === "google_ads") {
+    if (platform !== "meta_ads") {
       const g = this.cfg.google!;
+      const scopes = platform === "google_ads" ? [GOOGLE_ADS_SCOPE] : PRODUCT_SCOPES[platform][access];
       const q = new URLSearchParams({
         client_id: g.clientId,
         redirect_uri: this.redirectUri(platform),
         response_type: "code",
-        scope: `${GOOGLE_ADS_SCOPE} openid email`,
+        scope: `${scopes.join(" ")} openid email`,
         access_type: "offline", // needed for a refresh token
         prompt: "consent", // Google only returns a refresh token on explicit consent
         state,
@@ -155,24 +179,27 @@ export class PlatformOAuth {
     const code = q.get("code");
     if (!code) throw new ToolError("invalid_argument", "Missing authorization code.");
     this.assertCanConnect(actor, access);
-    return platform === "google_ads" ? this.finishGoogle(actor, code, verifier, access) : this.finishMeta(actor, code, access);
+    if (platform === "meta_ads") return this.finishMeta(actor, code, access);
+    return platform === "google_ads" ? this.finishGoogle(actor, code, verifier, access) : this.finishGoogleProduct(platform, actor, code, verifier, access);
   }
 
   // ------------------------------------------------------------------ Google ----
-  private async finishGoogle(actor: Actor, code: string, verifier: string, access: Access): Promise<FinishResult> {
+  /**
+   * Authorization code -> tokens, shared by every Google connection. Google may grant fewer scopes than requested (the
+   * consent screen lets users untick them), so `granted` is the token response's own `scope` list, never the request.
+   */
+  private async googleTokens(platform: PlatformKey, code: string, verifier: string) {
     const g = this.cfg.google!;
     const res = await this.f("https://oauth2.googleapis.com/token", {
       method: "POST",
       headers: { "content-type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({ code, client_id: g.clientId, client_secret: g.clientSecret, redirect_uri: this.redirectUri("google_ads"), grant_type: "authorization_code", code_verifier: verifier }),
+      body: new URLSearchParams({ code, client_id: g.clientId, client_secret: g.clientSecret, redirect_uri: this.redirectUri(platform), grant_type: "authorization_code", code_verifier: verifier }),
       signal: AbortSignal.timeout(10_000),
     });
     const tok = (await res.json().catch(() => ({}))) as { access_token?: string; refresh_token?: string; scope?: string; id_token?: string };
     if (!res.ok || !tok.access_token) throw new ToolError("permission_denied", "Google did not accept the authorization. Start again.");
     if (!tok.refresh_token) throw new ToolError("invalid_argument", "Google did not return a refresh token. Remove this app's access in your Google account settings, then connect again.");
     const granted = (tok.scope ?? "").split(" ").filter(Boolean);
-    if (!granted.includes(GOOGLE_ADS_SCOPE)) throw new ToolError("permission_denied", "The Google Ads permission was not granted.");
-
     // The id_token arrives straight from Google's token endpoint over TLS, so reading its email claim is safe for display.
     let email: string | undefined;
     try {
@@ -180,24 +207,50 @@ export class PlatformOAuth {
     } catch {
       /* optional */
     }
+    return { accessToken: tok.access_token, refreshToken: tok.refresh_token, granted, email };
+  }
 
-    const http = new GoogleAdsHttp({ apiVersion: g.apiVersion, fetch: this.f });
-    const discovered = await this.discoverGoogleAccounts(http, tok.access_token);
-
+  private async saveGoogleConnection(actor: Actor, platform: PlatformKey, t: { refreshToken: string; granted: string[]; email?: string }, access: Access, accounts: Parameters<PlatformOAuth["saveAccounts"]>[4]) {
     const connectionId = randomUUID();
     await this.db.insert(platformConnection).values({
       id: connectionId,
       tenantId: actor.tenantId,
       userId: actor.userId,
-      platform: "google_ads",
-      credentialsEnc: this.cipher.encrypt({ refreshToken: tok.refresh_token }, credentialAad(actor.tenantId, connectionId)).enc,
+      platform,
+      credentialsEnc: this.cipher.encrypt({ refreshToken: t.refreshToken }, credentialAad(actor.tenantId, connectionId)).enc,
       keyVersion: this.cipher.activeVersion,
-      grantedScopes: granted,
-      externalUserId: email ?? null,
+      grantedScopes: t.granted,
+      externalUserId: t.email ?? null,
       status: "active",
     });
-    await this.saveAccounts(actor.tenantId, connectionId, "google_ads", access, discovered.accounts);
-    await audit(this.db, { tenantId: actor.tenantId, userId: actor.userId, event: "connection.created", refId: connectionId, outcome: "google_ads" });
+    await this.saveAccounts(actor.tenantId, connectionId, platform, access, accounts);
+    await audit(this.db, { tenantId: actor.tenantId, userId: actor.userId, event: "connection.created", refId: connectionId, outcome: platform });
+    return connectionId;
+  }
+
+  /**
+   * Search Console, GA4 or Tag Manager. Every scope the chosen access level needs must have been granted (checked on the
+   * token response, as for Ads); then discovery lists the sites, properties or containers before anything is stored, so a
+   * failed discovery leaves no half connection behind.
+   */
+  private async finishGoogleProduct(platform: ProductPlatform, actor: Actor, code: string, verifier: string, access: Access): Promise<FinishResult> {
+    const t = await this.googleTokens(platform, code, verifier);
+    const missing = PRODUCT_SCOPES[platform][access].filter((sc) => !t.granted.includes(sc));
+    if (missing.length) throw new ToolError("permission_denied", `The ${PRODUCTS[platform].label} permission${missing.length > 1 ? "s were" : " was"} not granted (${missing.map((m) => m.replace("https://www.googleapis.com/auth/", "")).join(", ")}). Connect again and allow ${missing.length > 1 ? "them" : "it"}.`);
+    const api = new GoogleApiClient({ http: new GoogleApiHttp({ fetch: this.f }), getAccessToken: async () => t.accessToken, signal: AbortSignal.timeout(60_000) });
+    const found = await PRODUCTS[platform].discover(api);
+    const connectionId = await this.saveGoogleConnection(actor, platform, t, access, found.accounts);
+    return { connectionId, accounts: found.accounts.length, skipped: found.skipped, access };
+  }
+
+  private async finishGoogle(actor: Actor, code: string, verifier: string, access: Access): Promise<FinishResult> {
+    const g = this.cfg.google!;
+    const t = await this.googleTokens("google_ads", code, verifier);
+    if (!t.granted.includes(GOOGLE_ADS_SCOPE)) throw new ToolError("permission_denied", "The Google Ads permission was not granted.");
+
+    const http = new GoogleAdsHttp({ apiVersion: g.apiVersion, fetch: this.f });
+    const discovered = await this.discoverGoogleAccounts(http, t.accessToken);
+    const connectionId = await this.saveGoogleConnection(actor, "google_ads", t, access, discovered.accounts);
     return { connectionId, accounts: discovered.accounts.length, skipped: discovered.skipped, access };
   }
 
@@ -343,7 +396,9 @@ export class PlatformOAuth {
     if (c.status !== "revoked") {
       try {
         const creds = this.cipher.decrypt<{ refreshToken?: string; accessToken?: string }>(c.credentialsEnc, credentialAad(actor.tenantId, connectionId));
-        if (c.platform === "google_ads" && creds.refreshToken) {
+        // Every Google connection (Ads, Search Console, GA4, Tag Manager) is its own grant: revoking its refresh token ends
+        // only that grant (no include_granted_scopes, so the others are untouched).
+        if ((c.platform === "google_ads" || isProduct(c.platform)) && creds.refreshToken) {
           const r = await this.f("https://oauth2.googleapis.com/revoke", { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ token: creds.refreshToken }), signal: AbortSignal.timeout(10_000) });
           revoked = r.ok;
         } else if (c.platform === "meta_ads" && creds.accessToken && this.cfg.meta) {

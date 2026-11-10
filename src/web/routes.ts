@@ -6,11 +6,11 @@ import { and, desc, eq, inArray, ne } from "drizzle-orm";
 import type { Role } from "../auth/context";
 import { OAuthError, type OAuthServer } from "../auth/oauth-server";
 import { verifyPassword } from "../auth/passwords";
-import type { PlatformKey, PlatformOAuth } from "../auth/platform-oauth";
+import { CONNECT_SLUGS, PLATFORM_LABELS, type PlatformKey, type PlatformOAuth } from "../auth/platform-oauth";
 import { clearCookie, createSession, csrfToken, destroySession, getSession, sessionCookie, verifyCsrf, type WebSession } from "../auth/web-session";
 import type { AppConfig } from "../config";
 import type { Db } from "../db";
-import { appUser, approvalRequest, connectedAccount, platformConnection } from "../db/schema";
+import { accountLink, appUser, approvalRequest, connectedAccount, platformConnection } from "../db/schema";
 import { ToolError } from "../mcp/errors";
 import { type PipelineDeps, createExecutor } from "../mcp/pipeline";
 import { audit } from "../security/audit";
@@ -32,7 +32,11 @@ export interface WebDeps {
 
 const PUBLIC_CORS = { "access-control-allow-origin": "*", "access-control-allow-methods": "GET, POST, OPTIONS", "access-control-allow-headers": "content-type, authorization, mcp-protocol-version", "access-control-max-age": "600" };
 const CORS_PATHS = new Set(["/.well-known/oauth-protected-resource", "/.well-known/oauth-protected-resource/mcp", "/.well-known/oauth-authorization-server", "/register", "/token", "/revoke"]);
-const PLATFORM_BY_SLUG: Record<string, PlatformKey> = { google: "google_ads", meta: "meta_ads" };
+const PLATFORM_BY_SLUG = Object.fromEntries(Object.entries(CONNECT_SLUGS).map(([p, slug]) => [slug, p])) as Record<string, PlatformKey>;
+const SLUG_RE = Object.values(CONNECT_SLUGS).join("|");
+const START_RE = new RegExp(`^/connect/(${SLUG_RE})/start$`);
+const CALLBACK_RE = new RegExp(`^/connect/(${SLUG_RE})/callback$`);
+const label = (platform: string) => PLATFORM_LABELS[platform as PlatformKey] ?? platform;
 
 
 export class WebRoutes {
@@ -152,12 +156,15 @@ export class WebRoutes {
     if (path === "/connections" && method === "GET") return this.connectionsPage(req, res, url);
     if (path === "/settings/automation" && method === "GET") return this.automationPage(req, res, url);
     if (path === "/settings/automation" && method === "POST") return this.saveAutomation(req, res);
-    const start = path.match(/^\/connect\/(google|meta)\/start$/);
+    const start = path.match(START_RE);
     if (start && method === "POST") return this.connectStart(req, res, PLATFORM_BY_SLUG[start[1]!]!);
-    const cb = path.match(/^\/connect\/(google|meta)\/callback$/);
+    const cb = path.match(CALLBACK_RE);
     if (cb && method === "GET") return this.connectCallback(req, res, url, PLATFORM_BY_SLUG[cb[1]!]!);
     const disc = path.match(/^\/connections\/([\w-]+)\/disconnect$/);
     if (disc && method === "POST") return this.disconnect(req, res, disc[1]!);
+    if (path === "/connections/links" && method === "POST") return this.addLink(req, res);
+    const unlink = path.match(/^\/connections\/links\/([\w-]+)\/remove$/);
+    if (unlink && method === "POST") return this.removeLink(req, res, unlink[1]!);
     if (path === "/" && method === "GET") {
       const s = await this.session(req);
       this.html(res, 200, page("ads-mcp", `<p>MCP endpoint: <code>${esc(this.d.config.resource)}</code></p>${s ? "" : `<p><a href="/login">Sign in</a></p>`}`, s ? this.navFor(s) : ""));
@@ -384,7 +391,7 @@ ${hidden("csrf", csrfToken(s, "consent"))}
     const canDecide = s.role === "owner" || s.role === "admin";
     const pending = rows.filter((r) => r.a.status === "pending" && r.a.expiresAt > new Date());
     const other = rows.filter((r) => !pending.includes(r)).slice(0, 15);
-    const card = (r: (typeof rows)[number]) => `<div class="card"><div class="muted">${esc(r.platform)} · ${esc(r.name || r.ext)} · ${esc(r.a.tool)} · risk: <strong>${esc(r.a.risk)}</strong></div><p>${esc(r.a.summary)}</p>${changeTable(r.a.changeSet as ChangeSet | null)}${
+    const card = (r: (typeof rows)[number]) => `<div class="card"><div class="muted">${esc(r.platform)} · ${esc(r.name || r.ext)} · ${esc(r.a.tool)} · risk: <strong>${esc(r.a.risk)}</strong></div><p>${esc(r.a.summary)}</p>${changeTable(r.a.changeSet as ChangeSet | null, r.a.risk)}${
       canDecide
         ? `<form method="post" action="/approvals/${esc(r.a.id)}/decision">${hidden("csrf", csrfToken(s, `approval:${r.a.id}`))}<button class="primary" name="decision" value="approve">Approve</button> <button class="danger" name="decision" value="reject">Reject</button></form>`
         : `<p class="muted">Only an owner or admin can decide.</p>`
@@ -474,20 +481,31 @@ ${owner ? `<button class="primary">Save</button>` : `<p class="muted">Only an ow
     const conns = await this.d.db.select().from(platformConnection).where(and(eq(platformConnection.tenantId, s.tenantId), ne(platformConnection.status, "revoked"))).orderBy(desc(platformConnection.createdAt));
     const accounts = conns.length ? await this.d.db.select().from(connectedAccount).where(and(eq(connectedAccount.tenantId, s.tenantId), inArray(connectedAccount.connectionId, conns.map((c) => c.id)))) : [];
     const admin = s.role !== "member";
-    const connect = (slug: string, label: string, enabled: boolean) =>
-      enabled && admin
-        ? `<form method="post" action="/connect/${slug}/start">${hidden("csrf", csrfToken(s, "connect"))}<button name="access" value="read">${esc(label)} (read-only)</button> <button class="primary" name="access" value="write">${esc(label)} (allow changes)</button></form>`
-        : `<p class="muted">${esc(label)}: ${enabled ? "only owners and admins can connect." : "not configured on this server."}</p>`;
+    const connect = (platform: PlatformKey, hint = "") => {
+      const slug = CONNECT_SLUGS[platform];
+      const text = `Connect ${PLATFORM_LABELS[platform]}`;
+      const enabled = !!this.d.platform?.enabled(platform);
+      return enabled && admin
+        ? `<form method="post" action="/connect/${slug}/start">${hidden("csrf", csrfToken(s, "connect"))}<button name="access" value="read">${esc(text)} (read-only)</button> <button class="primary" name="access" value="write">${esc(text)} (allow changes)</button></form>${hint ? `<p class="muted">${esc(hint)}</p>` : ""}`
+        : `<p class="muted">${esc(text)}: ${enabled ? "only owners and admins can connect." : "not configured on this server."}</p>`;
+    };
+    // Each Google product is its own grant, asking only for that product's access (see PlatformOAuth).
+    const products: [PlatformKey, string][] = [
+      ["google_search_console", "Each site you can see in Search Console becomes an account."],
+      ["google_analytics", "Each GA4 property becomes an account, with its reporting currency and time zone."],
+      ["google_tag_manager", "Each container becomes an account. Allowing changes includes publishing, always after approval."],
+    ];
     this.html(
       res,
       200,
       page(
         "Connections",
-        `${flash(url.searchParams.get("msg"))}<div class="card">${connect("google", "Connect Google Ads", !!this.d.platform?.enabled("google_ads"))}</div><div class="card">${connect("meta", "Connect Meta Ads", !!this.d.platform?.enabled("meta_ads"))}</div>
+        `${flash(url.searchParams.get("msg"))}<div class="card">${connect("google_ads")}</div><div class="card">${connect("meta_ads")}</div>${products.map(([p, hint]) => `<div class="card">${connect(p, hint)}</div>`).join("")}
+${await this.linksSection(s, accounts, admin)}
 <h2>Connected</h2>${conns
           .map((c) => {
             const mine = accounts.filter((a) => a.connectionId === c.id);
-            return `<div class="card"><strong>${esc(c.platform)}</strong> · ${esc(c.externalUserId ?? "")} · <strong>${esc(c.status)}</strong>${c.expiresAt ? ` · expires ${esc(c.expiresAt.toISOString().slice(0, 10))}` : ""}
+            return `<div class="card"><strong>${esc(label(c.platform))}</strong> · ${esc(c.externalUserId ?? "")} · <strong>${esc(c.status)}</strong>${c.expiresAt ? ` · expires ${esc(c.expiresAt.toISOString().slice(0, 10))}` : ""}
 <ul>${mine.slice(0, 30).map((a) => `<li>${esc(a.displayName || a.externalId)} <span class="muted">${esc(a.externalId)} · ${esc(a.access)}</span></li>`).join("")}${mine.length > 30 ? `<li class="muted">and ${mine.length - 30} more</li>` : ""}</ul>
 ${c.status === "needs_reauth" ? `<p class="err">Access expired or was revoked. Connect again.</p>` : ""}
 ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${hidden("csrf", csrfToken(s, `disconnect:${c.id}`))}<button class="danger">Disconnect and revoke</button></form>` : ""}</div>`;
@@ -536,13 +554,72 @@ ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${h
     }
     return true;
   }
+
+  // ------------------------------------------------------------------- links ----
+  /**
+   * Links between two accounts of this workspace (an ad account and its Search Console site, GA4 property or Tag Manager
+   * container), used by the combined tools. Everyone sees them; only owners and admins change them.
+   */
+  private async linksSection(s: WebSession, accounts: (typeof connectedAccount.$inferSelect)[], admin: boolean): Promise<string> {
+    const links = await this.d.db.select().from(accountLink).where(eq(accountLink.tenantId, s.tenantId)).orderBy(accountLink.createdAt);
+    const byId = new Map(accounts.map((a) => [a.id, a]));
+    const name = (id: string) => {
+      const a = byId.get(id);
+      return a ? `${esc(label(a.platform))}: ${esc(a.displayName || a.externalId)} <span class="muted">${esc(a.externalId)}</span>` : `<span class="muted">unavailable account</span>`;
+    };
+    const rows = links
+      .map((l) => `<li>${name(l.accountAId)} ↔ ${name(l.accountBId)}${admin ? ` <form method="post" action="/connections/links/${esc(l.id)}/remove" style="display:inline">${hidden("csrf", csrfToken(s, `unlink:${l.id}`))}<button class="danger">Remove link</button></form>` : ""}</li>`)
+      .join("");
+    const sorted = [...accounts].sort((x, y) => label(x.platform).localeCompare(label(y.platform)) || (x.displayName || x.externalId).localeCompare(y.displayName || y.externalId));
+    const options = sorted.map((a) => `<option value="${esc(a.id)}">${esc(label(a.platform))}: ${esc(a.displayName || a.externalId)} (${esc(a.externalId)})</option>`).join("");
+    const form =
+      admin && accounts.length >= 2
+        ? `<form method="post" action="/connections/links">${hidden("csrf", csrfToken(s, "link"))}<select name="account_a">${options}</select> ↔ <select name="account_b">${options}</select> <button class="primary">Link</button></form>`
+        : admin
+          ? `<p class="muted">Connect at least two accounts to link them.</p>`
+          : "";
+    return `<h2>Links</h2><div class="card"><p class="muted">Link an ad account to its Search Console site, GA4 property and Tag Manager container, so tools that combine them know which belong together.</p>${rows ? `<ul>${rows}</ul>` : `<p class="muted">No links yet.</p>`}${form}</div>`;
+  }
+
+  private async addLink(req: IncomingMessage, res: ServerResponse) {
+    const post = await this.formPost(req, res, "link");
+    if (!post) return true;
+    const { s, form } = post;
+    const back = (msg: string) => (this.redirect(res, `/connections?msg=${encodeURIComponent(msg)}`), true);
+    if (s.role !== "owner" && s.role !== "admin") return back("Only owners and admins can link accounts.");
+    const a = form.get("account_a") ?? "";
+    const b = form.get("account_b") ?? "";
+    if (!a || !b || a === b) return back("Choose two different accounts to link.");
+    // Both must be accounts of THIS workspace: an id from another workspace is refused like an unknown one.
+    const found = await this.d.db.select({ id: connectedAccount.id, platform: connectedAccount.platform }).from(connectedAccount).where(and(eq(connectedAccount.tenantId, s.tenantId), inArray(connectedAccount.id, [a, b])));
+    if (found.length !== 2) return back("One of those accounts was not found in this workspace.");
+    if (found[0]!.platform === found[1]!.platform) return back("Link accounts of different products (for example an ad account and its GA4 property).");
+    const [lo, hi] = a < b ? [a, b] : [b, a];
+    const inserted = await this.d.db.insert(accountLink).values({ tenantId: s.tenantId, accountAId: lo, accountBId: hi }).onConflictDoNothing().returning({ id: accountLink.id });
+    if (!inserted.length) return back("Those accounts are already linked.");
+    await audit(this.d.db, { tenantId: s.tenantId, userId: s.userId, event: "account_link.created", refId: inserted[0]!.id });
+    return back("Linked.");
+  }
+
+  private async removeLink(req: IncomingMessage, res: ServerResponse, id: string) {
+    const post = await this.formPost(req, res, `unlink:${id}`);
+    if (!post) return true;
+    const { s } = post;
+    const back = (msg: string) => (this.redirect(res, `/connections?msg=${encodeURIComponent(msg)}`), true);
+    if (s.role !== "owner" && s.role !== "admin") return back("Only owners and admins can remove links.");
+    const gone = await this.d.db.delete(accountLink).where(and(eq(accountLink.id, id), eq(accountLink.tenantId, s.tenantId))).returning({ id: accountLink.id });
+    if (!gone.length) return back("No such link.");
+    await audit(this.d.db, { tenantId: s.tenantId, userId: s.userId, event: "account_link.removed", refId: id });
+    return back("Link removed.");
+  }
 }
 
 /** Before/after table for an approval's change set. Every value is escaped: names come from the ad platform. */
-function changeTable(cs: ChangeSet | null): string {
+function changeTable(cs: ChangeSet | null, risk = "write"): string {
   if (!cs?.changes?.length) return "";
   const fmt = (v: unknown, unit: string) => (v === null || v === undefined ? "unset" : unit === "currency" && cs.currency_code ? `${v} ${cs.currency_code}` : String(v));
-  const shown = cs.changes.slice(0, 50);
+  // A destructive change (e.g. a Tag Manager publish) shows its whole diff, up to 300 rows; others show 50.
+  const shown = cs.changes.slice(0, risk === "destructive" ? 300 : 50);
   const rows = shown
     .map((c) => `<tr><td>${esc(c.resource)} ${esc(c.name ?? c.id)}</td><td>${esc(c.field)}</td><td>${esc(fmt(c.before, c.unit))}</td><td>${esc(fmt(c.after, c.unit))}</td><td>${esc(c.effect.replace(/_/g, " "))}</td></tr>`)
     .join("");

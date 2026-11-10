@@ -14,7 +14,7 @@ import { eq } from "drizzle-orm";
 import { randomBytes } from "node:crypto";
 import type { FetchLike } from "../../auth/token-providers";
 import { createDb, schema, type Db } from "../../db";
-import { loadInventory } from "../../inventory";
+import { type Platform, loadInventory } from "../../inventory";
 import type { PipelineDeps } from "../../mcp/pipeline";
 import { ToolRegistry } from "../../mcp/registry";
 import type { AnyTool, ReadTool, WriteTool } from "../../mcp/tool";
@@ -41,11 +41,13 @@ export async function addUser(db: Db, tenantId: string, label: string, role: "ow
   return user!;
 }
 
+const DEFAULT_EXTERNAL: Record<Platform, string> = { google_ads: "1234567890", meta_ads: "act_987", google_search_console: "https://shop.example/", google_analytics: "properties/123", google_tag_manager: "accounts/1/containers/2" };
+
 /** Units default to known values; pass `units: null` for an account whose platform did not report them. */
 export async function seedAccount(
   db: Db,
   tenantId: string,
-  platform: "google_ads" | "meta_ads",
+  platform: Platform,
   access: "read" | "write" = "write",
   status = "active",
   externalId?: string,
@@ -54,7 +56,7 @@ export async function seedAccount(
   const [conn] = await db.insert(schema.platformConnection).values({ tenantId, platform, credentialsEnc: "test-not-real", status }).returning();
   const [acc] = await db
     .insert(schema.connectedAccount)
-    .values({ tenantId, connectionId: conn!.id, platform, externalId: externalId ?? (platform === "google_ads" ? "1234567890" : "act_987"), access, loginCustomerId: platform === "google_ads" ? "5550001111" : null, currencyCode: units?.currencyCode ?? null, timeZone: units?.timeZone ?? null })
+    .values({ tenantId, connectionId: conn!.id, platform, externalId: externalId ?? DEFAULT_EXTERNAL[platform], access, loginCustomerId: platform === "google_ads" ? "5550001111" : null, currencyCode: units?.currencyCode ?? null, timeZone: units?.timeZone ?? null })
     .returning();
   return acc!;
 }

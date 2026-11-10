@@ -41,18 +41,8 @@ export const insightsDateFields = {
 export const datesOk = (v: { start_date?: string; end_date?: string }) => (v.start_date === undefined) === (v.end_date === undefined);
 export const datesMsg = { message: "start_date and end_date must be given together" };
 
-/** Today's date (YYYY-MM-DD) in the ad account's time zone. Unknown zone: the latest date anywhere (UTC+14), so a valid
- * "today" is never refused. */
-export function todayIn(timeZone: string | null, now = new Date()): string {
-  if (timeZone) {
-    try {
-      return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
-    } catch {
-      /* unknown zone name: fall through */
-    }
-  }
-  return new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 10);
-}
+export { todayIn } from "../core/report-math";
+import { todayIn } from "../core/report-math";
 
 const monthsBack = (d: string, months: number): string => {
   const [y, m, dd] = d.split("-").map(Number) as [number, number, number];
@@ -200,6 +190,7 @@ export async function fetchInsights(m: MetaAdsClient, o: { objectPath: string; l
       ...o.period,
     },
     cap + 1,
+    { partial: true },
   );
   return { rows: rows.slice(0, cap), truncated: rows.length > cap };
 }

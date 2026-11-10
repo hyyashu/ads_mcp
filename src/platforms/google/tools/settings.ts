@@ -38,7 +38,7 @@ export const getCampaignDates = googleRead({
   title: "Campaign start and end dates",
   description: "Shows when campaigns start and end. Google stores these as date-times in the account's time zone (yyyy-MM-dd HH:mm:ss); an empty end means the campaign runs indefinitely.",
   input: z.object({ account_id: accountId, campaign_ids: campaignIds.optional(), limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() })), returned: z.number() }),
+  output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
   handler: async (a, ctx) => {
     const q = new Gaql()
       .select("campaign.id", "campaign.name", "campaign.status", "campaign.start_date_time", "campaign.end_date_time")
@@ -46,9 +46,10 @@ export const getCampaignDates = googleRead({
       .where("campaign.status != 'REMOVED'")
       .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined)
       .orderBy("campaign.id")
-      .limit(a.limit);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit });
-    return { campaigns: rows.map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name"), status: str(r, "campaign.status"), start_date_time: str(r, "campaign.start_date_time"), end_date_time: str(r, "campaign.end_date_time") })), returned: rows.length };
+      .limit(a.limit + 1);
+    const fetched = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
+    const rows = fetched.slice(0, a.limit);
+    return { campaigns: rows.map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name"), status: str(r, "campaign.status"), start_date_time: str(r, "campaign.start_date_time"), end_date_time: str(r, "campaign.end_date_time") })), returned: rows.length, truncated: fetched.length > a.limit };
   },
 });
 
@@ -159,7 +160,7 @@ export const getAdGroupSettings = googleRead({
   title: "Ad group settings",
   description: "Shows ad group name, status, type, bids, tracking template and final URL suffix. Bids apply only under matching bidding strategies (see Google's AdGroup reference).",
   input: z.object({ account_id: accountId, campaign_id: id.optional(), ad_group_ids: z.array(id).max(50).optional(), limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ ad_groups: z.array(z.object({ ad_group_id: z.string().min(1), campaign_id: z.string().nullable(), name: z.string().nullable(), status: z.string().nullable(), type: z.string().nullable(), cpc_bid: Money.nullable(), cpv_bid: Money.nullable(), target_cpa: Money.nullable(), tracking_url_template: z.string().nullable(), final_url_suffix: z.string().nullable() })), returned: z.number() }),
+  output: z.object({ ad_groups: z.array(z.object({ ad_group_id: z.string().min(1), campaign_id: z.string().nullable(), name: z.string().nullable(), status: z.string().nullable(), type: z.string().nullable(), cpc_bid: Money.nullable(), cpv_bid: Money.nullable(), target_cpa: Money.nullable(), tracking_url_template: z.string().nullable(), final_url_suffix: z.string().nullable() })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
   handler: async (a, ctx) => {
     const q = new Gaql()
       .select("ad_group.id", "campaign.id", "ad_group.name", "ad_group.status", "ad_group.type", "ad_group.cpc_bid_micros", "ad_group.cpv_bid_micros", "ad_group.target_cpa_micros", "ad_group.tracking_url_template", "ad_group.final_url_suffix")
@@ -168,10 +169,11 @@ export const getAdGroupSettings = googleRead({
       .where(a.campaign_id && `campaign.id = ${lit.id(a.campaign_id)}`)
       .where(a.ad_group_ids?.length ? `ad_group.id IN ${lit.list(a.ad_group_ids.map(lit.id))}` : undefined)
       .orderBy("ad_group.id")
-      .limit(a.limit);
-    const rows = await ctx.services.ads.query(q, { maxRows: a.limit });
+      .limit(a.limit + 1);
+    const fetched = await ctx.services.ads.query(q, { maxRows: a.limit + 1, partial: true });
+    const rows = fetched.slice(0, a.limit);
     const money = (r: Record<string, unknown>, f: string) => (pick(r, f) === undefined ? null : fromMicros(pick(r, f)));
-    return { ad_groups: rows.map((r) => ({ ad_group_id: String(pick(r, "ad_group.id") ?? ""), campaign_id: str(r, "campaign.id"), name: str(r, "ad_group.name"), status: str(r, "ad_group.status"), type: str(r, "ad_group.type"), cpc_bid: money(r, "ad_group.cpc_bid_micros"), cpv_bid: money(r, "ad_group.cpv_bid_micros"), target_cpa: money(r, "ad_group.target_cpa_micros"), tracking_url_template: str(r, "ad_group.tracking_url_template"), final_url_suffix: str(r, "ad_group.final_url_suffix") })), returned: rows.length };
+    return { ad_groups: rows.map((r) => ({ ad_group_id: String(pick(r, "ad_group.id") ?? ""), campaign_id: str(r, "campaign.id"), name: str(r, "ad_group.name"), status: str(r, "ad_group.status"), type: str(r, "ad_group.type"), cpc_bid: money(r, "ad_group.cpc_bid_micros"), cpv_bid: money(r, "ad_group.cpv_bid_micros"), target_cpa: money(r, "ad_group.target_cpa_micros"), tracking_url_template: str(r, "ad_group.tracking_url_template"), final_url_suffix: str(r, "ad_group.final_url_suffix") })), returned: rows.length, truncated: fetched.length > a.limit };
   },
 });
 

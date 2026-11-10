@@ -29,7 +29,7 @@ type AppAdSet = { row: MetaRow; application_id: string; object_store_url: string
 /** Ad sets of this account whose promoted_object names an app (optionally one app, checked first). */
 async function appAdSets(m: MetaAdsClient, appId?: string): Promise<{ adSets: AppAdSet[]; truncated: boolean }> {
   if (appId) await requireAdvertisableApp(m, appId);
-  const rows = await m.list(`${m.adAccountId}/adsets`, { fields: ADSET_FIELDS.join(",") }, EDGE_CAP);
+  const rows = await m.list(`${m.adAccountId}/adsets`, { fields: ADSET_FIELDS.join(",") }, EDGE_CAP, { partial: true });
   const adSets: AppAdSet[] = [];
   for (const r of rows) {
     const po = obj(r.promoted_object);
@@ -113,7 +113,7 @@ export const listMetaPromotableApps = metaRead({
   output: z.object({ apps: z.array(z.object({ app_id: z.string(), name: U })), returned: z.number(), truncated: z.boolean() }),
   handler: async (a, ctx) => {
     const m = ctx.services.meta;
-    const rows = await m.list(`${m.adAccountId}/advertisable_applications`, { fields: "id,name" }, a.limit + 1);
+    const rows = await m.list(`${m.adAccountId}/advertisable_applications`, { fields: "id,name" }, a.limit + 1, { partial: true });
     const shown = rows.slice(0, a.limit).map((r) => ({ app_id: String(r.id ?? ""), name: s(r, "name") }));
     return { apps: shown, returned: shown.length, truncated: rows.length > a.limit };
   },
@@ -127,7 +127,7 @@ export const getMetaAppSummary = metaRead({
   output: z.object({
     period: z.string(),
     attribution: z.string(),
-    totals: appMetrics,
+    totals: appMetrics.describe("Over every app ad set read. When truncated is true, totals are partial."),
     apps: z.array(z.object({ app_id: z.string(), ad_sets: z.number(), metrics: appMetrics })),
     truncated: z.boolean(),
   }),
@@ -168,7 +168,7 @@ export const getMetaAppCampaigns = metaRead({
     const { adSets, truncated } = await appAdSets(m, a.app_id);
     const ins = await appInsights(m, adSets, params);
     const campIds = new Set(adSets.map((x) => s(x.row, "campaign_id")).filter((x): x is string => !!x));
-    const camps = campIds.size ? await m.list(`${m.adAccountId}/campaigns`, { fields: "id,name,objective,status,effective_status" }, EDGE_CAP) : [];
+    const camps = campIds.size ? await m.list(`${m.adAccountId}/campaigns`, { fields: "id,name,objective,status,effective_status" }, EDGE_CAP, { partial: true }) : [];
     const info = new Map(camps.map((c) => [String(c.id), c]));
     const rows = [...campIds]
       .map((id) => {
@@ -259,7 +259,7 @@ export const getMetaAppCreatives = metaRead({
     const m = ctx.services.meta;
     const { adSets, truncated } = await appAdSets(m, a.app_id);
     const appOf = new Map(adSets.map((x) => [String(x.row.id), x.application_id]));
-    const ads = adSets.length ? await m.list(`${m.adAccountId}/ads`, { fields: `id,name,adset_id,effective_status,creative{${CREATIVE_FIELDS.join(",")}}` }, EDGE_CAP) : [];
+    const ads = adSets.length ? await m.list(`${m.adAccountId}/ads`, { fields: `id,name,adset_id,effective_status,creative{${CREATIVE_FIELDS.join(",")}}` }, EDGE_CAP, { partial: true }) : [];
     const rows = ads
       .filter((r) => appOf.has(String(r.adset_id ?? "")))
       .map((r) => {

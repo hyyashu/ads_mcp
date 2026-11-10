@@ -14,7 +14,7 @@ export const LEAD_CAP = 200;
 
 async function pageForms(m: import("../client").MetaAdsClient, pageId: string): Promise<MetaRow[]> {
   await requirePromotablePage(m, pageId);
-  return m.listAsPage(pageId, `${pageId}/leadgen_forms`, { fields: "id,name,status" }, FORM_CAP + 1);
+  return m.listAsPage(pageId, `${pageId}/leadgen_forms`, { fields: "id,name,status" }, FORM_CAP + 1, { partial: true });
 }
 
 export const listMetaLeadForms = metaRead({
@@ -66,6 +66,7 @@ export const getMetaLeadFormSubmissions = metaRead({
       `${a.form_id}/leads`,
       { fields: "id,created_time,ad_id,form_id,field_data", filtering: JSON.stringify([{ field: "time_created", operator: "GREATER_THAN_OR_EQUAL", value: since }]) },
       a.limit + 1,
+      { partial: true },
     );
     const want = [...new Set(a.fields)];
     const leads = rows.slice(0, a.limit).map((r) => {

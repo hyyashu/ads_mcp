@@ -4,6 +4,7 @@ import { ApiTokenAuthenticator } from "./auth/api-token";
 import { CompositeAuthenticator, OAuthServer } from "./auth/oauth-server";
 import { PlatformOAuth } from "./auth/platform-oauth";
 import { GoogleTokenProvider, MetaTokenProvider } from "./auth/token-providers";
+import { GoogleApiHttp } from "./platforms/gapi/http";
 import { GoogleAdsHttp } from "./platforms/google/http";
 import { MetaGraphHttp } from "./platforms/meta/http";
 import { YouTubeClient } from "./platforms/google/youtube";
@@ -62,6 +63,9 @@ function main() {
       google: config.google
         ? { tokens: googleTokens!, http: new GoogleAdsHttp({ apiVersion: config.google.apiVersion }) }
         : undefined,
+      // Search Console, GA4 and Tag Manager share the Google OAuth client, so they share its token provider.
+      // Tag Manager allows 25 requests per 100 seconds per Cloud project (its "Limits and quotas" page), shared by all tenants.
+      gapi: googleTokens ? { tokens: googleTokens, http: new GoogleApiHttp(), gtmLimiter: limiter("gtm_project", num("GTM_RATE_BURST", 25), num("GTM_RATE_PER_SEC", 0.25)) } : undefined,
       youtube: config.youtubeApiKey ? new YouTubeClient({ apiKey: config.youtubeApiKey }) : undefined,
       meta: config.meta ? { tokens: new MetaTokenProvider({ db, cipher, appSecret: config.meta.appSecret }), http: new MetaGraphHttp({ apiVersion: config.meta.apiVersion }) } : undefined,
     }),

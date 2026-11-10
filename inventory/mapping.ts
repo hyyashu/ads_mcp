@@ -198,6 +198,87 @@ const metaApi: Rule[] = [
   [/^update_meta_catalog_ad$/, { api: "POST /{ad_id} (name, status); update_meta_ad rules plus a catalog check (v27.0)", feasibility: "api", platformPermissions: ["ads_management"], notes: "Creative content is immutable once an ad is created: creative changes need a new creative." }],
 ];
 
+// ------------------------------------------------- Search Console, GA4, Tag Manager (2026-11-10) ----
+// Scopes confirmed on each API's reference pages (docs/VERIFICATION.md, "Search Console, GA4, Tag Manager foundation").
+const G = (s: string) => `https://www.googleapis.com/auth/${s}`;
+const GSC_READ = [G("webmasters.readonly")];
+const GSC_WRITE = [G("webmasters")];
+const GA4_READ = [G("analytics.readonly")];
+// The Data API (runReport, getMetadata) accepts analytics.readonly or analytics, NOT analytics.edit, so a write connection holds both.
+const GA4_WRITE = [G("analytics.readonly"), G("analytics.edit")];
+const GTM_READ = [G("tagmanager.readonly")];
+const GTM_EDIT = [G("tagmanager.edit.containers")];
+const GTM_VERSION = [G("tagmanager.edit.containerversions")];
+const GTM_PUBLISH = [G("tagmanager.publish")];
+
+const productDomain: [RegExp, string][] = [
+  [/^get_property_links$/, "connections"],
+  [/^(analyze_paid_organic_overlap|find_organic_keyword_gaps|audit_ad_landing_pages|compare_conversion_tracking|analyze_meta_traffic_quality|get_channel_mix|check_utm_tagging|analyze_brand_search_trend|find_converting_terms_without_content|audit_tracking_setup|analyze_paid_search_on_site)$/, "combined"],
+  [/gsc|search_|sitemap|inspect_url|top_(queries|pages)/, "search_console"],
+  [/gtm/, "tag_manager"],
+  [/.*/, "analytics"],
+];
+
+/** Each combined tool joins several products: its permissions name every scope it reads with. Checked before the per-platform rules. */
+const combinedApi: Rule[] = [
+  [/^get_property_links$/, { api: "This server's account_link table (no platform call)", feasibility: "internal", accountScope: "none", platformPermissions: [] }],
+  [/^analyze_paid_organic_overlap$/, { api: "Google Ads search_term_view (GAQL) + GSC searchAnalytics.query (dimension query) for the linked site", feasibility: "derived", platformPermissions: [...GADS, ...GSC_READ], notes: "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output." }],
+  [/^find_organic_keyword_gaps$/, { api: "GSC searchAnalytics.query (query) + Google Ads keyword_view (GAQL)", feasibility: "derived", platformPermissions: [...GADS, ...GSC_READ] }],
+  [/^audit_ad_landing_pages$/, { api: "Google Ads ad final URLs (GAQL) and/or Meta creatives + GA4 runReport (landingPage) + GSC urlInspection.index.inspect (sampled: 2,000/day per site)", feasibility: "derived", platformPermissions: [...GADS, ...GA4_READ, ...GSC_READ], notes: "URL inspection is quota-limited, so it samples and says so." }],
+  [/^compare_conversion_tracking$/, { api: "GA4 runReport (keyEvents by sessionGoogleAdsCampaignName / sessionCampaignName) + Google Ads conversions (GAQL) or Meta insights actions", feasibility: "derived", platformPermissions: [...GA4_READ, ...GADS], notes: "Reports the gap and the known reasons a gap is normal (attribution model, window, time zone); never claims one side is right." }],
+  [/^analyze_meta_traffic_quality$/, { api: "Meta GET /{ad_id}?fields=url_tags,creative + GA4 runReport (sessionSource, sessionMedium, sessionCampaignName)", feasibility: "derived", platformPermissions: ["ads_read", ...GA4_READ], notes: "GA4 has no Meta dimensions: matched through UTM tags only, with a list of campaigns it could not match." }],
+  [/^get_channel_mix$/, { api: "GA4 runReport (sessionDefaultChannelGroup) + spend from linked ad accounts", feasibility: "derived", platformPermissions: [...GA4_READ] }],
+  [/^check_utm_tagging$/, { api: "Google Ads customer.auto_tagging_enabled + tracking templates (GAQL), Meta url_tags, GA4 runReport (sessionManual* UTM dimensions)", feasibility: "derived", platformPermissions: [...GA4_READ, ...GADS, "ads_read"] }],
+  [/^analyze_brand_search_trend$/, { api: "GSC searchAnalytics.query (date, query filtered to brand terms) + spend from linked ad accounts", feasibility: "derived", platformPermissions: [...GSC_READ], notes: "A trend next to spend only: no causal claim." }],
+  [/^find_converting_terms_without_content$/, { api: "Google Ads search_term_view with conversions (GAQL) + GSC searchAnalytics.query (query)", feasibility: "derived", platformPermissions: [...GADS, ...GSC_READ] }],
+  [/^audit_tracking_setup$/, { api: "GTM live version (versions.live) + GA4 Admin keyEvents.list + Google Ads conversion_action (GAQL) + Meta adspixels", feasibility: "derived", platformPermissions: [...GTM_READ, ...GA4_READ, ...GADS], notes: "Recognises tags only by documented tag types and snippets." }],
+  [/^analyze_paid_search_on_site$/, { api: "GA4 runReport (sessionGoogleAdsQuery with engagement and keyEvents)", feasibility: "derived", platformPermissions: [...GA4_READ] }],
+];
+
+const productApi: Rule[] = [
+  // ---- Search Console (webmasters v3 at www.googleapis.com, URL Inspection at searchconsole.googleapis.com)
+  [/^list_gsc_sites$/, { api: "GET webmasters/v3/sites (siteEntry: siteUrl, permissionLevel)", feasibility: "api", platformPermissions: GSC_READ }],
+  [/^(get_search_performance|get_top_queries|get_top_pages|get_search_appearance)$/, { api: "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query (rowLimit up to 25,000, startRow paging)", feasibility: "api", platformPermissions: GSC_READ }],
+  [/^compare_search_periods$/, { api: "POST webmasters/v3/sites/{siteUrl}/searchAnalytics/query for two periods, deterministic diff", feasibility: "derived", platformPermissions: GSC_READ }],
+  [/^inspect_url$/, { api: "POST searchconsole.googleapis.com/v1/urlInspection/index:inspect", feasibility: "api", platformPermissions: GSC_READ, notes: "600/min and 2,000/day per site." }],
+  [/^list_sitemaps$/, { api: "GET webmasters/v3/sites/{siteUrl}/sitemaps", feasibility: "api", platformPermissions: GSC_READ }],
+  [/^submit_sitemap$/, { api: "PUT webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}", feasibility: "api", platformPermissions: GSC_WRITE }],
+  [/^delete_sitemap$/, { api: "DELETE webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}", feasibility: "api", platformPermissions: GSC_WRITE }],
+  [/^add_gsc_site$/, { api: "PUT webmasters/v3/sites/{siteUrl}", feasibility: "api", platformPermissions: GSC_WRITE, notes: "Ownership must still be verified in Search Console. Acts on the connection of the named site account." }],
+  [/^remove_gsc_site$/, { api: "DELETE webmasters/v3/sites/{siteUrl}", feasibility: "api", platformPermissions: GSC_WRITE }],
+  // ---- GA4 (Admin API v1beta/v1alpha, Data API v1beta/v1alpha)
+  [/^list_ga4_properties$/, { api: "Admin v1beta accountSummaries.list + properties.get + properties.dataStreams.list", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^get_ga4_metadata$/, { api: "Data v1beta properties/{id}/metadata + Admin keyEvents.list", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^run_ga4_report$/, { api: "Data v1beta properties:checkCompatibility then properties:runReport", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^run_ga4_pivot_report$/, { api: "Data v1beta properties:runPivotReport", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^run_ga4_funnel_report$/, { api: "Data v1alpha properties:runFunnelReport (alpha API)", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^get_ga4_realtime$/, { api: "Data v1beta properties:runRealtimeReport", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^(get_traffic_by_channel|get_campaign_traffic|get_landing_page_performance|get_google_ads_traffic_in_ga4|get_conversion_events)$/, { api: "Data v1beta properties:runReport with fixed dimensions and metrics", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^get_ga4_ads_links$/, { api: "Admin v1beta properties.googleAdsLinks.list", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^get_ga4_attribution_settings$/, { api: "Admin v1alpha properties.getAttributionSettings (alpha API)", feasibility: "api", platformPermissions: GA4_READ }],
+  [/^get_ga4_change_history$/, { api: "Admin v1beta accounts:searchChangeHistoryEvents", feasibility: "api", platformPermissions: GA4_READ, notes: "Check the method's scope before building: it may need analytics.edit." }],
+  [/^create_key_event$/, { api: "Admin v1beta properties.keyEvents.create", feasibility: "api", platformPermissions: GA4_WRITE }],
+  [/^remove_key_event$/, { api: "Admin v1beta properties.keyEvents.delete", feasibility: "api", platformPermissions: GA4_WRITE }],
+  [/^create_custom_dimension$/, { api: "Admin v1beta properties.customDimensions.create", feasibility: "api", platformPermissions: GA4_WRITE }],
+  [/^create_ga4_audience$/, { api: "Admin v1alpha properties.audiences.create (alpha API)", feasibility: "api", platformPermissions: GA4_WRITE }],
+  // ---- Tag Manager (tagmanager v2)
+  [/^list_gtm_containers$/, { api: "GET tagmanager/v2/accounts + accounts/{a}/containers", feasibility: "api", platformPermissions: GTM_READ }],
+  [/^get_gtm_live_version$/, { api: "GET tagmanager/v2/{container}/versions:live", feasibility: "api", platformPermissions: GTM_READ }],
+  [/^list_gtm_(tags|triggers|variables)$/, { api: "GET tagmanager/v2/{workspace}/tags | triggers | variables", feasibility: "api", platformPermissions: GTM_READ }],
+  [/^get_gtm_workspace_status$/, { api: "GET tagmanager/v2/{workspace}/status", feasibility: "api", platformPermissions: GTM_READ }],
+  [/^audit_gtm_container$/, { api: "GET tagmanager/v2/{container}/versions:live, fixed documented rules", feasibility: "derived", platformPermissions: GTM_READ }],
+  [/^(create|update)_gtm_tag$/, { api: "POST {workspace}/tags | PUT {tag} (in the server's own JackOfAds workspace)", feasibility: "api", platformPermissions: GTM_EDIT }],
+  [/^create_gtm_trigger$/, { api: "POST {workspace}/triggers (in the server's own JackOfAds workspace)", feasibility: "api", platformPermissions: GTM_EDIT }],
+  [/^create_gtm_version$/, { api: "POST {workspace}:create_version", feasibility: "api", platformPermissions: GTM_VERSION }],
+  [/^publish_gtm_version$/, { api: "POST {version}:publish", feasibility: "api", platformPermissions: GTM_PUBLISH, notes: "The only tool that changes the live site; the approval shows a diff against the live version." }],
+];
+
+/** Design section 6: tiers that differ from the action type's default (Delete = destructive, other changes = write). */
+// create/update_gtm_tag are high_impact (owner-approved 2026-11-10, stricter than design section 6): a custom HTML tag is code
+// that will run on the customer's website once published, so a second person approves even the draft.
+const productRisk: Record<string, Risk> = { create_key_event: "high_impact", create_gtm_tag: "high_impact", update_gtm_tag: "high_impact", publish_gtm_version: "destructive" };
+const PRODUCTS = new Set(["google_search_console", "google_analytics", "google_tag_manager"]);
+
 const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$/;
 const metaHighImpact = /^create_meta_.*_campaign$|^duplicate_meta_campaign$|^resume_meta_campaign$|^update_meta_(campaign|catalog_campaign|ad_set|catalog_ad_set|ad|catalog_ad)$|^add_meta_(ad_set|catalog_ad_set|ad|catalog_ad)$|^create_meta_dco_ad$/;
 
@@ -207,6 +288,20 @@ function firstMatch<T>(rules: [RegExp, T][], name: string, fallback: T): T {
 }
 
 export function mapTool(t: InventoryTool): Mapping {
+  const combined = combinedApi.find(([re]) => re.test(t.name))?.[1];
+  if (PRODUCTS.has(t.platform) || combined) {
+    const rule = combined ?? productApi.find(([re]) => re.test(t.name))?.[1];
+    const risk: Risk = !t.modifies_data ? "read" : (productRisk[t.name] ?? (t.action_type === "Delete" ? "destructive" : "write"));
+    return {
+      domain: firstMatch(productDomain, t.name, "other"),
+      api: rule?.api ?? "UNMAPPED: needs API mapping",
+      risk,
+      feasibility: rule?.feasibility ?? "api",
+      platformPermissions: rule?.platformPermissions ?? [],
+      accountScope: rule?.accountScope ?? "required",
+      ...(rule?.notes ? { notes: rule.notes } : {}),
+    };
+  }
   const google = t.platform === "google_ads";
   const domain = firstMatch(google ? googleDomain : metaDomain, t.name, "other");
 

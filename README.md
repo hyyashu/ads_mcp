@@ -1,23 +1,29 @@
 # ads-mcp
 
-A remote MCP server (Streamable HTTP) for Google Ads and Meta Ads. Target: 227 tools (167 Google, 60 Meta) from
-`inventory/tool-registry.json`, implemented against the official platform APIs. Advertising data is fetched on demand
-and never stored.
+A remote MCP server (Streamable HTTP), product name JackOfAds, for Google Ads, Meta Ads, Google Search Console, Google
+Analytics 4 and Google Tag Manager: 286 tools from `inventory/tool-registry.json`, implemented against the official
+platform APIs. Advertising and analytics data is fetched on demand and never stored.
 
 ## Status (read this first)
 
-**39 of 227 tools are implemented** (all Google Ads: 16 read-only, 23 approval-gated writes). `docs/TRACKING.md` (generated) lists every tool, its
-plan and its status. A tool is exposed only when it has a real handler, input and output schemas, documented
-permissions and tests; there are no stub or fake-success tools.
+**285 of 286 tools are implemented**: 171 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
+`get_property_links`), 12 Tag Manager, and 11 combined tools that join ad data with Search Console and GA4 (for example
+paid vs organic overlap, conversion tracking gaps, landing page quality, tracking setup audit). The remaining one,
+`create_youtube_campaign`, is a documented external limitation. Search Console, GA4 and Tag Manager each have their own
+Connect button and Google grant; a workspace links a site, property and container to its ad accounts on the Connections
+page, and the combined tools use those links. Design: `docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md`. `docs/TRACKING.md` (generated) lists every tool, its plan and its status. A tool is exposed only
+when it has a real handler, input and output schemas, documented permissions and tests; there are no stub or
+fake-success tools.
 
-**"Implemented" currently means tested against crafted API responses, not against a real account.** No ad-platform
-credentials or test accounts were available, and the official documentation sites (Google, Meta, the MCP spec) were
-partly unreachable from the build environment (the key pages were later checked: see `docs/VERIFICATION.md`), so field names, endpoints and the MCP authorization details were written from
-knowledge and are **not verified against current official documentation**. The matrix marks every tool
-`mocked-api only` until it is proven live (`inventory/live-verified.json`).
+**"Implemented" means tested against crafted API responses, not against a real account.** Google tools are checked
+against Google's published v26 schema ("schema-checked (v26), not live"); Meta tools were built from Meta's reference
+docs ("docs-checked, not live"); Search Console, GA4 and Tag Manager tools were built from Google's reference pages,
+recorded per product in `docs/VERIFICATION.md`. Nothing has run against a live ad account yet (`inventory/live-verified.json` is
+empty). See `docs/VERIFICATION.md` for what was checked against which page.
 
-Built and tested (288 tests): MCP transport, tool registry with enforced rules, MCP-client OAuth server, Google/Meta
-connection flows, human approvals, crash reconciliation, shared rate limiting, GAQL builder and Google client layer.
+Tests (`npm test`) cover the MCP transport (2026-07-28 and 2025-era clients), the tool registry and its rules, the
+MCP-client OAuth server, Google/Meta connection flows, human approvals, crash reconciliation, shared rate limiting,
+the GAQL builder, both platform clients and every tool.
 
 ## Architecture
 
@@ -90,7 +96,10 @@ issued with `issueApiToken` (read/write scopes only).
 - Serve behind TLS; set `PUBLIC_URL` to the https origin (required when `NODE_ENV=production`). Set `TRUST_PROXY=1` only behind a trusted proxy.
 - Keys: `ADS_MCP_KEYS` supports rotation (add a new version, it encrypts new data; old versions still decrypt). Prefer unwrapping the keyring from a KMS at boot.
 - Multiple instances: keep `RATE_LIMIT_STORE=db` (shared, atomic Postgres token buckets). The server is otherwise stateless.
-- Register redirect URIs: Google `${PUBLIC_URL}/connect/google/callback`, Meta `${PUBLIC_URL}/connect/meta/callback`.
+- Register redirect URIs: Google `${PUBLIC_URL}/connect/google/callback`, `${PUBLIC_URL}/connect/gsc/callback`,
+  `${PUBLIC_URL}/connect/ga4/callback`, `${PUBLIC_URL}/connect/gtm/callback` (same Google OAuth client), Meta
+  `${PUBLIC_URL}/connect/meta/callback`. Enable the Search Console, Google Analytics Data, Google Analytics Admin and Tag
+  Manager APIs on the Google Cloud project.
 - Google: create a Cloud project, enable the Google Ads API, request Basic/Standard access for that project, set the OAuth consent screen (the `adwords` scope is sensitive and needs verification for external users).
 - Meta: a Meta app with Business Verification and App Review for `ads_management` and the other requested permissions.
 
@@ -126,9 +135,19 @@ Back up the Postgres service (Dokploy → Backups): it holds the encrypted platf
 
 ## Known gaps and limitations
 
-- 188 tools pending. See `docs/TRACKING.md`. Three need platform support verified before they can be built honestly: `get_benchmark_context` (competitive metrics availability), `validate_video` (YouTube Data API key and what Google Ads exposes), `get_meta_audience_insights` (only officially supported capabilities; explicit unsupported errors otherwise).
-- No live verification of any tool, OAuth flow or API mapping (see Status).
-- MCP: the published spec is now revision 2026-07-28 (stateless, no `initialize`); the installed SDK (1.32.2) supports up to 2025-11-25, so the new transport revision is not implemented. The authorization requirements checked match (see `docs/VERIFICATION.md`).
+- No live verification of any tool, OAuth flow or API mapping (see Status). This needs a Test- and a Basic-level Google
+  Ads account and a Meta test ad account.
+- Lists are read up to a fixed size per call (for example 5,000 rows). Past that, a tool either says `truncated`
+  (when it shows a page) or refuses with `unsupported` (when it needs the whole list, as duplicate checks and totals
+  do). It never works from a silently cut list.
+- Each write makes several API calls (plan, re-check at approval time, execute, read back). That is the price of the
+  approval and conflict checks and is intended.
+- A few Meta fields could not be confirmed in Meta's docs and are deliberately not used (see `docs/VERIFICATION.md`).
 - Meta `debug_token` is called with POST (token kept out of the URL); confirm on the first live run.
+- Search Console, GA4 and Tag Manager have not run against live properties either. Each product's section in
+  `docs/VERIFICATION.md` lists what is inferred rather than documented (for example GA4 tag type codes in Tag Manager,
+  how GA4 stores Google Ads customer ids, and Meta's dynamic URL parameters, which the combined tools never resolve).
+- Google must verify the OAuth app for the Search Console, Analytics and Tag Manager scopes before outside customers can
+  connect them. Tag Manager allows 25 requests per 100 seconds per Cloud project, shared by every tenant; the server
+  enforces that limit (`GTM_RATE_BURST`, `GTM_RATE_PER_SEC`), and a higher quota should be requested before launch.
 - Web UI is deliberately minimal (login, consent, approvals, connections). No self-serve signup: tenants are created with `tenant:create`.
-- The Meta platform client and all Meta tools are not started.
