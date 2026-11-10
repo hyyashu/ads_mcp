@@ -2,5 +2,13 @@
   "create_youtube_campaign": {
     "reason": "Google Ads API v26 cannot create Video campaigns. Google's Video campaigns overview (developers.google.com/google-ads/api/docs/video/overview, checked 2026-11-04): \"Video campaigns cannot be created or mutated using the Google Ads API\", apart from VideoResponsiveAdInfo changes. Video campaigns are readable for reporting.",
     "alternative": "create_demandgen_campaign: Demand Gen campaigns serve video ads on YouTube and are fully supported for creation in the API."
+  },
+  "add_bing_preview_block": {
+    "reason": "AddPagePreviewBlock needs a BlockReason value, but Microsoft's API reference has no page for the BlockReason enum (checked 2026-11-10), and the reasons on Bing's help page do not match the names unofficial libraries use. Sending a guessed number could record a false reason (for example illegal content) against the customer's site.",
+    "alternative": "Add the preview block in Bing Webmaster Tools; list_bing_preview_blocks and remove_bing_preview_block work through the API."
+  },
+  "add_bing_sitelink_block": {
+    "reason": "AddDeepLinkBlock needs a market and a search URL, but Microsoft documents neither the market format nor the value meaning all markets or all searches (checked 2026-11-10). A guess could block the sitelink in the wrong market or everywhere.",
+    "alternative": "Add the sitelink block in Bing Webmaster Tools; list_bing_sitelink_blocks and remove_bing_sitelink_block work through the API."
   }
 }

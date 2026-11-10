@@ -1,8 +1,8 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 285,
-    "external_limitation": 1,
+    "implemented": 339,
+    "external_limitation": 3,
     "pending": 0
   },
   "rows": [
@@ -4796,15 +4796,16 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "Google Ads search_term_view (GAQL) + GSC searchAnalytics.query (dimension query) for the linked site",
+      "api": "Google Ads search_term_view (GAQL) + GSC searchAnalytics.query (dimension query) for the linked site; with search_engine bing/both, Bing GET GetQueryStats (weekly buckets) for the linked Bing site",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "webmaster.read"
       ],
       "accountScope": "required",
-      "notes": "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output.",
+      "notes": "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output. Bing has no date range: buckets dated inside the period are used and named; engines are shown side by side, never added.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4815,14 +4816,16 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "GSC searchAnalytics.query (query) + Google Ads keyword_view (GAQL)",
+      "api": "GSC searchAnalytics.query (query) and/or Bing GET GetQueryStats (weekly buckets) + Google Ads keyword_view (GAQL)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "webmaster.read"
       ],
       "accountScope": "required",
+      "notes": "search_engine google (default) / bing / both; Bing buckets dated inside the period are used and named.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4833,16 +4836,18 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "Google Ads ad final URLs (GAQL) and/or Meta creatives + GA4 runReport (landingPage) + GSC urlInspection.index.inspect (sampled: 2,000/day per site)",
+      "api": "Google Ads ad final URLs (GAQL) and/or Meta creatives + GA4 runReport (landingPage) + GSC urlInspection.index.inspect (sampled: 2,000/day per site) and/or Bing GET GetUrlInfo (sampled)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
         "https://www.googleapis.com/auth/analytics.readonly",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "ads_read",
+        "webmaster.read"
       ],
       "accountScope": "required",
-      "notes": "URL inspection is quota-limited, so it samples and says so.",
+      "notes": "URL inspection is quota-limited, so it samples and says so. Bing GetUrlInfo has no documented 'indexed' verdict: it reports Bing's index details (discovery and crawl dates).",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4927,14 +4932,17 @@
       "platform": "google_search_console",
       "action": "Analyze",
       "domain": "combined",
-      "api": "GSC searchAnalytics.query (date, query filtered to brand terms) + spend from linked ad accounts",
+      "api": "GSC searchAnalytics.query (date, query filtered to brand terms) + spend from linked ad accounts; with search_engine bing/both, Bing GET GetQueryStats (find branded top queries) + GetQueryTrafficStats per branded query (at most 20) + GetRankAndTrafficStats",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "https://www.googleapis.com/auth/adwords",
+        "ads_read",
+        "webmaster.read"
       ],
       "accountScope": "required",
-      "notes": "A trend next to spend only: no causal claim.",
+      "notes": "A trend next to spend only: no causal claim. Bing has no brand filter: only its top queries containing a brand term are counted, and the output says branded traffic is undercounted.",
       "status": "implemented",
       "verification": "docs-checked, not live",
       "tests": "see src/tests",
@@ -4945,14 +4953,16 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "Google Ads search_term_view with conversions (GAQL) + GSC searchAnalytics.query (query)",
+      "api": "Google Ads search_term_view with conversions (GAQL) + GSC searchAnalytics.query (query) and/or Bing GET GetQueryStats (weekly buckets)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "webmaster.read"
       ],
       "accountScope": "required",
+      "notes": "search_engine google (default) / bing / both; Bing lists only its top queries, which the output states.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4988,6 +4998,965 @@
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_sites",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUserSites",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_site",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddSite",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Acts on the Bing user of the named site's connection. Verification is separate (verify_bing_site).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "verify_bing_site",
+      "platform": "bing_webmaster",
+      "action": "Update",
+      "domain": "bing_webmaster",
+      "api": "POST VerifySite",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_site",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveSite",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_site_users",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetSiteRoles",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_site_user",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddSiteRoles",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Gives another person access to the site's Bing data.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_site_user",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveSiteRole",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_site_moves",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetSiteMoves",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_site_move",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitSiteMove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Tells Bing the site moved to another URL: affects how Bing indexes both.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_search_performance",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetRankAndTrafficStats (daily)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_top_queries",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryStats (weekly buckets, Bing's own window)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_top_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetPageStats (weekly buckets, Bing's own window)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_query_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryPageStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_page_queries",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetPageQueryStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_query_page_detail",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryPageDetailStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_query_trend",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryTrafficStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "compare_bing_search_periods",
+      "platform": "bing_webmaster",
+      "action": "Analyze",
+      "domain": "bing_webmaster",
+      "api": "GET GetRankAndTrafficStats / GetQueryStats / GetPageStats, deterministic diff of two periods",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_keyword_volume",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetKeyword (country, language, date range)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_keyword_history",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetKeywordStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_related_keywords",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetRelatedKeywords",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "inspect_bing_url",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUrlInfo + GetUrlTrafficInfo",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_directory_index",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetChildrenUrlInfo + GetChildrenUrlTrafficInfo",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_urls",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitUrl / SubmitUrlBatch (at most 500 per batch, within GetUrlSubmissionQuota)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_submission_quota",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUrlSubmissionQuota + GetContentSubmissionQuota",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_content",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitContent",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "fetch_url_as_bingbot",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST FetchUrl",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Asks Bingbot to fetch the page; changes nothing on the site or in the index.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_fetched_urls",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFetchedUrls",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_fetched_url",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFetchedUrlDetails",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_crawl_stats",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCrawlStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_crawl_issues",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCrawlIssues",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_crawl_settings",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCrawlSettings",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_bing_crawl_settings",
+      "platform": "bing_webmaster",
+      "action": "Update",
+      "domain": "bing_webmaster",
+      "api": "POST SaveCrawlSettings",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Changes how fast Bingbot crawls the site.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_sitemaps",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFeeds",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_sitemap",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFeedDetails",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_sitemap",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitFeed",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_sitemap",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveFeed",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_linked_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetLinkCounts (paged)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_backlinks",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUrlLinks (paged)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_connected_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetConnectedPages",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_connected_page",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddConnectedPage",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_blocked_urls",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetBlockedUrls",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "block_bing_url",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddBlockedUrl",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Removes the page or directory from Bing results.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "unblock_bing_url",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveBlockedUrl",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_preview_blocks",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetActivePagePreviewBlocks",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_preview_block",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddPagePreviewBlock",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "external_limitation",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_bing_preview_block",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemovePagePreviewBlock",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_sitelink_blocks",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetDeepLinkBlocks",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_sitelink_block",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddDeepLinkBlock",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "external_limitation",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_bing_sitelink_block",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveDeepLinkBlock",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_url_parameters",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryParameters",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_url_parameter",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddQueryParameter",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Bing then treats URLs differing only in this parameter as one page.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_bing_url_parameter",
+      "platform": "bing_webmaster",
+      "action": "Update",
+      "domain": "bing_webmaster",
+      "api": "POST EnableDisableQueryParameter",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_url_parameter",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveQueryParameter",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_country_targeting",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCountryRegionSettings",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_country_targeting",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddCountryRegionSettings",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_country_targeting",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveCountryRegionSettings",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
       ],
       "accountScope": "required",
       "status": "implemented",
