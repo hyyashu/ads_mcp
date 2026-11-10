@@ -9257,6 +9257,63 @@
 "from_metrics_segments": [],
 "segmenting": []
 },
+"multi_party_auth_review": {
+"attributed": [
+"customer"
+],
+"fields": {
+"multi_party_auth_review.approval_date_time": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.creation_date_time": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.customer_user_access_invitation_review.new_customer_user_access_invitation": {
+"filterable": false,
+"selectable": true
+},
+"multi_party_auth_review.customer_user_access_review.new_customer_user_access": {
+"filterable": false,
+"selectable": true
+},
+"multi_party_auth_review.customer_user_access_review.old_customer_user_access": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.justification": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.multi_party_auth_review_id": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.operation_type": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.request_user_email": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.review_status": {
+"filterable": true,
+"selectable": true
+},
+"multi_party_auth_review.target_resource": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "offline_user_data_job": {
 "attributed": [
 "customer",
