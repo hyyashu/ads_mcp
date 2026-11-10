@@ -151,7 +151,7 @@ export const addSitelinks = addTool({
   asset: (s) => ({ finalUrls: [s.final_url], sitelinkAsset: { linkText: s.link_text, ...(s.description1 ? { description1: s.description1, description2: s.description2 } : {}) } }),
   key: (s) => ({ key: `${s.link_text.trim().toLowerCase()}|${s.final_url.trim().toLowerCase()}`, label: `${s.link_text} -> ${s.final_url}` }),
 });
-export const removeSitelinks = removeTool({ name: "remove_sitelinks", title: "Remove sitelinks", description: "Removes sitelinks from a campaign after approval from a second person (the sitelink assets stay in the asset library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "SITELINK" });
+export const removeSitelinks = removeTool({ name: "remove_sitelinks", title: "Remove sitelinks", description: "Removes sitelinks from a campaign after a person approves it (the sitelink assets stay in the asset library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "SITELINK" });
 
 // ----------------------------------------------------------------------------------------------------- callouts
 export const addCalloutExtensions = addTool({
@@ -164,7 +164,7 @@ export const addCalloutExtensions = addTool({
   asset: (c) => ({ calloutAsset: { calloutText: c.text } }),
   key: (c) => ({ key: c.text.trim().toLowerCase(), label: c.text }),
 });
-export const removeCallouts = removeTool({ name: "remove_callouts", title: "Remove callouts", description: "Removes callouts from a campaign after approval from a second person (the assets stay in the library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "CALLOUT" });
+export const removeCallouts = removeTool({ name: "remove_callouts", title: "Remove callouts", description: "Removes callouts from a campaign after a person approves it (the assets stay in the library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "CALLOUT" });
 
 // ------------------------------------------------------------------------------------------- structured snippets
 /** English headers from Google's "Structured snippet headers" reference (localized variants are not accepted here). */
@@ -179,7 +179,7 @@ export const addStructuredSnippets = addTool({
   asset: (s) => ({ structuredSnippetAsset: { header: s.header, values: s.values } }),
   key: (s) => ({ key: `${s.header.toLowerCase()}|${s.values.map((v) => v.trim().toLowerCase()).join(",")}`, label: `${s.header}: ${s.values.join(", ")}` }),
 });
-export const removeStructuredSnippets = removeTool({ name: "remove_structured_snippets", title: "Remove structured snippets", description: "Removes structured snippets from a campaign after approval from a second person (the assets stay in the library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "STRUCTURED_SNIPPET" });
+export const removeStructuredSnippets = removeTool({ name: "remove_structured_snippets", title: "Remove structured snippets", description: "Removes structured snippets from a campaign after a person approves it (the assets stay in the library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "STRUCTURED_SNIPPET" });
 
 // ---------------------------------------------------------------------------------------------------- call assets
 export const addCallAsset = addTool({
@@ -192,7 +192,7 @@ export const addCallAsset = addTool({
   asset: (c) => ({ callAsset: { countryCode: c.country_code, phoneNumber: c.phone_number, callConversionReportingState: "USE_ACCOUNT_LEVEL_CALL_CONVERSION_ACTION" } }),
   key: (c) => ({ key: `${c.country_code.toLowerCase()}|${c.phone_number.replace(/[^\d+]/g, "")}`, label: `${c.country_code} ${c.phone_number}` }),
 });
-export const removeCallAssets = removeTool({ name: "remove_call_assets", title: "Remove call assets", description: "Removes phone numbers (call assets) from a campaign after approval from a second person (the assets stay in the library). Give the asset ids from list_call_assets. Confirmed by re-reading.", fieldType: "CALL" });
+export const removeCallAssets = removeTool({ name: "remove_call_assets", title: "Remove call assets", description: "Removes phone numbers (call assets) from a campaign after a person approves it (the assets stay in the library). Give the asset ids from list_call_assets. Confirmed by re-reading.", fieldType: "CALL" });
 
 export const setCallAssetStatus = stateWrite({
   name: "set_call_asset_status",

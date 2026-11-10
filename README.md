@@ -54,8 +54,8 @@ MCP client (Claude, ChatGPT, Cursor)             Human in a browser
 ### Writes and approvals
 
 A modifying tool never changes anything directly. It plans against live state (read-only) and queues an approval. A
-signed-in owner or admin approves in the browser (`/approvals`, CSRF-protected). Destructive and high-impact changes
-need a second person. Identical requests are deduplicated; approval re-plans and refuses if the account changed since the
+signed-in owner or admin approves in the browser (`/approvals`, CSRF-protected). The MCP client can never approve: only
+a person signed in to the web app can. Workspace automation rules may auto-approve matching changes, never destructive ones. Identical requests are deduplicated; approval re-plans and refuses if the account changed since the
 request; a crash or ambiguous failure becomes `unknown_outcome` and is **never retried automatically**. A background job
 reconciles it by asking the platform (`verify()` on every write tool) and only then lets a human re-approve.
 

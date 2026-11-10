@@ -96,7 +96,6 @@ describe("audiences", () => {
   it("replace_demandgen_audiences swaps the whole set atomically and needs a second approver", async () => {
     const r = await run("replace_demandgen_audiences", { ad_group_id: "71", audiences: [{ kind: "user_list", id: "600" }] });
     expect(r.approval?.risk).toBe("high_impact");
-    await expect(approve(r.approval!.approval_id, kit.owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("executed");
     expect(done.result).toEqual({ ad_group_id: "71", audiences: ["USER_LIST:600"] });

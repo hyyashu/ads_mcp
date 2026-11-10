@@ -235,7 +235,7 @@ record and usage counter.
 
 **Prepare and approve a budget increase**: same front half with `ads:write` and a write-capable account -> `plan()` reads
 the campaign and budget, refuses shared budgets, produces the summary and snapshot -> approval row (pending, 24 h) ->
-the client is told nothing changed -> a second person signs in, sees the change, approves (CSRF, origin check).
+the client is told nothing changed -> an owner or admin (the requester included) signs in, sees the change, approves (CSRF, origin check).
 
 **Execute an approved change**: approval claimed atomically (pending to executing) -> account resolved again (access
 may have been revoked) -> `plan()` re-run, snapshot must match -> one atomic Google mutate -> read back and compare ->

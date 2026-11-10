@@ -57,7 +57,7 @@ export const updateCampaignDates = googleWrite({
   name: "update_campaign_dates",
   title: "Update campaign dates",
   risk: "high_impact",
-  description: "Changes a campaign's start and/or end date after approval from a second person. Dates are whole days in the account's time zone. Pass clear_end_date to make the campaign run indefinitely. Confirmed by re-reading the campaign.",
+  description: "Changes a campaign's start and/or end date after a person approves it. Dates are whole days in the account's time zone. Pass clear_end_date to make the campaign run indefinitely. Confirmed by re-reading the campaign.",
   input: z.object({ account_id: accountId, campaign_id: id, start_date: dateOnly.optional(), end_date: dateOnly.optional(), clear_end_date: z.boolean().default(false) }).refine((v) => v.start_date || v.end_date || v.clear_end_date, "give start_date, end_date or clear_end_date").refine((v) => !(v.end_date && v.clear_end_date), "end_date and clear_end_date conflict").refine((v) => !(v.start_date && v.end_date) || v.start_date <= v.end_date, "start_date must not be after end_date"),
   output: z.object({ campaign_id: z.string(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() }),
   plan: async (a, ctx) => {

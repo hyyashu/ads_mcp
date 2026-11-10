@@ -379,7 +379,7 @@ export const duplicateMetaCampaign = metaWrite({
   name: "duplicate_meta_campaign",
   title: "Duplicate Meta campaign",
   risk: "high_impact",
-  description: `Copies one Meta campaign after approval by a second person (POST /{campaign}/copies). The copy is always created PAUSED, so it spends nothing until someone activates it. With deep_copy the ad sets and ads are copied too, up to ${SYNC_COPY_MAX_ADS} ads (Meta's limit for a synchronous copy; larger copies are refused rather than started in the background). An optional suffix is added to the copy's name. The copy is confirmed by reading it back; if Meta returns no copy id the result is reported as unknown and is never retried automatically. Deleted campaigns cannot be copied.`,
+  description: `Copies one Meta campaign after a person approves it (POST /{campaign}/copies). The copy is always created PAUSED, so it spends nothing until someone activates it. With deep_copy the ad sets and ads are copied too, up to ${SYNC_COPY_MAX_ADS} ads (Meta's limit for a synchronous copy; larger copies are refused rather than started in the background). An optional suffix is added to the copy's name. The copy is confirmed by reading it back; if Meta returns no copy id the result is reported as unknown and is never retried automatically. Deleted campaigns cannot be copied.`,
   input: dupInput,
   output: z.object({ source_campaign_id: z.string(), copied_campaign_id: z.string(), status: z.string().nullable(), copied_objects: z.number().describe("Objects Meta reports as copied (campaign, ad sets, ads, creatives).") }),
   plan: async (a, ctx) => {

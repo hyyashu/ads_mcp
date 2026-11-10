@@ -82,7 +82,7 @@ function statusTool(name: "pause_meta_campaign" | "resume_meta_campaign", to: "P
     name,
     title: `${verb} Meta campaign`,
     risk,
-    description: `${verb}s one Meta campaign after human approval${to === "ACTIVE" ? " from a second person, because resuming can start spend immediately (ad sets and ads inside must also be active to deliver)" : ""}. Deleted or archived campaigns cannot be changed. Confirmed by re-reading the campaign from Meta.`,
+    description: `${verb}s one Meta campaign after human approval${to === "ACTIVE" ? ", which is high impact because resuming can start spend immediately (ad sets and ads inside must also be active to deliver)" : ""}. Deleted or archived campaigns cannot be changed. Confirmed by re-reading the campaign from Meta.`,
     input: z.object({ account_id: accountId, campaign_id: metaId }),
     output,
     read: (a, m) => readCampaign(m, a.campaign_id),

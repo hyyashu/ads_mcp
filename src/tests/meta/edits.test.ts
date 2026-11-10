@@ -115,10 +115,9 @@ describe("update_meta_campaign", () => {
     expect(done.result).toMatchObject({ name: "CBO v2", daily_budget: 40, spend_cap: 500 });
   });
 
-  it("activation, budget increase and mixed changes are high impact and need a second person", async () => {
+  it("activation, budget increase and mixed changes are high impact and wait for a person", async () => {
     const up = await planned("update_meta_campaign", { campaign_id: "200001", daily_budget: 60 });
     expect(up.risk).toBe("high_impact");
-    await expect(approve(up.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     expect((await approve(up.approval_id, second)).status).toBe("executed");
     expect(posts.at(-1)!.params).toEqual({ daily_budget: "6000" });
     expect((await planned("update_meta_campaign", { campaign_id: "200001", name: "x", status: "ACTIVE" })).risk).toBe("high_impact");
@@ -256,7 +255,6 @@ describe("duplicate_meta_campaign", () => {
     const ap = await planned("duplicate_meta_campaign", args);
     expect(ap.risk).toBe("high_impact");
     expect(posts).toHaveLength(0);
-    await expect(approve(ap.approval_id, owner)).rejects.toMatchObject({ code: "permission_denied" });
     const done = await approve(ap.approval_id, second);
     expect(done.status).toBe("executed");
     expect(posts).toEqual([{ path: "200001/copies", params: { deep_copy: "false", status_option: "PAUSED", rename_options: JSON.stringify({ rename_strategy: "ONLY_TOP_LEVEL_RENAME", rename_suffix: "(test 1)" }) } }]);

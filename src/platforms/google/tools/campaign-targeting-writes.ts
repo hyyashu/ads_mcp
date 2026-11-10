@@ -143,7 +143,7 @@ export const removeCampaignProximity = stateWrite({
   name: "remove_campaign_proximity",
   title: "Remove radius targeting",
   risk: "destructive",
-  description: "Removes radius (proximity) targets from a campaign after approval from a second person. Give the criterion ids from get_campaign_targeting. If no other location remains, the campaign targets all locations, so that is refused. Confirmed by re-reading.",
+  description: "Removes radius (proximity) targets from a campaign after a person approves it. Give the criterion ids from get_campaign_targeting. If no other location remains, the campaign targets all locations, so that is refused. Confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, criterion_ids: z.array(idSchema).min(1).max(50) }),
   output: z.object({ campaign_id: z.string(), removed: z.array(z.string()) }),
   read: async (a, ads) => {
@@ -178,7 +178,7 @@ export const setCampaignAdSchedule = stateWrite({
   title: "Set ad schedule",
   risk: "high_impact",
   description:
-    "Replaces a campaign's ad schedule (days and hours when ads may show, in the account's time zone, optionally with a bid adjustment per slot), after approval from a second person. Up to 6 slots per day. An empty schedule means ads may show at all times; pass clear: true to do that deliberately. Applied atomically and confirmed by re-reading.",
+    "Replaces a campaign's ad schedule (days and hours when ads may show, in the account's time zone, optionally with a bid adjustment per slot), after a person approves it. Up to 6 slots per day. An empty schedule means ads may show at all times; pass clear: true to do that deliberately. Applied atomically and confirmed by re-reading.",
   input: z.object({ account_id: accountId, campaign_id: idSchema, slots: z.array(slot).max(42).default([]), clear: z.boolean().default(false) }).refine((v) => v.slots.length > 0 || v.clear, "give slots, or clear: true for no schedule"),
   output: z.object({ campaign_id: z.string(), slots: z.array(z.string()) }),
   read: async (a, ads) => {
