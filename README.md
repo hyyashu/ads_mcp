@@ -1,12 +1,12 @@
 # ads-mcp
 
 A remote MCP server (Streamable HTTP), product name JackOfAds, for Google Ads, Meta Ads, Google Search Console, Google
-Analytics 4 and Google Tag Manager: 287 tools from `inventory/tool-registry.json`, implemented against the official
+Analytics 4 and Google Tag Manager: 290 tools from `inventory/tool-registry.json`, implemented against the official
 platform APIs. Advertising and analytics data is fetched on demand and never stored.
 
 ## Status (read this first)
 
-**286 of 287 tools are implemented**: 172 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
+**289 of 290 tools are implemented**: 175 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
 `get_property_links`), 12 Tag Manager, and 11 combined tools that join ad data with Search Console and GA4 (for example
 paid vs organic overlap, conversion tracking gaps, landing page quality, tracking setup audit). The remaining one,
 `create_youtube_campaign`, is a documented external limitation. Search Console, GA4 and Tag Manager each have their own

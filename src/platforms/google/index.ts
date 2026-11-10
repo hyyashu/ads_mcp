@@ -9,6 +9,7 @@ import { statusTools } from "./tools/status";
 import { campaignReadTools } from "./tools/campaign-reads";
 import { targetingReadTools } from "./tools/targeting-reads";
 import { pmaxReadTools } from "./tools/pmax-reads";
+import { assetReportTools } from "./tools/asset-reports";
 import { assetWriteTools } from "./tools/asset-writes";
 import { campaignTargetingWriteTools } from "./tools/campaign-targeting-writes";
 import { adGroupCriteriaWriteTools } from "./tools/ad-group-criteria-writes";
@@ -22,4 +23,4 @@ import { businessAssetTools } from "./tools/business-assets";
 import { keywordSegmentTools } from "./tools/keyword-segment-reports";
 
 /** Google Ads tools. A tool is added here only when it has a real handler, schemas and tests. */
-export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools, ...pmaxWriteTools, ...campaignCreateTools, ...adGroupAdTools, ...listingTreeTools, ...planningTools, ...businessAssetTools, ...keywordSegmentTools] as AnyTool[];
+export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...assetReportTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools, ...pmaxWriteTools, ...campaignCreateTools, ...adGroupAdTools, ...listingTreeTools, ...planningTools, ...businessAssetTools, ...keywordSegmentTools] as AnyTool[];

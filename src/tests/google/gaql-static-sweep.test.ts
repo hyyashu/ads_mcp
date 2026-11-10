@@ -145,11 +145,15 @@ describe("every GAQL query in the Google source", () => {
     expect(problems).toEqual([]);
   });
   it("leaves only reviewed chains unchecked", () => {
-    // FROM is a parameter here. Reviewed: the first four filter only on the FROM resource's own id (campaign, ad_group,
-    // label or the criterion resources); get_segment_performance's plan is exercised per segment in keyword-segment-reports.test.ts.
+    // FROM is a parameter here. Reviewed: account-writes, common, keywords and status filter only on the FROM resource's own
+    // id (campaign, ad_group, label or the criterion resources). These are exercised at every value in tests, under the schema
+    // guard: get_segment_performance's plan (keyword-segment-reports.test.ts), the asset link levels (asset-writes.test.ts)
+    // and get_asset_performance's levels (asset-reports.test.ts).
     const skipped = all.filter((c) => !c.from).map((c) => c.at.replace(/:\d+$/, ""));
     expect(skipped.sort()).toEqual([
       "src/platforms/google/tools/account-writes.ts",
+      "src/platforms/google/tools/asset-reports.ts",
+      "src/platforms/google/tools/asset-writes.ts",
       "src/platforms/google/tools/common.ts",
       "src/platforms/google/tools/keyword-segment-reports.ts",
       "src/platforms/google/tools/keywords.ts",

@@ -89,7 +89,10 @@ const googleApi: Rule[] = [
   [/^explain_performance_anomaly$/, { api: "GAQL: metrics by date/segment, deterministic period comparison", feasibility: "derived" }],
   [/^optimize_budget_allocation$/, { api: "GAQL: campaign_budget + campaign metrics, deterministic reallocation math", feasibility: "derived" }],
   [/^discover_existing_assets$/, { api: "GAQL: asset, asset_group_asset, campaign_asset, customer_asset", feasibility: "api" }],
-  [/^link_existing_assets$/, { api: "GAQL: asset, campaign_asset; CampaignAssetService (creates links only, no AssetService create)", feasibility: "api", notes: "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) to a campaign. Business name is excluded: a campaign has one, set by add_business_name_asset." }],
+  [/^link_existing_assets$/, { api: "GAQL: asset, customer_asset, campaign_asset, ad_group_asset; CustomerAssetService / CampaignAssetService / AdGroupAssetService (creates links only, no AssetService create)", feasibility: "api", notes: "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) at account, campaign or ad group level. Business name is excluded: a campaign has one, set by add_business_name_asset." }],
+  [/^update_extension_asset$/, { api: "AssetService update (sitelink, callout, structured snippet, call; update mask), GAQL: asset, customer_asset, campaign_asset, ad_group_asset for where it is used", feasibility: "api", notes: "DECISION (owner, 2026-11-11): edit mutable extension assets in place. Automatically created assets are refused." }],
+  [/^exclude_account_assets_from_campaign$/, { api: "CampaignService update: campaign.excluded_parent_asset_field_types", feasibility: "api" }],
+  [/^get_asset_performance$/, { api: "GAQL: customer_asset, campaign_asset, ad_group_asset with metrics, segmented by segments.asset_interaction_target.interaction_on_this_asset", feasibility: "api" }],
   // --- corrections found by auditing the generic rules (must come before them)
   [/^(add|remove)_negative_keywords$/, { api: "CampaignCriterionService / AdGroupCriterionService (negative keyword criteria)", feasibility: "api" }],
   [/^add_negative_keywords_to_list$/, { api: "SharedCriterionService.MutateSharedCriteria (KEYWORD in a NEGATIVE_KEYWORDS shared set)", feasibility: "api" }],

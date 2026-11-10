@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 286,
+    "implemented": 289,
     "external_limitation": 1,
     "pending": 0
   },
@@ -2447,14 +2447,66 @@
       "platform": "google_ads",
       "action": "Create",
       "domain": "assets_extensions",
-      "api": "GAQL: asset, campaign_asset; CampaignAssetService (creates links only, no AssetService create)",
+      "api": "GAQL: asset, customer_asset, campaign_asset, ad_group_asset; CustomerAssetService / CampaignAssetService / AdGroupAssetService (creates links only, no AssetService create)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "notes": "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) to a campaign. Business name is excluded: a campaign has one, set by add_business_name_asset.",
+      "notes": "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) at account, campaign or ad group level. Business name is excluded: a campaign has one, set by add_business_name_asset.",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_extension_asset",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "AssetService update (sitelink, callout, structured snippet, call; update mask), GAQL: asset, customer_asset, campaign_asset, ad_group_asset for where it is used",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-11): edit mutable extension assets in place. Automatically created assets are refused.",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "exclude_account_assets_from_campaign",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "CampaignService update: campaign.excluded_parent_asset_field_types",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_asset_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: customer_asset, campaign_asset, ad_group_asset with metrics, segmented by segments.asset_interaction_target.interaction_on_this_asset",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",

@@ -3,6 +3,7 @@ import { ToolError } from "../../../mcp/errors";
 import { type Change, textChange } from "../../../policy/change-set";
 import type { GoogleAdsClient, Row } from "../client";
 import { Gaql, lit, pick } from "../gaql";
+import { tailId } from "./campaign-reads";
 import { accountId, idSchema, str } from "./common";
 import { rn, stateWrite, temp } from "./write-kit";
 
@@ -61,6 +62,64 @@ async function readCampaignAssets(ads: GoogleAdsClient, campaignId: string, fiel
   return { campaign: { id: campaignId, name: str(c, "campaign.name"), status: str(c, "campaign.status")! }, links };
 }
 
+// ------------------------------------------------------------------------------- link levels: account, campaign, ad group
+/** Where an extension is linked. An account-level link applies to every campaign that does not exclude its field type. */
+type Level = "account" | "campaign" | "ad_group";
+interface Scope {
+  level: Level;
+  campaign_id?: string | undefined;
+  ad_group_id?: string | undefined;
+}
+const scopeFields = {
+  level: z.enum(["campaign", "ad_group", "account"]).default("campaign").describe("campaign (default, give campaign_id), ad_group (give ad_group_id) or account (give neither; applies to every campaign that does not exclude the type)."),
+  campaign_id: idSchema.optional(),
+  ad_group_id: idSchema.optional(),
+};
+const scopeOk = (v: Scope) => (v.level === "campaign" ? v.campaign_id !== undefined && v.ad_group_id === undefined : v.level === "ad_group" ? v.ad_group_id !== undefined && v.campaign_id === undefined : v.campaign_id === undefined && v.ad_group_id === undefined);
+const scopeMsg = { message: "give campaign_id for level campaign, ad_group_id for level ad_group, and neither for level account" };
+
+/** Links of one field type at a level. Campaign level keeps readCampaignAssets' shape, so pending approvals still match. */
+interface ScopedLinks {
+  campaign?: { id: string; name: string | null; status: string };
+  ad_group?: { id: string; name: string | null; status: string };
+  links: Link[];
+}
+async function readLinks(ads: GoogleAdsClient, s: Scope, fieldType: FieldType): Promise<ScopedLinks> {
+  if (s.level === "campaign") return readCampaignAssets(ads, s.campaign_id!, fieldType);
+  let owner: ScopedLinks["ad_group"];
+  if (s.level === "ad_group") {
+    const [g] = await ads.query(new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status").from("ad_group").where(`ad_group.id = ${lit.id(s.ad_group_id!)}`).limit(1), { maxRows: 1 });
+    if (!g) throw new ToolError("not_found", `No ad group ${s.ad_group_id} in this account.`);
+    if (str(g, "ad_group.status") === "REMOVED") throw new ToolError("invalid_argument", "The ad group is removed and cannot be changed.");
+    owner = { id: s.ad_group_id!, name: str(g, "ad_group.name"), status: str(g, "ad_group.status")! };
+  }
+  const res = s.level === "ad_group" ? "ad_group_asset" : "customer_asset";
+  const rows = await ads.query(
+    new Gaql()
+      .select("asset.id", `${res}.status`, ...CONTENT_FIELDS)
+      .from(res)
+      .where(s.level === "ad_group" ? `ad_group_asset.ad_group = ${lit.str(rn(ads, "adGroups", s.ad_group_id!))}` : undefined)
+      .where(`${res}.field_type = '${fieldType}'`)
+      .where(`${res}.status != 'REMOVED'`),
+    { maxRows: 2000 },
+  );
+  const links = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), status: str(r, `${res}.status`) ?? "", ...contentKey(fieldType, r) })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
+  return { ...(owner ? { ad_group: owner } : {}), links };
+}
+/** "the account", campaign "Brand" or ad group "Shoes", for summaries and errors. */
+const where = (s: Scope, snap: ScopedLinks) => (s.level === "account" ? "the account" : s.level === "campaign" ? `campaign "${snap.campaign?.name ?? s.campaign_id}"` : `ad group "${snap.ad_group?.name ?? s.ad_group_id}"`);
+const ownerRef = (ads: GoogleAdsClient, s: Scope, snap: ScopedLinks) =>
+  s.level === "account" ? { resource: "account", id: ads.customerId } : s.level === "campaign" ? { resource: "campaign", id: s.campaign_id!, name: snap.campaign?.name ?? null } : { resource: "ad_group", id: s.ad_group_id!, name: snap.ad_group?.name ?? null };
+/** The mutate operation that creates or removes one link at the scope's level. */
+function linkOp(ads: GoogleAdsClient, s: Scope, assetId: string, fieldType: FieldType, action: "create" | "remove"): Row {
+  const c = ads.customerId;
+  if (s.level === "account") return { customerAssetOperation: action === "create" ? { create: { asset: rn(ads, "assets", assetId), fieldType } } : { remove: `customers/${c}/customerAssets/${assetId}~${fieldType}` } };
+  if (s.level === "ad_group") return { adGroupAssetOperation: action === "create" ? { create: { asset: rn(ads, "assets", assetId), adGroup: rn(ads, "adGroups", s.ad_group_id!), fieldType } } : { remove: `customers/${c}/adGroupAssets/${s.ad_group_id}~${assetId}~${fieldType}` } };
+  return { campaignAssetOperation: action === "create" ? { create: { asset: rn(ads, "assets", assetId), campaign: rn(ads, "campaigns", s.campaign_id!), fieldType } } : { remove: `customers/${c}/campaignAssets/${s.campaign_id}~${assetId}~${fieldType}` } };
+}
+const scopeResult = (s: Scope) => ({ level: s.level, campaign_id: s.campaign_id ?? null, ad_group_id: s.ad_group_id ?? null });
+const scopeOutput = { level: z.string(), campaign_id: z.string().nullable(), ad_group_id: z.string().nullable() };
+
 /** Builds "add extensions" tools: new items become asset + link pairs; items whose content is already linked are skipped. */
 function addTool<T>(o: {
   name: string;
@@ -112,28 +171,28 @@ function addTool<T>(o: {
   });
 }
 
-/** Builds "remove extensions" tools: unlinks the given assets from the campaign (the asset stays in the library). */
+/** Builds "remove extensions" tools: unlinks the given assets from a campaign, ad group or the account (the asset stays in the library). */
 function removeTool(o: { name: string; title: string; description: string; fieldType: FieldType }) {
   return stateWrite({
     name: o.name,
     title: o.title,
     risk: "destructive",
-    description: o.description,
-    input: z.object({ account_id: accountId, campaign_id: idSchema, asset_ids: z.array(idSchema).min(1).max(50) }),
-    output: z.object({ campaign_id: z.string(), removed: z.array(z.string()) }),
-    read: (a, ads) => readCampaignAssets(ads, a.campaign_id, o.fieldType),
+    description: `${o.description} Works at campaign (default), ad group or account level.`,
+    input: z.object({ account_id: accountId, ...scopeFields, asset_ids: z.array(idSchema).min(1).max(50) }).refine(scopeOk, scopeMsg),
+    output: z.object({ ...scopeOutput, removed: z.array(z.string()) }),
+    read: (a, ads) => readLinks(ads, a, o.fieldType),
     build: (a, s, ads) => {
       const ids = [...new Set(a.asset_ids)].sort();
       const missing = ids.filter((id) => !s.links.some((l) => l.asset_id === id));
-      if (missing.length) throw new ToolError("invalid_argument", `Not linked to this campaign as ${o.fieldType}: ${missing.join(", ")}`);
-      const ops = ids.map((id) => ({ campaignAssetOperation: { remove: `customers/${ads.customerId}/campaignAssets/${a.campaign_id}~${id}~${o.fieldType}` } }));
-      const changes = ids.map((id) => textChange({ resource: "campaign", id: a.campaign_id, name: s.campaign.name }, o.fieldType.toLowerCase(), s.links.find((l) => l.asset_id === id)!.label, "(removed)"));
+      if (missing.length) throw new ToolError("invalid_argument", `Not linked to ${a.level === "account" ? "the account" : `this ${a.level === "campaign" ? "campaign" : "ad group"}`} as ${o.fieldType}: ${missing.join(", ")}`);
+      const ops = ids.map((id) => linkOp(ads, a, id, o.fieldType, "remove"));
+      const changes = ids.map((id) => textChange(ownerRef(ads, a, s), o.fieldType.toLowerCase(), s.links.find((l) => l.asset_id === id)!.label, "(removed)"));
       // A removal is irreversible as a link: re-adding creates a new link without the old history.
       for (const c of changes) c.effect = "remove";
-      return { summary: `Remove ${ids.length} ${o.fieldType.toLowerCase().replace("_", " ")}(s) from campaign "${s.campaign.name ?? a.campaign_id}": ${ids.map((id) => s.links.find((l) => l.asset_id === id)!.label).slice(0, 5).join("; ")}`, changes, ops };
+      return { summary: `Remove ${ids.length} ${o.fieldType.toLowerCase().replace("_", " ")}(s) from ${where(a, s)}: ${ids.map((id) => s.links.find((l) => l.asset_id === id)!.label).slice(0, 5).join("; ")}`, changes, ops };
     },
     landed: (a, _b, after) => a.asset_ids.every((id) => !after.links.some((l) => l.asset_id === id)),
-    result: (a) => ({ campaign_id: a.campaign_id, removed: [...new Set(a.asset_ids)].sort() }),
+    result: (a) => ({ ...scopeResult(a), removed: [...new Set(a.asset_ids)].sort() }),
   });
 }
 
@@ -221,20 +280,20 @@ export const setCallAssetStatus = stateWrite({
 const LINKABLE = ["SITELINK", "CALLOUT", "STRUCTURED_SNIPPET", "CALL"] as const satisfies readonly FieldType[];
 export const linkExistingAssets = stateWrite({
   name: "link_existing_assets",
-  title: "Link existing assets to a campaign",
+  title: "Link existing assets",
   risk: "write",
   description:
-    "Links assets already in the account's asset library (sitelinks, callouts, structured snippets or phone numbers) to a campaign after approval, without creating new ones, so the campaign shares the asset and its history. Give the field type and the asset ids from list_call_assets, list_campaign_extensions or discover_existing_assets. Each asset must be of that type; assets already linked to the campaign (enabled or paused) are skipped. Created atomically and confirmed by re-reading.",
-  input: z.object({ account_id: accountId, campaign_id: idSchema, field_type: z.enum(LINKABLE), asset_ids: z.array(idSchema).min(1).max(20) }),
-  output: z.object({ campaign_id: z.string(), field_type: z.string(), linked: z.array(z.object({ asset_id: z.string(), label: z.string() })), skipped_existing: z.array(z.string()) }),
+    "Links assets already in the account's asset library (sitelinks, callouts, structured snippets or phone numbers) to a campaign, an ad group or the whole account after approval, without creating new ones, so they share the asset and its history. An account-level link shows with every campaign that does not exclude the type (exclude_account_assets_from_campaign). Give the field type and the asset ids from list_call_assets, list_campaign_extensions or discover_existing_assets. Each asset must be of that type; assets already linked there (enabled or paused) are skipped. Created atomically and confirmed by re-reading.",
+  input: z.object({ account_id: accountId, ...scopeFields, field_type: z.enum(LINKABLE), asset_ids: z.array(idSchema).min(1).max(20) }).refine(scopeOk, scopeMsg),
+  output: z.object({ ...scopeOutput, field_type: z.string(), linked: z.array(z.object({ asset_id: z.string(), label: z.string() })), skipped_existing: z.array(z.string()) }),
   read: async (a, ads) => {
     const ids = [...new Set(a.asset_ids)].sort();
-    const [campaign, rows] = await Promise.all([
-      readCampaignAssets(ads, a.campaign_id, a.field_type),
+    const [scoped, rows] = await Promise.all([
+      readLinks(ads, a, a.field_type),
       ads.query(new Gaql().select("asset.id", "asset.type", ...CONTENT_FIELDS).from("asset").where(`asset.id IN ${lit.list(ids.map(lit.id))}`), { maxRows: ids.length }),
     ]);
     const assets = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), type: str(r, "asset.type") ?? "", label: contentKey(a.field_type, r).label })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
-    return { ...campaign, assets };
+    return { ...scoped, assets };
   },
   build: (a, s, ads) => {
     const ids = [...new Set(a.asset_ids)].sort();
@@ -244,20 +303,190 @@ export const linkExistingAssets = stateWrite({
     if (wrong.length) throw new ToolError("invalid_argument", `Not ${a.field_type} assets: ${wrong.map((x) => `${x.asset_id} is a ${x.type} asset`).join("; ")}.`);
     const skipped = ids.filter((id) => s.links.some((l) => l.asset_id === id));
     const fresh = s.assets.filter((x) => !skipped.includes(x.asset_id));
-    if (!fresh.length) throw new ToolError("invalid_argument", `Nothing would change: ${skipped.join(", ")} already linked to the campaign.`);
+    if (!fresh.length) throw new ToolError("invalid_argument", `Nothing would change: ${skipped.join(", ")} already linked to ${where(a, s)}.`);
     const kind = a.field_type.toLowerCase().replace("_", " ");
     return {
-      summary: `Link ${fresh.length} existing ${kind} asset(s) to campaign "${s.campaign.name ?? a.campaign_id}": ${fresh.slice(0, 5).map((x) => x.label).join("; ")}${skipped.length ? ` (${skipped.length} already linked)` : ""}`,
-      changes: fresh.map((x) => textChange({ resource: "campaign", id: a.campaign_id, name: s.campaign.name }, a.field_type.toLowerCase(), null, x.label)),
-      ops: fresh.map((x) => ({ campaignAssetOperation: { create: { asset: rn(ads, "assets", x.asset_id), campaign: rn(ads, "campaigns", a.campaign_id), fieldType: a.field_type } } })),
+      summary: `Link ${fresh.length} existing ${kind} asset(s) to ${where(a, s)}${a.level === "account" ? " (every campaign that does not exclude account-level ones)" : ""}: ${fresh.slice(0, 5).map((x) => x.label).join("; ")}${skipped.length ? ` (${skipped.length} already linked)` : ""}`,
+      changes: fresh.map((x) => textChange(ownerRef(ads, a, s), a.field_type.toLowerCase(), null, x.label)),
+      ops: fresh.map((x) => linkOp(ads, a, x.asset_id, a.field_type, "create")),
     };
   },
   landed: (a, _b, after) => a.asset_ids.every((id) => after.links.some((l) => l.asset_id === id)),
   result: (a, after, _res, before) => {
     const had = new Set(before.links.map((l) => l.asset_id));
     const ids = [...new Set(a.asset_ids)].sort();
-    return { campaign_id: a.campaign_id, field_type: a.field_type, linked: ids.filter((id) => !had.has(id)).map((id) => ({ asset_id: id, label: after.assets.find((x) => x.asset_id === id)!.label })), skipped_existing: ids.filter((id) => had.has(id)) };
+    return { ...scopeResult(a), field_type: a.field_type, linked: ids.filter((id) => !had.has(id)).map((id) => ({ asset_id: id, label: after.assets.find((x) => x.asset_id === id)!.label })), skipped_existing: ids.filter((id) => had.has(id)) };
   },
+});
+
+// ------------------------------------------------------------------------------------------- edit an asset in place
+/** One editable field: its name in the output, its update-mask path, and where it goes in the update body. */
+interface Edit {
+  field: string;
+  mask: string;
+  before: string | null;
+  after: string | null;
+  set: (u: Row) => void;
+}
+const sitelinkPatch = z
+  .object({ link_text: clean(25).optional(), final_url: url.optional(), description1: clean(35).nullable().optional(), description2: clean(35).nullable().optional() })
+  .refine((o) => Object.values(o).some((v) => v !== undefined), "give at least one field to change")
+  .describe("Fields to change; null for description1/description2 clears it (clear both or neither).");
+const snippetPatch = z.object({ header: z.enum(SNIPPET_HEADERS).optional(), values: z.array(clean(25)).min(3).max(10).optional() }).refine((o) => o.header !== undefined || o.values !== undefined, "give header or values");
+const callPatch = z.object({ country_code: z.string().regex(/^[A-Z]{2}$/).optional(), phone_number: z.string().trim().regex(/^\+?[0-9 ()-]{5,25}$/, "a phone number").optional() }).refine((o) => o.country_code !== undefined || o.phone_number !== undefined, "give country_code or phone_number");
+const EDIT_KINDS = { sitelink: "SITELINK", callout: "CALLOUT", structured_snippet: "STRUCTURED_SNIPPET", call: "CALL" } as const;
+const nest = (u: Row, key: string, k: string, v: unknown) => ((u[key] = { ...((u[key] as Row | undefined) ?? {}), [k]: v }), undefined);
+
+export const updateExtensionAsset = stateWrite({
+  name: "update_extension_asset",
+  title: "Edit an extension asset",
+  risk: "write",
+  description:
+    "Edits a sitelink, callout, structured snippet or phone number (call asset) in place after approval, keeping its id and history. The asset changes everywhere it is linked: the approval lists every campaign, ad group and account link. Give the asset id and exactly one of sitelink, callout, structured_snippet or call with only the fields to change. Assets Google created automatically cannot be edited. Confirmed by re-reading.",
+  input: z
+    .object({ account_id: accountId, asset_id: idSchema, sitelink: sitelinkPatch.optional(), callout: z.object({ text: clean(25) }).optional(), structured_snippet: snippetPatch.optional(), call: callPatch.optional() })
+    .refine((v) => Object.keys(EDIT_KINDS).filter((k) => v[k as keyof typeof EDIT_KINDS] !== undefined).length === 1, { message: "give exactly one of sitelink, callout, structured_snippet or call" }),
+  output: z.object({ asset_id: z.string(), field_type: z.string(), updated: z.array(z.string()), used_in: z.number().int() }),
+  read: async (a, ads) => {
+    const asset = rn(ads, "assets", a.asset_id);
+    const [rows, acct, camp, grp] = await Promise.all([
+      ads.query(new Gaql().select("asset.id", "asset.type", "asset.source", ...CONTENT_FIELDS).from("asset").where(`asset.id IN ${lit.list([lit.id(a.asset_id)])}`), { maxRows: 1 }),
+      ads.query(new Gaql().select("customer_asset.field_type").from("customer_asset").where(`customer_asset.asset = ${lit.str(asset)}`).where("customer_asset.status != 'REMOVED'"), { maxRows: 100 }),
+      ads.query(new Gaql().select("campaign_asset.campaign", "campaign.name").from("campaign_asset").where(`campaign_asset.asset = ${lit.str(asset)}`).where("campaign_asset.status != 'REMOVED'"), { maxRows: 5000 }),
+      ads.query(new Gaql().select("ad_group_asset.ad_group", "ad_group.name").from("ad_group_asset").where(`ad_group_asset.asset = ${lit.str(asset)}`).where("ad_group_asset.status != 'REMOVED'"), { maxRows: 5000 }),
+    ]);
+    const r = rows[0];
+    const used = [
+      ...(acct.length ? ["the account"] : []),
+      ...camp.map((x) => ({ id: tailId(pick(x, "campaign_asset.campaign")) ?? "", name: str(x, "campaign.name") })).sort((x, y) => x.id.localeCompare(y.id)).map((x) => `campaign "${x.name ?? x.id}"`),
+      ...grp.map((x) => ({ id: tailId(pick(x, "ad_group_asset.ad_group")) ?? "", name: str(x, "ad_group.name") })).sort((x, y) => x.id.localeCompare(y.id)).map((x) => `ad group "${x.name ?? x.id}"`),
+    ];
+    if (!r) return { asset: null, used };
+    const arr = (f: string) => (pick(r, f) as string[] | undefined) ?? [];
+    return {
+      asset: {
+        type: str(r, "asset.type"),
+        source: str(r, "asset.source"),
+        link_text: str(r, "asset.sitelink_asset.link_text"),
+        final_url: arr("asset.final_urls")[0] ?? null,
+        description1: str(r, "asset.sitelink_asset.description1"),
+        description2: str(r, "asset.sitelink_asset.description2"),
+        callout_text: str(r, "asset.callout_asset.callout_text"),
+        header: str(r, "asset.structured_snippet_asset.header"),
+        values: arr("asset.structured_snippet_asset.values").join(", ") || null,
+        country_code: str(r, "asset.call_asset.country_code"),
+        phone_number: str(r, "asset.call_asset.phone_number"),
+      },
+      used,
+    };
+  },
+  build: (a, s, ads) => {
+    const kind = (Object.keys(EDIT_KINDS) as (keyof typeof EDIT_KINDS)[]).find((k) => a[k] !== undefined)!;
+    const want = EDIT_KINDS[kind];
+    const cur = s.asset;
+    if (!cur) throw new ToolError("not_found", `No asset ${a.asset_id} in this account's asset library.`);
+    if (cur.type !== want) throw new ToolError("invalid_argument", `${a.asset_id} is a ${cur.type} asset, not a ${want} asset.`);
+    if (cur.source === "AUTOMATICALLY_CREATED") throw new ToolError("invalid_argument", `Asset ${a.asset_id} was created automatically by Google and cannot be edited. Link your own asset instead.`);
+    const edits: Edit[] = [];
+    const edit = (field: string, mask: string, after: string | null, set: Edit["set"]) => {
+      const before = (cur as Record<string, string | null>)[field] ?? null;
+      if (after !== before) edits.push({ field, mask, before, after, set });
+    };
+    if (a.sitelink) {
+      const p = a.sitelink;
+      if (p.link_text !== undefined) edit("link_text", "sitelink_asset.link_text", p.link_text, (u) => nest(u, "sitelinkAsset", "linkText", p.link_text));
+      if (p.final_url !== undefined) edit("final_url", "final_urls", p.final_url, (u) => void (u.finalUrls = [p.final_url]));
+      for (const d of ["description1", "description2"] as const) if (p[d] !== undefined) edit(d, `sitelink_asset.${d}`, p[d], (u) => (p[d] === null ? undefined : nest(u, "sitelinkAsset", d, p[d])));
+      const d1 = p.description1 !== undefined ? p.description1 : cur.description1;
+      const d2 = p.description2 !== undefined ? p.description2 : cur.description2;
+      if ((d1 === null) !== (d2 === null)) throw new ToolError("invalid_argument", "A sitelink has both descriptions or neither: set or clear both.");
+    }
+    if (a.callout) edit("callout_text", "callout_asset.callout_text", a.callout.text, (u) => nest(u, "calloutAsset", "calloutText", a.callout!.text));
+    if (a.structured_snippet) {
+      const p = a.structured_snippet;
+      if (p.header !== undefined) edit("header", "structured_snippet_asset.header", p.header, (u) => nest(u, "structuredSnippetAsset", "header", p.header));
+      if (p.values !== undefined) edit("values", "structured_snippet_asset.values", p.values.join(", "), (u) => nest(u, "structuredSnippetAsset", "values", p.values));
+    }
+    if (a.call) {
+      const p = a.call;
+      if (p.country_code !== undefined) edit("country_code", "call_asset.country_code", p.country_code, (u) => nest(u, "callAsset", "countryCode", p.country_code));
+      if (p.phone_number !== undefined) edit("phone_number", "call_asset.phone_number", p.phone_number, (u) => nest(u, "callAsset", "phoneNumber", p.phone_number));
+    }
+    if (!edits.length) throw new ToolError("invalid_argument", "Nothing would change: the asset already has those values.");
+    const update: Row = { resourceName: rn(ads, "assets", a.asset_id) };
+    for (const e of edits) e.set(update);
+    const ref = { resource: "asset", id: a.asset_id, name: `${want.toLowerCase().replace("_", " ")} asset` };
+    return {
+      summary: `Edit ${want.toLowerCase().replace("_", " ")} asset ${a.asset_id}: ${edits.map((e) => `${e.field} "${e.before ?? "(none)"}" -> "${e.after ?? "(none)"}"`).join("; ")}. It is used in ${s.used.length} place${s.used.length === 1 ? "" : "s"}${s.used.length ? `: ${s.used.slice(0, 10).join(", ")}${s.used.length > 10 ? ", ..." : ""}` : ""}.`,
+      changes: edits.map((e) => textChange(ref, e.field, e.before, e.after ?? "(none)")),
+      ops: [{ assetOperation: { update, updateMask: edits.map((e) => e.mask).join(",") } }],
+    };
+  },
+  landed: (a, before, after) => {
+    if (!after.asset || !before.asset) return false;
+    const changed = (Object.keys(after.asset) as (keyof NonNullable<typeof after.asset>)[]).filter((k) => after.asset![k] !== before.asset![k]);
+    return changed.length > 0 && wantedHolds(a, after.asset);
+  },
+  result: (a, after, _res, before) => ({
+    asset_id: a.asset_id,
+    field_type: after.asset!.type ?? "",
+    updated: (Object.keys(after.asset!) as (keyof NonNullable<typeof after.asset>)[]).filter((k) => after.asset![k] !== before.asset![k]),
+    used_in: after.used.length,
+  }),
+});
+/** True when the re-read asset has every value the request asked for. */
+function wantedHolds(a: { sitelink?: z.infer<typeof sitelinkPatch> | undefined; callout?: { text: string } | undefined; structured_snippet?: z.infer<typeof snippetPatch> | undefined; call?: z.infer<typeof callPatch> | undefined }, now: Record<string, string | null>): boolean {
+  const want: Record<string, string | null | undefined> = {
+    ...(a.sitelink ?? {}),
+    ...(a.callout ? { callout_text: a.callout.text } : {}),
+    ...(a.structured_snippet ? { header: a.structured_snippet.header, values: a.structured_snippet.values?.join(", ") } : {}),
+    ...(a.call ?? {}),
+  };
+  return Object.entries(want).every(([k, v]) => v === undefined || now[k] === v);
+}
+
+// ------------------------------------------------------------------------------- account-level assets on one campaign
+/** Field types a campaign inherits from account-level links (asset overview: linkable at customer level). */
+const INHERITABLE = ["SITELINK", "CALLOUT", "STRUCTURED_SNIPPET", "CALL", "PRICE", "PROMOTION", "MOBILE_APP", "HOTEL_CALLOUT", "BUSINESS_MESSAGE", "BUSINESS_NAME", "BUSINESS_LOGO"] as const;
+export const excludeAccountAssetsFromCampaign = stateWrite({
+  name: "exclude_account_assets_from_campaign",
+  title: "Exclude account-level assets from a campaign",
+  risk: "write",
+  description:
+    "Stops a campaign from showing account-level assets of the given types (for example the account's sitelinks or phone number), or with action include lets it show them again, after approval. The campaign's own and its ad groups' assets are not affected. Uses the campaign's excluded parent asset field types. Confirmed by re-reading.",
+  input: z.object({ account_id: accountId, campaign_id: idSchema, field_types: z.array(z.enum(INHERITABLE)).min(1).max(INHERITABLE.length), action: z.enum(["exclude", "include"]).default("exclude") }),
+  output: z.object({ campaign_id: z.string(), excluded_field_types: z.array(z.string()) }),
+  read: async (a, ads) => {
+    const [[c], acct] = await Promise.all([
+      ads.query(new Gaql().select("campaign.id", "campaign.name", "campaign.status", "campaign.excluded_parent_asset_field_types").from("campaign").where(`campaign.id = ${lit.id(a.campaign_id)}`).limit(1), { maxRows: 1 }),
+      ads.query(new Gaql().select("customer_asset.field_type").from("customer_asset").where(`customer_asset.field_type IN ${lit.list(a.field_types.map((t) => `'${t}'`))}`).where("customer_asset.status != 'REMOVED'"), { maxRows: 5000 }),
+    ]);
+    if (!c) throw new ToolError("not_found", `No campaign ${a.campaign_id} in this account.`);
+    if (str(c, "campaign.status") === "REMOVED") throw new ToolError("invalid_argument", "The campaign is removed and cannot be changed.");
+    const accountLinks: Record<string, number> = {};
+    for (const r of acct) {
+      const t = str(r, "customer_asset.field_type") ?? "";
+      accountLinks[t] = (accountLinks[t] ?? 0) + 1;
+    }
+    const excluded = [...((pick(c, "campaign.excluded_parent_asset_field_types") as string[] | undefined) ?? [])].sort();
+    return { campaign: { id: a.campaign_id, name: str(c, "campaign.name") }, excluded, accountLinks };
+  },
+  build: (a, s, ads) => {
+    const next = a.action === "exclude" ? [...new Set([...s.excluded, ...a.field_types])].sort() : s.excluded.filter((t) => !a.field_types.includes(t as (typeof INHERITABLE)[number]));
+    if (next.join() === s.excluded.join()) throw new ToolError("invalid_argument", `Nothing would change: ${a.field_types.join(", ")} already ${a.action === "exclude" ? "excluded" : "allowed"}.`);
+    const counts = a.field_types.map((t) => {
+      const n = s.accountLinks[t] ?? 0;
+      return `${n} account-level ${t.toLowerCase().replace(/_/g, " ")}${n === 1 ? "" : "s"}`;
+    });
+    const name = s.campaign.name ?? a.campaign_id;
+    return {
+      summary: a.action === "exclude" ? `Campaign "${name}" stops showing account-level ${a.field_types.join(", ")} assets (the account has ${counts.join(", ")})` : `Campaign "${name}" shows account-level ${a.field_types.join(", ")} assets again (the account has ${counts.join(", ")})`,
+      changes: [textChange({ resource: "campaign", id: a.campaign_id, name: s.campaign.name }, "excluded_account_asset_types", s.excluded.join(", ") || "(none)", next.join(", ") || "(none)")],
+      ops: [{ campaignOperation: { update: { resourceName: rn(ads, "campaigns", a.campaign_id), excludedParentAssetFieldTypes: next }, updateMask: "excluded_parent_asset_field_types" } }],
+    };
+  },
+  landed: (a, _b, after) => a.field_types.every((t) => after.excluded.includes(t) === (a.action === "exclude")),
+  result: (a, after) => ({ campaign_id: a.campaign_id, excluded_field_types: after.excluded }),
 });
 
 // ---------------------------------------------------------------------------------------------------- business name
@@ -284,4 +513,4 @@ export const addBusinessNameAsset = stateWrite({
   result: (a, after) => ({ campaign_id: a.campaign_id, asset_id: after.links[0]!.asset_id, business_name: a.business_name }),
 });
 
-export const assetWriteTools = [addSitelinks, removeSitelinks, addCalloutExtensions, removeCallouts, addStructuredSnippets, removeStructuredSnippets, addCallAsset, removeCallAssets, setCallAssetStatus, linkExistingAssets, addBusinessNameAsset];
+export const assetWriteTools = [addSitelinks, removeSitelinks, addCalloutExtensions, removeCallouts, addStructuredSnippets, removeStructuredSnippets, addCallAsset, removeCallAssets, setCallAssetStatus, linkExistingAssets, updateExtensionAsset, excludeAccountAssetsFromCampaign, addBusinessNameAsset];

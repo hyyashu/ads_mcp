@@ -8,12 +8,12 @@ import { activeLists, attachedCampaigns, members } from "./negative-lists";
 import { stateWrite } from "./write-kit";
 
 /** Added by the project owner (2026-11-04) beyond the Adspirer inventory. Fields checked against the v26 field reference. */
-const period = (a: { date_range: string; start_date?: string; end_date?: string }) => (a.start_date ? `${a.start_date}..${a.end_date}` : a.date_range);
+export const period = (a: { date_range: string; start_date?: string; end_date?: string }) => (a.start_date ? `${a.start_date}..${a.end_date}` : a.date_range);
 const n = (r: Row, f: string): number | null => (pick(r, f) === undefined || pick(r, f) === null ? null : num(pick(r, f)));
 const money = (r: Row, f: string): number | null => (pick(r, f) === undefined ? null : fromMicros(pick(r, f)));
-const perfSchema = z.object({ impressions: z.number(), clicks: z.number(), cost: Money, conversions: z.number(), conversion_value: z.number(), ctr: z.number().nullable(), average_cpc: Money.nullable(), conversion_rate: z.number().nullable(), cost_per_conversion: Money.nullable(), roas: z.number().nullable() });
-type Totals = { impressions: number; clicks: number; cost: number; conversions: number; value: number };
-const add = (t: Totals, r: Row) => {
+export const perfSchema = z.object({ impressions: z.number(), clicks: z.number(), cost: Money, conversions: z.number(), conversion_value: z.number(), ctr: z.number().nullable(), average_cpc: Money.nullable(), conversion_rate: z.number().nullable(), cost_per_conversion: Money.nullable(), roas: z.number().nullable() });
+export type Totals = { impressions: number; clicks: number; cost: number; conversions: number; value: number };
+export const add = (t: Totals, r: Row) => {
   t.impressions += num(pick(r, "metrics.impressions"));
   t.clicks += num(pick(r, "metrics.clicks"));
   t.cost += fromMicros(pick(r, "metrics.cost_micros"));
@@ -21,8 +21,8 @@ const add = (t: Totals, r: Row) => {
   t.value += num(pick(r, "metrics.conversions_value"));
   return t;
 };
-const zero = (): Totals => ({ impressions: 0, clicks: 0, cost: 0, conversions: 0, value: 0 });
-const perf = (t: Totals) => ({ impressions: t.impressions, clicks: t.clicks, cost: round(t.cost, 2)!, conversions: round(t.conversions, 2)!, conversion_value: round(t.value, 2)!, ctr: round(ratio(t.clicks, t.impressions)), average_cpc: round(ratio(t.cost, t.clicks), 2), conversion_rate: round(ratio(t.conversions, t.clicks)), cost_per_conversion: round(ratio(t.cost, t.conversions), 2), roas: round(ratio(t.value, t.cost)) });
+export const zero = (): Totals => ({ impressions: 0, clicks: 0, cost: 0, conversions: 0, value: 0 });
+export const perf = (t: Totals) => ({ impressions: t.impressions, clicks: t.clicks, cost: round(t.cost, 2)!, conversions: round(t.conversions, 2)!, conversion_value: round(t.value, 2)!, ctr: round(ratio(t.clicks, t.impressions)), average_cpc: round(ratio(t.cost, t.clicks), 2), conversion_rate: round(ratio(t.conversions, t.clicks)), cost_per_conversion: round(ratio(t.cost, t.conversions), 2), roas: round(ratio(t.value, t.cost)) });
 
 // -------------------------------------------------------------------------------------------- get_keyword_performance
 export const getKeywordPerformance = googleRead({
