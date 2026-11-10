@@ -64,6 +64,19 @@ export function checkGaql(query: string): string[] {
       else if ((owner === "metrics" || owner === "segments") && !metricsOk.has(f)) problems.push(`${f} cannot be used with FROM ${from}`);
     }
     for (const f of fieldsIn(select)) if (r.fields[f]?.selectable === false) problems.push(`${f} is not selectable`);
+    // GAQL selects only the fields in Google's field reference. A path below one of them (a sub-field of a message such as
+    // recommendation.campaign_budget_recommendation) exists in the REST schema but is rejected by the API as unrecognized.
+    for (const f of [...fieldsIn(select), ...fieldsIn(where)]) {
+      if (r.fields[f]) continue;
+      const parts = f.split(".");
+      for (let i = parts.length - 1; i > 1; i--) {
+        const parent = parts.slice(0, i).join(".");
+        if (r.fields[parent]) {
+          problems.push(`${f} is not a GAQL field: select ${parent} and read the sub-field from the response`);
+          break;
+        }
+      }
+    }
     for (const f of fieldsIn(where)) if (r.fields[f]?.filterable === false) problems.push(`${f} is not filterable`);
   }
   for (const w of noStrings.match(/\b[A-Z_]{2,}\b/g) ?? []) if (!RESERVED.has(w) && !/^LAST_|^THIS_|^TODAY|^YESTERDAY/.test(w)) problems.push(`unexpected keyword: ${w}`);
