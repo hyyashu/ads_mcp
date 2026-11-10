@@ -24,6 +24,10 @@ const fake: FetchLike = async (url, init) => {
       const camp = /campaign_asset\.campaign = '([^']+)'/.exec(q)![1];
       return J({ results: links.filter((l) => l.fieldType === ft && l.campaign === camp && l.status !== "REMOVED").map((l) => ({ campaignAsset: { status: l.status }, asset: assets.get(l.asset) })) });
     }
+    if (q.includes("FROM asset ")) {
+      const ids = (/asset\.id IN \(([^)]*)\)/.exec(q)?.[1] ?? "").split(",").map((x) => x.trim());
+      return J({ results: ids.filter((id) => assets.has(id)).map((id) => ({ asset: assets.get(id) })) });
+    }
     return J({ results: [] });
   }
   if (path.endsWith("googleAds:mutate")) {
@@ -120,6 +124,51 @@ describe("add extensions", () => {
     expect(done.status).toBe("executed");
     expect(mutates[1]!.map((o: any) => Object.keys(o.campaignAssetOperation ?? o.assetOperation ?? {})[0])).toEqual(["remove", "create", "create"]);
     expect((await run("add_business_name_asset", { business_name: "acme running" })).error?.message).toContain("already set");
+  });
+});
+
+describe("link_existing_assets", () => {
+  beforeEach(() => {
+    assets.set("700", { id: "700", type: "CALL", callAsset: { countryCode: "IN", phoneNumber: "8404802214" } });
+    assets.set("701", { id: "701", type: "CALLOUT", calloutAsset: { calloutText: "Free shipping" } });
+  });
+
+  it("links an asset from the library without creating a new one, then confirms", async () => {
+    const r = await run("link_existing_assets", { field_type: "CALL", asset_ids: ["700"] });
+    expect(r.approval).toMatchObject({ risk: "write", summary: expect.stringContaining("IN 8404802214"), change_set: { changes: [{ field: "call", before: null, after: "IN 8404802214" }] } });
+    expect(mutates).toHaveLength(0);
+    const done = await approve(r.approval!.approval_id);
+    expect(done.status).toBe("executed");
+    expect(mutates[0]).toEqual([{ campaignAssetOperation: { create: { asset: `${C}/assets/700`, campaign: `${C}/campaigns/11`, fieldType: "CALL" } } }]);
+    expect(done.result).toEqual({ campaign_id: "11", field_type: "CALL", linked: [{ asset_id: "700", label: "IN 8404802214" }], skipped_existing: [] });
+    expect(assets.size).toBe(4); // nothing created
+  });
+
+  it("skips assets already on the campaign and links the rest", async () => {
+    assets.set("702", { id: "702", type: "CALL", callAsset: { countryCode: "IN", phoneNumber: "1800 000 000" } });
+    const r = await run("link_existing_assets", { field_type: "CALL", asset_ids: ["600", "702"] });
+    expect(r.approval?.summary).toContain("1 already linked");
+    const done = await approve(r.approval!.approval_id);
+    expect(mutates[0]).toHaveLength(1);
+    expect(done.result).toMatchObject({ linked: [{ asset_id: "702" }], skipped_existing: ["600"] });
+  });
+
+  it("refuses unknown assets, the wrong asset type, and a no-op", async () => {
+    expect((await run("link_existing_assets", { field_type: "CALL", asset_ids: ["999"] })).error).toMatchObject({ code: "not_found", message: expect.stringContaining("999") });
+    expect((await run("link_existing_assets", { field_type: "CALL", asset_ids: ["701"] })).error).toMatchObject({ code: "invalid_argument", message: expect.stringContaining("701 is a CALLOUT asset") });
+    expect((await run("link_existing_assets", { field_type: "SITELINK", asset_ids: ["500"] })).error?.message).toContain("already linked");
+    expect((await run("link_existing_assets", { field_type: "BUSINESS_NAME", asset_ids: ["700"] })).error?.code).toBe("invalid_argument");
+    expect((await kit.run("link_existing_assets", { campaign_id: "13", field_type: "CALL", asset_ids: ["700"] })).error?.message).toContain("removed");
+    expect(mutates).toHaveLength(0);
+  });
+
+  it("a paused link counts as linked, and drift before approval applies nothing", async () => {
+    links.find((l) => l.asset === "600")!.status = "PAUSED";
+    expect((await run("link_existing_assets", { field_type: "CALL", asset_ids: ["600"] })).error?.message).toContain("already linked");
+    const r = await run("link_existing_assets", { field_type: "CALLOUT", asset_ids: ["701"] });
+    links.push({ campaign: `${C}/campaigns/11`, asset: "701", fieldType: "CALLOUT", status: "ENABLED" });
+    expect((await approve(r.approval!.approval_id)).status).toBe("failed");
+    expect(mutates).toHaveLength(0);
   });
 });
 

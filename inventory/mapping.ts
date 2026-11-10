@@ -89,6 +89,7 @@ const googleApi: Rule[] = [
   [/^explain_performance_anomaly$/, { api: "GAQL: metrics by date/segment, deterministic period comparison", feasibility: "derived" }],
   [/^optimize_budget_allocation$/, { api: "GAQL: campaign_budget + campaign metrics, deterministic reallocation math", feasibility: "derived" }],
   [/^discover_existing_assets$/, { api: "GAQL: asset, asset_group_asset, campaign_asset, customer_asset", feasibility: "api" }],
+  [/^link_existing_assets$/, { api: "GAQL: asset, campaign_asset; CampaignAssetService (creates links only, no AssetService create)", feasibility: "api", notes: "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) to a campaign. Business name is excluded: a campaign has one, set by add_business_name_asset." }],
   // --- corrections found by auditing the generic rules (must come before them)
   [/^(add|remove)_negative_keywords$/, { api: "CampaignCriterionService / AdGroupCriterionService (negative keyword criteria)", feasibility: "api" }],
   [/^add_negative_keywords_to_list$/, { api: "SharedCriterionService.MutateSharedCriteria (KEYWORD in a NEGATIVE_KEYWORDS shared set)", feasibility: "api" }],

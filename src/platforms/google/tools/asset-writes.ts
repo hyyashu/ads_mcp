@@ -216,6 +216,50 @@ export const setCallAssetStatus = stateWrite({
   result: (a) => ({ campaign_id: a.campaign_id, updated: [...new Set(a.asset_ids)].sort(), status: a.status }),
 });
 
+// ------------------------------------------------------------------------------------------ existing library assets
+/** Field types whose asset can be shared by several campaigns; the business name is replaced, not added (add_business_name_asset). */
+const LINKABLE = ["SITELINK", "CALLOUT", "STRUCTURED_SNIPPET", "CALL"] as const satisfies readonly FieldType[];
+export const linkExistingAssets = stateWrite({
+  name: "link_existing_assets",
+  title: "Link existing assets to a campaign",
+  risk: "write",
+  description:
+    "Links assets already in the account's asset library (sitelinks, callouts, structured snippets or phone numbers) to a campaign after approval, without creating new ones, so the campaign shares the asset and its history. Give the field type and the asset ids from list_call_assets, list_campaign_extensions or discover_existing_assets. Each asset must be of that type; assets already linked to the campaign (enabled or paused) are skipped. Created atomically and confirmed by re-reading.",
+  input: z.object({ account_id: accountId, campaign_id: idSchema, field_type: z.enum(LINKABLE), asset_ids: z.array(idSchema).min(1).max(20) }),
+  output: z.object({ campaign_id: z.string(), field_type: z.string(), linked: z.array(z.object({ asset_id: z.string(), label: z.string() })), skipped_existing: z.array(z.string()) }),
+  read: async (a, ads) => {
+    const ids = [...new Set(a.asset_ids)].sort();
+    const [campaign, rows] = await Promise.all([
+      readCampaignAssets(ads, a.campaign_id, a.field_type),
+      ads.query(new Gaql().select("asset.id", "asset.type", ...CONTENT_FIELDS).from("asset").where(`asset.id IN ${lit.list(ids.map(lit.id))}`), { maxRows: ids.length }),
+    ]);
+    const assets = rows.map((r) => ({ asset_id: String(pick(r, "asset.id") ?? ""), type: str(r, "asset.type") ?? "", label: contentKey(a.field_type, r).label })).sort((x, y) => x.asset_id.localeCompare(y.asset_id));
+    return { ...campaign, assets };
+  },
+  build: (a, s, ads) => {
+    const ids = [...new Set(a.asset_ids)].sort();
+    const missing = ids.filter((id) => !s.assets.some((x) => x.asset_id === id));
+    if (missing.length) throw new ToolError("not_found", `No asset ${missing.join(", ")} in this account's asset library.`);
+    const wrong = s.assets.filter((x) => x.type !== a.field_type);
+    if (wrong.length) throw new ToolError("invalid_argument", `Not ${a.field_type} assets: ${wrong.map((x) => `${x.asset_id} is a ${x.type} asset`).join("; ")}.`);
+    const skipped = ids.filter((id) => s.links.some((l) => l.asset_id === id));
+    const fresh = s.assets.filter((x) => !skipped.includes(x.asset_id));
+    if (!fresh.length) throw new ToolError("invalid_argument", `Nothing would change: ${skipped.join(", ")} already linked to the campaign.`);
+    const kind = a.field_type.toLowerCase().replace("_", " ");
+    return {
+      summary: `Link ${fresh.length} existing ${kind} asset(s) to campaign "${s.campaign.name ?? a.campaign_id}": ${fresh.slice(0, 5).map((x) => x.label).join("; ")}${skipped.length ? ` (${skipped.length} already linked)` : ""}`,
+      changes: fresh.map((x) => textChange({ resource: "campaign", id: a.campaign_id, name: s.campaign.name }, a.field_type.toLowerCase(), null, x.label)),
+      ops: fresh.map((x) => ({ campaignAssetOperation: { create: { asset: rn(ads, "assets", x.asset_id), campaign: rn(ads, "campaigns", a.campaign_id), fieldType: a.field_type } } })),
+    };
+  },
+  landed: (a, _b, after) => a.asset_ids.every((id) => after.links.some((l) => l.asset_id === id)),
+  result: (a, after, _res, before) => {
+    const had = new Set(before.links.map((l) => l.asset_id));
+    const ids = [...new Set(a.asset_ids)].sort();
+    return { campaign_id: a.campaign_id, field_type: a.field_type, linked: ids.filter((id) => !had.has(id)).map((id) => ({ asset_id: id, label: after.assets.find((x) => x.asset_id === id)!.label })), skipped_existing: ids.filter((id) => had.has(id)) };
+  },
+});
+
 // ---------------------------------------------------------------------------------------------------- business name
 export const addBusinessNameAsset = stateWrite({
   name: "add_business_name_asset",
@@ -240,4 +284,4 @@ export const addBusinessNameAsset = stateWrite({
   result: (a, after) => ({ campaign_id: a.campaign_id, asset_id: after.links[0]!.asset_id, business_name: a.business_name }),
 });
 
-export const assetWriteTools = [addSitelinks, removeSitelinks, addCalloutExtensions, removeCallouts, addStructuredSnippets, removeStructuredSnippets, addCallAsset, removeCallAssets, setCallAssetStatus, addBusinessNameAsset];
+export const assetWriteTools = [addSitelinks, removeSitelinks, addCalloutExtensions, removeCallouts, addStructuredSnippets, removeStructuredSnippets, addCallAsset, removeCallAssets, setCallAssetStatus, linkExistingAssets, addBusinessNameAsset];

@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 285,
+    "implemented": 286,
     "external_limitation": 1,
     "pending": 0
   },
@@ -2437,6 +2437,24 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "link_existing_assets",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "GAQL: asset, campaign_asset; CampaignAssetService (creates links only, no AssetService create)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) to a campaign. Business name is excluded: a campaign has one, set by add_business_name_asset.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",

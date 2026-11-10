@@ -6,7 +6,8 @@
     "These are implementation targets, not registered or operational MCP tools.",
     "Live mutations should require authorization and server-enforced approval.",
     "Four Google tools were added by the project owner on 2026-11-04 beyond the Adspirer extract: get_keyword_performance, get_segment_performance, remove_negative_keywords_from_list, detach_negative_keyword_list_from_campaign. On 2026-11-05 the owner added list_accounts (workspace-level), because no inventoried tool returned the account_id the other tools require.",
-    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names."
+    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names.",
+    "On 2026-11-11 the owner added link_existing_assets (Google Ads): the add tools always create a new asset, so an asset already in the library (such as an existing phone number) could not be attached to another campaign."
   ],
   "tools": [
     {
@@ -1423,6 +1424,16 @@
       "platform": "google_ads",
       "name": "set_call_asset_status",
       "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "link_existing_assets",
+      "action_type": "Create",
       "modifies_data": true,
       "connected": true,
       "implementation_status": "pending",
