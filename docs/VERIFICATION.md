@@ -557,6 +557,45 @@ Status: docs-checked, tested against a fake API, **not run against a real site**
 | SubmitUrlBatch | `POST {"siteUrl", "urlList": [...]}`, answers `{"d": null}`. "The max number of urls that can be submitted in a batch is 500 unless it exceeds the available quota. GetUrlSubmissionQuota(String) should be called to determine how much urls can be submitted." | `API.iwebmasterapi.submiturlbatch` |
 | AI Performance (Copilot citations) | Not in the API reference as of 2026-11-10; third-party reports say it is UI-only. Not built. | `API.iwebmasterapi` (method list) |
 
+### Search performance and keyword research (2026-11-10)
+
+Tools in `src/platforms/bing/tools/performance.ts` and `keywords.ts`, calls in `src/platforms/bing/api/performance.ts` and `keywords.ts`
+(plus `api/traffic.ts` from the groundwork). Every method below is `WebGet` (GET, parameters in the query string) and returns `{"d": ...}`.
+Method pages fetched 2026-11-10 at `API.iwebmasterapi.<method>`; data contracts at `API.<type>` and their property pages.
+
+| Method | Verb, parameters | Returns (fields) | Remarks / notes | Source |
+|---|---|---|---|---|
+| GetRankAndTrafficStats | GET `siteUrl` | `RankAndTrafficStats {Clicks, Date, Impressions}` | "The data will be updated every day. The traffic data includes Impressions and Clicks from all verticals i.e. Web, Chat, News, Images, Videos and Knowledge Panel from March 24th, 2023 onwards." (Its XML sample is a copy of GetQueryTrafficStats.) Used by get_bing_search_performance and compare_bing_search_periods (site_totals). | `API.iwebmasterapi.getrankandtrafficstats` |
+| GetQueryStats | GET `siteUrl` | `QueryStats {AvgClickPosition, AvgImpressionPosition, Clicks, Date, Impressions, Query}`; positions are Int32 on the property pages | "The data will be updated every week." No date range. | `API.iwebmasterapi.getquerystats`, `API.querystats`, `API.querystats.avgclickposition` |
+| GetPageStats | GET `siteUrl` | `QueryStats` (XML sample `<Query>PageURL</Query>`) | "The data will be updated every week." | `API.iwebmasterapi.getpagestats` |
+| GetQueryPageStats | GET `siteUrl`, `query` | `QueryStats` | "Get detailed traffic statistics for specific query." "The data will be updated every week." **Unclear:** both samples put the query text (`"query"`) in `Query`, not a page URL. get_bing_query_pages reads `Query` as the page and, when every row only repeats the query, returns no page split (`rows_keyed_by_query: true`) and only per-bucket totals. | `API.iwebmasterapi.getquerypagestats` |
+| GetPageQueryStats | GET `siteUrl`, `page` | `QueryStats` (`Query` = query) | "Get detailed traffic statistics for specific site's page." "The data will be updated every week." The page goes in the parameter named `page`. | `API.iwebmasterapi.getpagequerystats` |
+| GetQueryPageDetailStats | GET `siteUrl`, `query`, `page` | `DetailedQueryStats {Clicks, Date, Impressions, Position}` (Position Int32) | "The data will be updated every week." | `API.iwebmasterapi.getquerypagedetailstats`, `API.detailedquerystats`, `API.detailedquerystats.position` |
+| GetQueryTrafficStats | GET `siteUrl`, `query` | `RankAndTrafficStats {Clicks, Date, Impressions}` | "The data will be updated every day. Only top-queries will be saved and returned by this method." | `API.iwebmasterapi.getquerytrafficstats` |
+| GetKeyword | GET `q`, `country`, `language`, `startDate` (DateTime), `endDate` (DateTime); **no siteUrl** | `Keyword {BroadImpressions (Int64), Impressions (Int64), Query}` (a single object) | "Get keyword impressions for selected period." No sample, no remarks, no country/language format, no date-range limit, no definition of Impressions vs BroadImpressions. | `API.iwebmasterapi.getkeyword`, `API.keyword`, `API.keyword.broadimpressions`, `API.keyword.impressions` |
+| GetKeywordStats | GET `q`, `country`, `language`; no siteUrl, no dates | `KeywordStats {BroadImpressions, Date, Impressions, Query}` (list) | "Get keyword historical statistics." No sample, no remarks; row granularity not documented. | `API.iwebmasterapi.getkeywordstats`, `API.keywordstats` |
+| GetRelatedKeywords | GET `q`, `country`, `language`, `startDate`, `endDate`; no siteUrl | `Keyword` list | Summary copied from GetKeyword ("Get keyword impressions for selected period"); its request/response samples are a copy of **GetSiteRoles** and say nothing about this method. | `API.iwebmasterapi.getrelatedkeywords` |
+
+Readings chosen where the docs are silent or contradictory:
+
+- **String parameters are sent unquoted.** The JSON GET samples write `query=%22query1%22` and `page=%22http%3a%5c%2f...%22` (JSON-quoted
+  strings), while `siteUrl` is unquoted in the same requests and every XML sample is unquoted. Values are sent unquoted, like `siteUrl`
+  (which the groundwork already sends that way). Confirm on the first live run.
+- **DateTime GET parameters (GetKeyword, GetRelatedKeywords) are sent as ISO days `YYYY-MM-DD`.** No page shows a DateTime in a query
+  string; the WCF JSON body form (`/Date(ms)/`, `toBingDate`) is for POST bodies. Confirm on the first live run.
+- **Country and language are sent exactly as given**, validated only loosely (country: two letters; language: `en` or `en-US` shape).
+  Microsoft documents no format; third-party pages (not used as a source) suggest lowercase ISO 3166 country (`us`) and an IETF tag
+  (`en-US`), which is what the tool descriptions suggest trying. No date-range limit is documented, so none is enforced beyond start ≤
+  end and end not in the future.
+- **Keyword data is search-wide**: the three keyword methods take no `siteUrl`, so the tools call them with `site: false` and every
+  output says the numbers are Bing-wide demand, not the site's traffic. Impressions/BroadImpressions are reported under Bing's names.
+- **Buckets, not date ranges**: query/page methods take no dates. Outputs list the bucket dates used (first, last, count, all dates);
+  sums for clicks/impressions, impression-weighted impression position, click-weighted click position (`sumByKey`), CTR from the sums.
+  compare_bing_search_periods matches each requested range to the buckets dated inside it and refuses a period with none; the named
+  comparison is the latest N buckets vs the N before (site totals: latest N×7 days vs the N×7 before, exact days).
+- **Top lists, not totals**: GetQueryStats/GetPageStats return only Bing's top rows, so "new"/"lost" in a comparison can mean "below
+  Bing's cut-off" rather than zero; the outputs say so.
+
 ## Meta fields still unconfirmed (checked again 2026-11-10 with Meta's docs search)
 
 - **Confirmed:** campaign copies (`POST /{campaign}/copies`) copy at most 3 child ads in a synchronous call and 51 in an asynchronous
