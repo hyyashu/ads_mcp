@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { z } from "zod";
 
-export const PLATFORMS = ["google_ads", "meta_ads", "google_search_console", "google_analytics", "google_tag_manager"] as const;
+export const PLATFORMS = ["google_ads", "meta_ads", "google_search_console", "google_analytics", "google_tag_manager", "bing_webmaster"] as const;
 export type Platform = (typeof PLATFORMS)[number];
 
 const InventoryTool = z.object({
@@ -20,7 +20,7 @@ export type InventoryTool = z.infer<typeof InventoryTool>;
 const Inventory = z.object({ schema_version: z.literal(1), tools: z.array(InventoryTool) });
 
 /** Per platform. The 2026-11-10 additions file each combined tool under the platform of the account its account_id names. */
-export const EXPECTED = { google_ads: 176, meta_ads: 61, google_search_console: 13, google_analytics: 23, google_tag_manager: 13, total: 286 } as const;
+export const EXPECTED = { google_ads: 176, meta_ads: 61, google_search_console: 13, google_analytics: 23, google_tag_manager: 13, bing_webmaster: 56, total: 342 } as const;
 
 export function loadInventory(path = fileURLToPath(new URL("../inventory/tool-registry.json", import.meta.url))): InventoryTool[] {
   return Inventory.parse(JSON.parse(readFileSync(path, "utf8"))).tools;

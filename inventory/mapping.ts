@@ -203,6 +203,9 @@ const metaApi: Rule[] = [
 const G = (s: string) => `https://www.googleapis.com/auth/${s}`;
 const GSC_READ = [G("webmasters.readonly")];
 const GSC_WRITE = [G("webmasters")];
+/** Bing Webmaster Tools OAuth scopes (src/platforms/bing/scopes.ts). */
+const BING_R = ["webmaster.read"];
+const BING_W = ["webmaster.manage"];
 const GA4_READ = [G("analytics.readonly")];
 // The Data API (runReport, getMetadata) accepts analytics.readonly or analytics, NOT analytics.edit, so a write connection holds both.
 const GA4_WRITE = [G("analytics.readonly"), G("analytics.edit")];
@@ -214,6 +217,7 @@ const GTM_PUBLISH = [G("tagmanager.publish")];
 const productDomain: [RegExp, string][] = [
   [/^get_property_links$/, "connections"],
   [/^(analyze_paid_organic_overlap|find_organic_keyword_gaps|audit_ad_landing_pages|compare_conversion_tracking|analyze_meta_traffic_quality|get_channel_mix|check_utm_tagging|analyze_brand_search_trend|find_converting_terms_without_content|audit_tracking_setup|analyze_paid_search_on_site)$/, "combined"],
+  [/bing/, "bing_webmaster"],
   [/gsc|search_|sitemap|inspect_url|top_(queries|pages)/, "search_console"],
   [/gtm/, "tag_manager"],
   [/.*/, "analytics"],
@@ -246,6 +250,63 @@ const productApi: Rule[] = [
   [/^delete_sitemap$/, { api: "DELETE webmasters/v3/sites/{siteUrl}/sitemaps/{feedpath}", feasibility: "api", platformPermissions: GSC_WRITE }],
   [/^add_gsc_site$/, { api: "PUT webmasters/v3/sites/{siteUrl}", feasibility: "api", platformPermissions: GSC_WRITE, notes: "Ownership must still be verified in Search Console. Acts on the connection of the named site account." }],
   [/^remove_gsc_site$/, { api: "DELETE webmasters/v3/sites/{siteUrl}", feasibility: "api", platformPermissions: GSC_WRITE }],
+  // ---- Bing Webmaster Tools (JSON API at www.bing.com/webmaster/api.svc/json/{Method}, OAuth Bearer)
+  [/^list_bing_sites$/, { api: "GET GetUserSites", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_site$/, { api: "POST AddSite", feasibility: "api", platformPermissions: BING_W, notes: "Acts on the Bing user of the named site's connection. Verification is separate (verify_bing_site)." }],
+  [/^verify_bing_site$/, { api: "POST VerifySite", feasibility: "api", platformPermissions: BING_W }],
+  [/^remove_bing_site$/, { api: "POST RemoveSite", feasibility: "api", platformPermissions: BING_W }],
+  [/^list_bing_site_users$/, { api: "GET GetSiteRoles", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_site_user$/, { api: "POST AddSiteRoles", feasibility: "api", platformPermissions: BING_W, notes: "Gives another person access to the site's Bing data." }],
+  [/^remove_bing_site_user$/, { api: "POST RemoveSiteRole", feasibility: "api", platformPermissions: BING_W }],
+  [/^get_bing_site_moves$/, { api: "GET GetSiteMoves", feasibility: "api", platformPermissions: BING_R }],
+  [/^submit_bing_site_move$/, { api: "POST SubmitSiteMove", feasibility: "api", platformPermissions: BING_W, notes: "Tells Bing the site moved to another URL: affects how Bing indexes both." }],
+  [/^get_bing_search_performance$/, { api: "GET GetRankAndTrafficStats (daily)", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_top_queries$/, { api: "GET GetQueryStats (weekly buckets, Bing's own window)", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_top_pages$/, { api: "GET GetPageStats (weekly buckets, Bing's own window)", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_query_pages$/, { api: "GET GetQueryPageStats", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_page_queries$/, { api: "GET GetPageQueryStats", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_query_page_detail$/, { api: "GET GetQueryPageDetailStats", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_query_trend$/, { api: "GET GetQueryTrafficStats", feasibility: "api", platformPermissions: BING_R }],
+  [/^compare_bing_search_periods$/, { api: "GET GetRankAndTrafficStats / GetQueryStats / GetPageStats, deterministic diff of two periods", feasibility: "derived", platformPermissions: BING_R }],
+  [/^get_bing_keyword_volume$/, { api: "GET GetKeyword (country, language, date range)", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_keyword_history$/, { api: "GET GetKeywordStats", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_related_keywords$/, { api: "GET GetRelatedKeywords", feasibility: "api", platformPermissions: BING_R }],
+  [/^inspect_bing_url$/, { api: "GET GetUrlInfo + GetUrlTrafficInfo", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_directory_index$/, { api: "GET GetChildrenUrlInfo + GetChildrenUrlTrafficInfo", feasibility: "api", platformPermissions: BING_R }],
+  [/^submit_bing_urls$/, { api: "POST SubmitUrl / SubmitUrlBatch (at most 500 per batch, within GetUrlSubmissionQuota)", feasibility: "api", platformPermissions: BING_W }],
+  [/^get_bing_submission_quota$/, { api: "GET GetUrlSubmissionQuota + GetContentSubmissionQuota", feasibility: "api", platformPermissions: BING_R }],
+  [/^submit_bing_content$/, { api: "POST SubmitContent", feasibility: "api", platformPermissions: BING_W }],
+  [/^fetch_url_as_bingbot$/, { api: "POST FetchUrl", feasibility: "api", platformPermissions: BING_W, notes: "Asks Bingbot to fetch the page; changes nothing on the site or in the index." }],
+  [/^list_bing_fetched_urls$/, { api: "GET GetFetchedUrls", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_fetched_url$/, { api: "GET GetFetchedUrlDetails", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_crawl_stats$/, { api: "GET GetCrawlStats", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_crawl_issues$/, { api: "GET GetCrawlIssues", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_crawl_settings$/, { api: "GET GetCrawlSettings", feasibility: "api", platformPermissions: BING_R }],
+  [/^update_bing_crawl_settings$/, { api: "POST SaveCrawlSettings", feasibility: "api", platformPermissions: BING_W, notes: "Changes how fast Bingbot crawls the site." }],
+  [/^list_bing_sitemaps$/, { api: "GET GetFeeds", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_sitemap$/, { api: "GET GetFeedDetails", feasibility: "api", platformPermissions: BING_R }],
+  [/^submit_bing_sitemap$/, { api: "POST SubmitFeed", feasibility: "api", platformPermissions: BING_W }],
+  [/^remove_bing_sitemap$/, { api: "POST RemoveFeed", feasibility: "api", platformPermissions: BING_W }],
+  [/^get_bing_linked_pages$/, { api: "GET GetLinkCounts (paged)", feasibility: "api", platformPermissions: BING_R }],
+  [/^get_bing_backlinks$/, { api: "GET GetUrlLinks (paged)", feasibility: "api", platformPermissions: BING_R }],
+  [/^list_bing_connected_pages$/, { api: "GET GetConnectedPages", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_connected_page$/, { api: "POST AddConnectedPage", feasibility: "api", platformPermissions: BING_W }],
+  [/^list_bing_blocked_urls$/, { api: "GET GetBlockedUrls", feasibility: "api", platformPermissions: BING_R }],
+  [/^block_bing_url$/, { api: "POST AddBlockedUrl", feasibility: "api", platformPermissions: BING_W, notes: "Removes the page or directory from Bing results." }],
+  [/^unblock_bing_url$/, { api: "POST RemoveBlockedUrl", feasibility: "api", platformPermissions: BING_W }],
+  [/^list_bing_preview_blocks$/, { api: "GET GetActivePagePreviewBlocks", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_preview_block$/, { api: "POST AddPagePreviewBlock", feasibility: "api", platformPermissions: BING_W }],
+  [/^remove_bing_preview_block$/, { api: "POST RemovePagePreviewBlock", feasibility: "api", platformPermissions: BING_W }],
+  [/^list_bing_sitelink_blocks$/, { api: "GET GetDeepLinkBlocks", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_sitelink_block$/, { api: "POST AddDeepLinkBlock", feasibility: "api", platformPermissions: BING_W }],
+  [/^remove_bing_sitelink_block$/, { api: "POST RemoveDeepLinkBlock", feasibility: "api", platformPermissions: BING_W }],
+  [/^list_bing_url_parameters$/, { api: "GET GetQueryParameters", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_url_parameter$/, { api: "POST AddQueryParameter", feasibility: "api", platformPermissions: BING_W, notes: "Bing then treats URLs differing only in this parameter as one page." }],
+  [/^update_bing_url_parameter$/, { api: "POST EnableDisableQueryParameter", feasibility: "api", platformPermissions: BING_W }],
+  [/^remove_bing_url_parameter$/, { api: "POST RemoveQueryParameter", feasibility: "api", platformPermissions: BING_W }],
+  [/^list_bing_country_targeting$/, { api: "GET GetCountryRegionSettings", feasibility: "api", platformPermissions: BING_R }],
+  [/^add_bing_country_targeting$/, { api: "POST AddCountryRegionSettings", feasibility: "api", platformPermissions: BING_W }],
+  [/^remove_bing_country_targeting$/, { api: "POST RemoveCountryRegionSettings", feasibility: "api", platformPermissions: BING_W }],
   // ---- GA4 (Admin API v1beta/v1alpha, Data API v1beta/v1alpha)
   [/^list_ga4_properties$/, { api: "Admin v1beta accountSummaries.list + properties.get + properties.dataStreams.list", feasibility: "api", platformPermissions: GA4_READ }],
   [/^get_ga4_metadata$/, { api: "Data v1beta properties/{id}/metadata + Admin keyEvents.list", feasibility: "api", platformPermissions: GA4_READ }],
@@ -276,8 +337,25 @@ const productApi: Rule[] = [
 /** Design section 6: tiers that differ from the action type's default (Delete = destructive, other changes = write). */
 // create/update_gtm_tag are high_impact (owner-approved 2026-11-10, stricter than design section 6): a custom HTML tag is code
 // that will run on the customer's website once published, so a second person approves even the draft.
-const productRisk: Record<string, Risk> = { create_key_event: "high_impact", create_gtm_tag: "high_impact", update_gtm_tag: "high_impact", publish_gtm_version: "destructive" };
-const PRODUCTS = new Set(["google_search_console", "google_analytics", "google_tag_manager"]);
+const productRisk: Record<string, Risk> = {
+  create_key_event: "high_impact",
+  create_gtm_tag: "high_impact",
+  update_gtm_tag: "high_impact",
+  publish_gtm_version: "destructive",
+  // Bing Webmaster (owner-approved 2026-11-10). Giving access, crawl rate, URL parameters, previews, sitelinks and country
+  // targeting change how Bing treats the whole site: high_impact. Removing a site from Bing results or moving the site:
+  // destructive. Every Delete stays destructive (repo rule), including lifting a block or removing a setting.
+  add_bing_site_user: "high_impact",
+  submit_bing_site_move: "destructive",
+  update_bing_crawl_settings: "high_impact",
+  block_bing_url: "destructive",
+  add_bing_preview_block: "high_impact",
+  add_bing_sitelink_block: "high_impact",
+  add_bing_url_parameter: "high_impact",
+  update_bing_url_parameter: "high_impact",
+  add_bing_country_targeting: "high_impact",
+};
+const PRODUCTS = new Set(["google_search_console", "google_analytics", "google_tag_manager", "bing_webmaster"]);
 
 const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$/;
 const metaHighImpact = /^create_meta_.*_campaign$|^duplicate_meta_campaign$|^resume_meta_campaign$|^update_meta_(campaign|catalog_campaign|ad_set|catalog_ad_set|ad|catalog_ad)$|^add_meta_(ad_set|catalog_ad_set|ad|catalog_ad)$|^create_meta_dco_ad$/;

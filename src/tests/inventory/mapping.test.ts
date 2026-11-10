@@ -18,7 +18,8 @@ describe("implementation plan (inventory/mapping.ts)", () => {
 
   it("risk tiers agree with the inventory: reads are read, deletes are destructive, other mutations are write or high_impact", () => {
     // Design 2026-11-10 section 6: publishing a Tag Manager version changes the live site with no API undo.
-    const destructiveUpdates = new Set(["publish_gtm_version"]);
+    // Bing (2026-11-10): removing pages from Bing results and moving the site are destructive although they create a setting.
+    const destructiveUpdates = new Set(["publish_gtm_version", "block_bing_url", "submit_bing_site_move"]);
     for (const t of inv) {
       const { risk } = mapTool(t);
       if (!t.modifies_data) expect(risk, t.name).toBe("read");

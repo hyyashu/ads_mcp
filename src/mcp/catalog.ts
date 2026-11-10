@@ -41,7 +41,7 @@ export function visibleTools(tools: AnyTool[], auth: Pick<AuthContext, "scopes">
   });
 }
 
-const LABEL: Record<Platform, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics", google_tag_manager: "Tag Manager" };
+const LABEL: Record<Platform, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics", google_tag_manager: "Tag Manager", bing_webmaster: "Bing Webmaster" };
 
 /** Server instructions that say what is (and is not) available, so the model does not guess at missing tools. */
 export function catalogInstructions(caps: Capabilities, auth: Pick<AuthContext, "scopes">): string {

@@ -41,7 +41,7 @@ export async function addUser(db: Db, tenantId: string, label: string, role: "ow
   return user!;
 }
 
-const DEFAULT_EXTERNAL: Record<Platform, string> = { google_ads: "1234567890", meta_ads: "act_987", google_search_console: "https://shop.example/", google_analytics: "properties/123", google_tag_manager: "accounts/1/containers/2" };
+const DEFAULT_EXTERNAL: Record<Platform, string> = { google_ads: "1234567890", meta_ads: "act_987", google_search_console: "https://shop.example/", google_analytics: "properties/123", google_tag_manager: "accounts/1/containers/2", bing_webmaster: "https://shop.example/" };
 
 /** Units default to known values; pass `units: null` for an account whose platform did not report them. */
 export async function seedAccount(

@@ -6,7 +6,8 @@
     "These are implementation targets, not registered or operational MCP tools.",
     "Live mutations should require authorization and server-enforced approval.",
     "Four Google tools were added by the project owner on 2026-11-04 beyond the Adspirer extract: get_keyword_performance, get_segment_performance, remove_negative_keywords_from_list, detach_negative_keyword_list_from_campaign. On 2026-11-05 the owner added list_accounts (workspace-level), because no inventoried tool returned the account_id the other tools require.",
-    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names."
+    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names.",
+    "On 2026-11-10 the owner approved 56 Bing Webmaster Tools tools (platform bing_webmaster) and a Google/Bing/both choice on the existing combined search tools (docs/superpowers/specs/2026-11-10-bing-webmaster-design.md)."
   ],
   "tools": [
     {
@@ -2868,6 +2869,566 @@
       "implementation_status": "pending",
       "input_schema_status": "needs_api_mapping",
       "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_sites",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_site",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "verify_bing_site",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_site",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_site_users",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_site_user",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_site_user",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_site_moves",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_site_move",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_search_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_top_queries",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_top_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_query_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_page_queries",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_query_page_detail",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_query_trend",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "compare_bing_search_periods",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_keyword_volume",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_keyword_history",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_related_keywords",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "inspect_bing_url",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_directory_index",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_urls",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_submission_quota",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_content",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "fetch_url_as_bingbot",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_fetched_urls",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_fetched_url",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_crawl_stats",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_crawl_issues",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_crawl_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "update_bing_crawl_settings",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_sitemaps",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_sitemap",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_sitemap",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_sitemap",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_linked_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_backlinks",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_connected_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_connected_page",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_blocked_urls",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "block_bing_url",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "unblock_bing_url",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_preview_blocks",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_preview_block",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_preview_block",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_sitelink_blocks",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_sitelink_block",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_sitelink_block",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_url_parameters",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_url_parameter",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "update_bing_url_parameter",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_url_parameter",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_country_targeting",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_country_targeting",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_country_targeting",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
     }
   ]
 }

@@ -532,6 +532,31 @@ pair several Meta campaigns share is never credited to one of them (`shared_utm_
 id and lists GA4 campaigns not in the compared accounts instead of filtering by customer id); whether GA4's `landingPage` ever
 contains a query string (the join strips one if present).
 
+## Bing Webmaster tools (2026-11-10)
+
+The Bing Webmaster connection and tools (`src/platforms/bing/`, tests in `src/tests/bing/`). Pages fetched 2026-11-10 (WebFetch).
+`LB` = `https://learn.microsoft.com/en-us/bingwebmaster`, `API` = `https://learn.microsoft.com/en-us/dotnet/api/microsoft.bing.webmaster.api.interfaces`.
+Status: docs-checked, tested against a fake API, **not run against a real site**. Each section's tools add their own method facts below.
+
+| Fact | Result | Source |
+|---|---|---|
+| Protocols | SOAP and POX are retired on 2026-08-31; JSON stays. JSON GET `https://ssl.bing.com/webmaster/api.svc/json/METHOD_NAME?apikey=...&param=...`, JSON POST `.../json/METHOD_NAME?apikey=...` | `LB/` (note), `LB/api-protocols` |
+| OAuth API calls | Sample: `POST /webmaster/api.svc/json/SubmitUrl`, `Host: www.bing.com`, `Authorization: Bearer <access token>`, JSON body `{"siteUrl", "url"}`. **This server calls `https://www.bing.com/webmaster/api.svc/json/{Method}` with the Bearer token and never uses `apikey`.** Whether ssl.bing.com also takes Bearer tokens is not documented. Confirm on the first live run. | `LB/oauth2` step 6 |
+| Authorize | `GET https://www.bing.com/webmasters/oauth/authorize` with `response_type=code`, `client_id`, `redirect_uri` (must match exactly), `scope` (space-separated). The redirect returns `code` or `error`. `state` is not documented but is sent (standard OAuth 2.0, RFC 6749) and checked by this server. No PKCE parameters are documented, so none are sent. | `LB/oauth2` steps 2–4 |
+| Token | `POST https://www.bing.com/webmasters/oauth/token`, form-encoded `client_id`, `client_secret`, `code`, `grant_type=authorization_code`, `redirect_uri`; the code is valid for 5 minutes. Response `access_token`, `expires_in` (sample 3599), `refresh_token` ("valid until the user revokes access"), `token_type` Bearer. No `scope` field is documented. | `LB/oauth2` step 5 |
+| Refresh | Same endpoint, `client_id`, `client_secret`, `refresh_token`, `grant_type=refresh_token` (the page's parameter table says `authorization_code`; its own sample and RFC 6749 say `refresh_token`, which is used). Response `access_token`, `expires_in`, `token_type`. A refresh token in the response, if any, replaces the stored one. | `LB/oauth2` step 7 |
+| Scopes | `webmaster.read` (read), `webmaster.manage` (read and write). The scope list spells them `Webmaster.read` / `Webmaster.manage`; the authorize sample uses `webmaster.manage`. The sample's spelling is sent and a returned scope list is compared without case. | `LB/oauth2` "Authorization Scopes" |
+| Revocation | No revoke endpoint is documented. Disconnect deletes the credentials here only; the Connections page tells the user to remove the app in Bing Webmaster Tools. | `LB/oauth2` (absent) |
+| Response envelope | Success: `{"d": <result>}`; methods with no result answer `{"d": null}` | method pages (GetUserSites, SubmitUrlBatch) |
+| Errors | "In case of an exception, HTTP status code 400 will be returned for POX and JSON formats", body `{"ErrorCode": 3, "Message": "InvalidApiKey"}` | `LB/getting-started` |
+| ApiErrorCode | None 0, InternalError 1, UnknownError 2, InvalidApiKey 3, ThrottleUser 4, ThrottleHost 5, UserBlocked 6, InvalidUrl 7, InvalidParameter 8, TooManySites 9, UserNotFound 10, NotFound 11, AlreadyExists 12, NotAllowed 13, NotAuthorized 14, UnexpectedState 15, Deprecated 16 (no descriptions given). Mapping: `src/platforms/bing/http.ts` | `API.apierrorcode` |
+| Dates | WCF JSON form `"/Date(1316156400000-0700)/"`, the same instant the XML sample shows as `2011-09-16T00:00:00-07:00` (milliseconds are UTC; the offset names the zone the day is rendered in) | GetQueryStats JSON and XML samples |
+| GetUserSites | `GET`, no parameters. `Site {AuthenticationCode, DnsVerificationCode, IsVerified, Url}`. Discovery connects verified sites only and keeps `Url` exactly as returned | `API.iwebmasterapi.getusersites` |
+| GetRankAndTrafficStats | `GET ?siteUrl`. `RankAndTrafficStats {Clicks, Date, Impressions}`. "The data will be updated every day. The traffic data includes Impressions and Clicks from all verticals i.e. Web, Chat, News, Images, Videos and Knowledge Panel from March 24th, 2023 onwards." No date-range parameter | `API.iwebmasterapi.getrankandtrafficstats` |
+| GetQueryStats / GetPageStats | `GET ?siteUrl`. `QueryStats {AvgClickPosition, AvgImpressionPosition, Clicks, Date, Impressions, Query}` (for GetPageStats `Query` is the page URL). "The data will be updated every week." No date-range parameter: Bing returns its own window with one row per key and bucket date | `API.iwebmasterapi.getquerystats`, `.getpagestats` |
+| SubmitUrlBatch | `POST {"siteUrl", "urlList": [...]}`, answers `{"d": null}`. "The max number of urls that can be submitted in a batch is 500 unless it exceeds the available quota. GetUrlSubmissionQuota(String) should be called to determine how much urls can be submitted." | `API.iwebmasterapi.submiturlbatch` |
+| AI Performance (Copilot citations) | Not in the API reference as of 2026-11-10; third-party reports say it is UI-only. Not built. | `API.iwebmasterapi` (method list) |
+
 ## Meta fields still unconfirmed (checked again 2026-11-10 with Meta's docs search)
 
 - **Confirmed:** campaign copies (`POST /{campaign}/copies`) copy at most 3 child ads in a synchronous call and 51 in an asynchronous

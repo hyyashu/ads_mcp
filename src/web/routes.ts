@@ -494,6 +494,7 @@ ${owner ? `<button class="primary">Save</button>` : `<p class="muted">Only an ow
       ["google_search_console", "Each site you can see in Search Console becomes an account."],
       ["google_analytics", "Each GA4 property becomes an account, with its reporting currency and time zone."],
       ["google_tag_manager", "Each container becomes an account. Allowing changes includes publishing, always after approval."],
+      ["bing_webmaster", "Each verified site in Bing Webmaster Tools becomes an account. Disconnecting removes access here; to revoke it at Bing too, remove the app in Bing Webmaster Tools (Bing offers no revoke call)."],
     ];
     this.html(
       res,
@@ -578,7 +579,7 @@ ${admin ? `<form method="post" action="/connections/${esc(c.id)}/disconnect">${h
         : admin
           ? `<p class="muted">Connect at least two accounts to link them.</p>`
           : "";
-    return `<h2>Links</h2><div class="card"><p class="muted">Link an ad account to its Search Console site, GA4 property and Tag Manager container, so tools that combine them know which belong together.</p>${rows ? `<ul>${rows}</ul>` : `<p class="muted">No links yet.</p>`}${form}</div>`;
+    return `<h2>Links</h2><div class="card"><p class="muted">Link an ad account to its Search Console site, Bing Webmaster site, GA4 property and Tag Manager container, so tools that combine them know which belong together.</p>${rows ? `<ul>${rows}</ul>` : `<p class="muted">No links yet.</p>`}${form}</div>`;
   }
 
   private async addLink(req: IncomingMessage, res: ServerResponse) {
