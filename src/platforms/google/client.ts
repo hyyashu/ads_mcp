@@ -74,12 +74,14 @@ export class GoogleAdsClient {
   }
 
   /**
-   * Sends a mutating RPC that is not part of GoogleAdsService.Mutate, e.g. "customers/{customer}/productLinks:create".
+   * Sends a mutating RPC that is not part of GoogleAdsService.Mutate, e.g. "customers/{customer}/productLinks:create" or
+   * "customers/{customer}/offlineUserDataJobs/{id}:run".
    * Counted and never retried, exactly like mutate().
    */
   async sendRpc<T = Row>(path: string, body: Row): Promise<T> {
     const p = path.replace("{customer}", this.o.customerId);
-    if (!new RegExp(`^customers/${this.o.customerId}/[A-Za-z]+:(create|remove|update)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
+    // Resource-level methods are allowed only where listed: OfflineUserDataJobService adds operations to, and runs, one job.
+    if (!new RegExp(`^customers/${this.o.customerId}/([A-Za-z]+:(create|remove|update)|offlineUserDataJobs/\\d+:(addOperations|run))$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
     const base = await this.base();
     this.assertNotAborted();
     this.sent++;

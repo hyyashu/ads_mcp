@@ -38,7 +38,8 @@ export function validateTool(tool: AnyTool, inv: InventoryTool | undefined): str
         else walk(v, `${path}.${k}`);
       }
     };
-    walk(z.toJSONSchema(tool.input), "");
+    // The input side, as clients see it (the MCP SDK lists tools with io "input"): a schema may transform what it accepts.
+    walk(z.toJSONSchema(tool.input, { io: "input" }), "");
     if (unbounded.length) at(`array inputs must set .max(): ${unbounded.join(", ")}`);
   }
   return p;

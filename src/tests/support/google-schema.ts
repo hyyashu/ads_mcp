@@ -129,6 +129,14 @@ export function checkBody(schema: string, body: unknown, at = ""): string[] {
 
 /** The request schema for a REST path such as customers/1/campaigns:mutate or customers/1/googleAds:search. */
 export function requestSchemaFor(path: string): string | null {
+  // A method on one resource, e.g. customers/1/offlineUserDataJobs/2:addOperations -> AddOfflineUserDataJobOperationsRequest
+  // and :run -> RunOfflineUserDataJobRequest (the verb, the resource in the singular, then the rest of the method name).
+  const onResource = /(?:^|\/)customers\/\d+\/([A-Za-z]+)\/\d+:([a-z]+)([A-Za-z]*)$/.exec(path);
+  if (onResource) {
+    const [, collection, verb, rest] = onResource;
+    const name = `Services__${verb![0]!.toUpperCase()}${verb!.slice(1)}${collection![0]!.toUpperCase()}${collection!.slice(1).replace(/s$/, "")}${rest}Request`;
+    return index.schemas[name] ? name : null;
+  }
   const m = /(?:^|\/)([A-Za-z]+|\d+):([A-Za-z]+)$/.exec(path);
   if (!m) return null;
   const [, service, method] = m;
