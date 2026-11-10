@@ -695,6 +695,28 @@ so their text was read from the Wayback Machine copies named below (Microsoft's 
 
 The live portal script (`/webmasters/dist/bundle.min.js`, fetched 2026-11-10) still has the Block URLs screen but no strings for page previews, deep links, geo-targeting or URL parameters, so those portal screens may be gone. Microsoft still lists the API methods. None of these tools has been run against a real site.
 
+### Combined tools: Google / Bing / both (2026-11-10)
+
+`search_engine: "google" | "bing" | "both"` (default `google`) and `bing_site_account_id` on `analyze_paid_organic_overlap`,
+`find_organic_keyword_gaps`, `find_converting_terms_without_content`, `analyze_brand_search_trend` and `audit_ad_landing_pages`
+(`src/platforms/cross/{bing,search,landing}.ts`, tests `src/tests/cross/bing.test.ts`). Pages fetched 2026-11-10 (WebFetch).
+With `google` the output is byte-for-byte what it was before (checked by dumping all five tools at ec53f01 and after, equal
+except random account ids). Status: docs-checked, tested against a fake API, **not run against a real site**.
+
+| Method | Verb, params | Returns | Remarks / reading chosen | Source |
+|---|---|---|---|---|
+| GetQueryStats | `GET ?siteUrl` (via `api/traffic.ts`) | `QueryStats[]` (see table above) | No date range. A bucket is used when the date Bing stamps on it is inside the period; the bucket dates used and the whole range Bing returned are reported (`bing.weeks`). **The reference does not say which days a weekly bucket covers** (start or end of the week), so the output says bucket edges do not match the period's days. No bucket inside the period → Bing figures are `null` with a note, never 0. | `API.iwebmasterapi.getquerystats` |
+| GetQueryTrafficStats | `GET ?siteUrl&query` (WebGet, WrappedRequest) | `RankAndTrafficStats[] {Clicks, Date, Impressions}` (JSON sample: `{"d":[{"__type":"RankAndTrafficStats:#Microsoft.Bing.Webmaster.Api","Clicks":15,"Date":"/Date(1316156400000-0700)/","Impressions":100}]}`) | "The data will be updated every day. Only top-queries will be saved and returned by this method." Exact query, no substring filter, and the row granularity is not stated: each row is counted in the bucket containing its date. Used for the Bing brand trend on Bing's top queries (from GetQueryStats) whose normalised text contains a brand term, at most 20 by impressions, one call at a time; the output says branded traffic is undercounted. | `API.iwebmasterapi.getquerytrafficstats`, `API.rankandtrafficstats` |
+| GetRankAndTrafficStats | `GET ?siteUrl` (via `api/traffic.ts`) | daily `{Clicks, Date, Impressions}` | Site-wide, not brand-filtered: used only as Bing's "all" clicks/impressions per bucket. A bucket with no Bing day is `null`, not 0. | `API.iwebmasterapi.getrankandtrafficstats` |
+| GetUrlInfo | `GET ?siteUrl&url` (WebGet, WrappedRequest) | `UrlInfo {AnchorCount, DiscoveryDate, DocumentSize, HttpStatus (UInt16), IsPage, LastCrawledDate, TotalChildUrlCount, Url}`; JSON sample `{"d":{"__type":"UrlInfo:#Microsoft.Bing.Webmaster.Api","AnchorCount":50,"DiscoveryDate":"/Date(1315349995266-0700)/",...,"Url":"example.com"}}` | Summary: "Get index details for single page". Remark: "\"domain:\" prefix can be used to get information for domain." **No property descriptions and no indexed/not-indexed field.** Reading chosen: `has_index_details` when Bing returns a discovery or last-crawl date, `no_index_details` for NotFound (ApiErrorCode 11) or no dates (DateTime.MinValue); never reported as "indexed". **Contradiction:** the JSON request sample sends `url=%22example.com%22` (a JSON-quoted string) while `siteUrl` in the same sample and the XML sample are unquoted. The URL is sent unquoted, like `siteUrl` in every other GET here; confirm on the first live run. No call limit is documented: the check is sampled like Search Console's (top `inspect_max` pages by ad clicks inside the Bing site) and stops on ThrottleUser/ThrottleHost. | `API.iwebmasterapi.geturlinfo`, `API.urlinfo`, `API.urlinfo.httpstatus` |
+
+Other readings: the Bing site defaults to the one linked to the tool's account (`account_link`, platform `bing_webmaster`) with the
+same errors as Search Console (none linked / several linked / foreign id `not_found`); for `analyze_brand_search_trend`, whose
+account is the Search Console site, that is the Bing site linked to that Search Console site. `bing_site_account_id` with
+`search_engine: "google"` (and `site_account_id` with `"bing"`) is refused. `audit_ad_landing_pages` checks Bing only when
+`search_engine` asks for it, not merely because a Bing site is linked, so default calls send nothing to Bing. Bing dates are the
+calendar day in the UTC offset Bing sends (`bingDay`); the reference does not name Bing's reporting time zone.
+
 ## Meta fields still unconfirmed (checked again 2026-11-10 with Meta's docs search)
 
 - **Confirmed:** campaign copies (`POST /{campaign}/copies`) copy at most 3 child ads in a synchronous call and 51 in an asynchronous
