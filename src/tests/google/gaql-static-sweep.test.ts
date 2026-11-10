@@ -149,8 +149,14 @@ describe("every GAQL query in the Google source", () => {
     // id (campaign, ad_group, label or the criterion resources). These are exercised at every value in tests, under the schema
     // guard: get_segment_performance's plan (keyword-segment-reports.test.ts), the asset link levels (asset-writes.test.ts)
     // and get_asset_performance's levels (asset-reports.test.ts).
+    // account-controls: FROM is the level (campaign or ad_group) in update_tracking_settings; account-controls-labels: FROM is
+    // the label view of the entity type (ad_group_label, ad_group_ad_label, ad_group_criterion_label) in get_entity_labels and
+    // the add/remove tools. Every value runs under the schema guard in account-controls*.test.ts.
     const skipped = all.filter((c) => !c.from).map((c) => c.at.replace(/:\d+$/, ""));
     expect(skipped.sort()).toEqual([
+      "src/platforms/google/tools/account-controls-labels.ts",
+      "src/platforms/google/tools/account-controls-labels.ts",
+      "src/platforms/google/tools/account-controls.ts",
       "src/platforms/google/tools/account-writes.ts",
       "src/platforms/google/tools/asset-reports.ts",
       "src/platforms/google/tools/asset-writes.ts",
