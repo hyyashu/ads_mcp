@@ -5,12 +5,14 @@ import type { Envelope } from "../../mcp/envelope";
 import { runTool, type PipelineDeps } from "../../mcp/pipeline";
 import { ToolRegistry } from "../../mcp/registry";
 import { allTools } from "../../platforms";
+import { BingHttp } from "../../platforms/bing/http";
 import { GoogleApiHttp } from "../../platforms/gapi/http";
 import { GoogleAdsHttp } from "../../platforms/google/http";
 import { MetaGraphHttp } from "../../platforms/meta/http";
 import { createServicesFactory } from "../../platforms/services";
 import { ApprovalService } from "../../security/approvals";
 import { RateLimiter } from "../../security/rate-limit";
+import { FakeBing } from "../bing/fake-bing";
 import { type FakeGa4, fakeGa4 } from "../ga4/fake-ga4";
 import { FakeGsc } from "../gsc/fake-gsc";
 import { FakeGtm, seedContainer } from "../gtm/support/fake-gtm";
@@ -22,8 +24,11 @@ import { schemaChecked } from "../support/schema-guard";
 /**
  * One workspace with an account on every platform, linked the way a customer would link them, behind the real pipeline and
  * the real services factory. Each product answers from its existing fake: Google Ads (fakeGoogle, schema-checked), Search
- * Console (FakeGsc), GA4 (fakeGa4), Tag Manager (FakeGtm) and a small Graph API fake. A second workspace owns accounts whose
- * ids are used to probe tenant isolation.
+ * Console (FakeGsc), GA4 (fakeGa4), Tag Manager (FakeGtm), Bing Webmaster (FakeBing) and a small Graph API fake. A second
+ * workspace owns accounts whose ids are used to probe tenant isolation.
+ *
+ * Bing: `bing` (https://shop.example.com/) is linked to the Google Ads account and to the Search Console site; `bing2`
+ * (https://www.example.com/) is not linked (name it explicitly); `foreignBing` belongs to the other workspace.
  */
 type Row = Record<string, unknown>;
 export interface FakeMeta {
@@ -71,6 +76,7 @@ export async function crossHarness(label: string) {
   const gtm = new FakeGtm();
   seedContainer(gtm);
   const meta = fakeMeta();
+  const bing = new FakeBing();
   const db = await testDb();
   const t = await seedTenant(db, label, "owner");
   const tenantId = t.tenant.id;
@@ -85,6 +91,9 @@ export async function crossHarness(label: string) {
     gtm: (await seedAccount(db, tenantId, "google_tag_manager", "read", "active", "accounts/1/containers/2", null)).id,
     foreignSite: (await seedAccount(db, other.tenant.id, "google_search_console", "read", "active", "https://ro.example.com/", null)).id,
     foreignProp: (await seedAccount(db, other.tenant.id, "google_analytics", "read", "active", "properties/123", { currencyCode: "EUR", timeZone: "Europe/Berlin" })).id,
+    bing: (await seedAccount(db, tenantId, "bing_webmaster", "read", "active", "https://shop.example.com/", null)).id,
+    bing2: (await seedAccount(db, tenantId, "bing_webmaster", "read", "active", "https://www.example.com/", null)).id,
+    foreignBing: (await seedAccount(db, other.tenant.id, "bing_webmaster", "read", "active", "https://ro.example.com/", null)).id,
   };
   for (const [x, y] of [
     [ids.gads, ids.site],
@@ -94,6 +103,8 @@ export async function crossHarness(label: string) {
     [ids.gtm, ids.prop],
     [ids.gtm, ids.gads],
     [ids.gtm, ids.meta],
+    [ids.gads, ids.bing],
+    [ids.site, ids.bing],
   ] as const)
     await link(db, tenantId, x, y);
 
@@ -114,11 +125,12 @@ export async function crossHarness(label: string) {
       google: { tokens: tok, http: new GoogleAdsHttp({ apiVersion: "v99", sleep: async () => {}, fetch: schemaChecked(google.fetch) }) },
       meta: { tokens: metaTok, http: new MetaGraphHttp({ apiVersion: "v27.0", fetch: meta.fetch, sleep: async () => {} }) },
       gapi: { tokens: tok, http: new GoogleApiHttp({ fetch: gapiFetch, sleep: async () => {}, random: () => 0 }) },
+      bing: { tokens: { getAccessToken: async () => "bing-tok" }, http: new BingHttp({ fetch: bing.fetch, sleep: async () => {}, random: () => 0 }) },
     }),
   };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const run = (name: string, args: Record<string, unknown>) => runTool(deps, deps.registry.get(name)!, args, { tenantId, userId: t.user.id, role: "owner", scopes: ["ads:read"] }) as Promise<Envelope & { data: any }>;
-  return { db, tenantId, ids, deps, run, google, gsc, ga4, gtm, meta };
+  return { db, tenantId, ids, deps, run, google, gsc, ga4, gtm, meta, bing };
 }
 export type CrossHarness = Awaited<ReturnType<typeof crossHarness>>;
 
