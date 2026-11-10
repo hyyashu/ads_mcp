@@ -97,7 +97,7 @@ const googleApi: Rule[] = [
   [/^apply_recommendations$/, { api: "RecommendationService.ApplyRecommendation", feasibility: "api" }],
   [/^dismiss_recommendations$/, { api: "RecommendationService.DismissRecommendation", feasibility: "api" }],
   [/^get_change_history$/, { api: "GAQL: change_event (who, when, what, old/new values; last 30 days) and change_status", feasibility: "api" }],
-  [/^get_auction_insights$/, { api: "GAQL: campaign / ad_group with metrics.auction_insight_search_* segmented by segments.auction_insight_domain (access may be restricted by Google)", feasibility: "api" }],
+  [/^get_auction_insights$/, { api: "GAQL: customer / campaign / ad_group with metrics.auction_insight_search_* segmented by segments.auction_insight_domain (access may be restricted by Google)", feasibility: "api" }],
   [/^upload_click_conversions$/, { api: "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)", feasibility: "api" }],
   [/^upload_call_conversions$/, { api: "ConversionUploadService.UploadCallConversions", feasibility: "api" }],
   [/^upload_conversion_adjustments$/, { api: "ConversionAdjustmentUploadService.UploadConversionAdjustments (retraction, restatement)", feasibility: "api" }],
