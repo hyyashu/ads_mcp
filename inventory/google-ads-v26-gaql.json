@@ -1,5 +1,212 @@
 {
 "resources": {
+"accessible_bidding_strategy": {
+"attributed": [
+"customer"
+],
+"fields": {
+"accessible_bidding_strategy.id": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.maximize_conversion_value.target_roas": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.maximize_conversions.target_cpa_micros": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.name": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.owner_customer_id": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.owner_descriptive_name": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_cpa.target_cpa_micros": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_impression_share.cpc_bid_ceiling_micros": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_impression_share.location": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_impression_share.location_fraction_micros": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_roas.target_roas": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_spend.cpc_bid_ceiling_micros": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.target_spend.target_spend_micros": {
+"filterable": true,
+"selectable": true
+},
+"accessible_bidding_strategy.type": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"account_budget": {
+"attributed": [
+"billing_setup",
+"customer"
+],
+"fields": {
+"account_budget.adjusted_spending_limit_micros": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.adjusted_spending_limit_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.amount_served_micros": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.approved_end_date_time": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.approved_end_time_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.approved_spending_limit_micros": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.approved_spending_limit_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.approved_start_date_time": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.billing_setup": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.id": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.name": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.notes": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.account_budget_proposal": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.creation_date_time": {
+"filterable": false,
+"selectable": true
+},
+"account_budget.pending_proposal.end_date_time": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.end_time_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.name": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.notes": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.proposal_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.purchase_order_number": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.spending_limit_micros": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.spending_limit_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.pending_proposal.start_date_time": {
+"filterable": false,
+"selectable": true
+},
+"account_budget.proposed_end_date_time": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.proposed_end_time_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.proposed_spending_limit_micros": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.proposed_spending_limit_type": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.proposed_start_date_time": {
+"filterable": false,
+"selectable": true
+},
+"account_budget.purchase_order_number": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.status": {
+"filterable": true,
+"selectable": true
+},
+"account_budget.total_adjustments_micros": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "ad_group": {
 "attributed": [
 "accessible_bidding_strategy",
@@ -1557,6 +1764,31 @@
 ],
 "segmenting": []
 },
+"ad_group_ad_label": {
+"attributed": [
+"ad_group",
+"ad_group_ad",
+"campaign",
+"customer",
+"label"
+],
+"fields": {
+"ad_group_ad_label.ad_group_ad": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_label.label": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_ad_label.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "ad_group_asset": {
 "attributed": [
 "asset",
@@ -2226,6 +2458,31 @@
 "selectable": true
 },
 "ad_group_criterion.youtube_video.video_id": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"ad_group_criterion_label": {
+"attributed": [
+"ad_group",
+"ad_group_criterion",
+"campaign",
+"customer",
+"label"
+],
+"fields": {
+"ad_group_criterion_label.ad_group_criterion": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_criterion_label.label": {
+"filterable": true,
+"selectable": true
+},
+"ad_group_criterion_label.resource_name": {
 "filterable": true,
 "selectable": true
 }
@@ -4156,6 +4413,116 @@
 "from_metrics_segments": [],
 "segmenting": []
 },
+"bidding_data_exclusion": {
+"attributed": [
+"customer"
+],
+"fields": {
+"bidding_data_exclusion.advertising_channel_types": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.campaigns": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.data_exclusion_id": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.description": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.devices": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.end_date_time": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.name": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.scope": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.start_date_time": {
+"filterable": true,
+"selectable": true
+},
+"bidding_data_exclusion.status": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"bidding_seasonality_adjustment": {
+"attributed": [
+"customer"
+],
+"fields": {
+"bidding_seasonality_adjustment.advertising_channel_types": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.campaigns": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.conversion_rate_modifier": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.description": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.devices": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.end_date_time": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.name": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.scope": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.seasonality_adjustment_id": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.start_date_time": {
+"filterable": true,
+"selectable": true
+},
+"bidding_seasonality_adjustment.status": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "bidding_strategy": {
 "attributed": [
 "customer"
@@ -4321,6 +4688,63 @@
 "segments.week",
 "segments.year"
 ],
+"segmenting": []
+},
+"billing_setup": {
+"attributed": [
+"customer"
+],
+"fields": {
+"billing_setup.end_date_time": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.end_time_type": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.id": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.payments_account": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.payments_account_info.payments_account_id": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.payments_account_info.payments_account_name": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.payments_account_info.payments_profile_id": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.payments_account_info.payments_profile_name": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.payments_account_info.secondary_payments_profile_id": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.start_date_time": {
+"filterable": true,
+"selectable": true
+},
+"billing_setup.status": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
 "segmenting": []
 },
 "campaign": {
@@ -5201,6 +5625,78 @@
 "segments.vertical_ads_rate_rule_id",
 "segments.vertical_ads_rate_type",
 "segments.vertical_ads_vertical",
+"segments.week",
+"segments.year"
+],
+"segmenting": []
+},
+"campaign_aggregate_asset_view": {
+"attributed": [
+"asset",
+"campaign"
+],
+"fields": {
+"campaign_aggregate_asset_view.asset": {
+"filterable": true,
+"selectable": true
+},
+"campaign_aggregate_asset_view.asset_source": {
+"filterable": true,
+"selectable": true
+},
+"campaign_aggregate_asset_view.campaign": {
+"filterable": true,
+"selectable": true
+},
+"campaign_aggregate_asset_view.field_type": {
+"filterable": true,
+"selectable": true
+},
+"campaign_aggregate_asset_view.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [
+"metrics.all_conversions",
+"metrics.all_conversions_from_interactions_rate",
+"metrics.all_conversions_from_interactions_value_per_interaction",
+"metrics.all_conversions_value",
+"metrics.all_conversions_value_per_cost",
+"metrics.asset_pinned_as_description_position_one_count",
+"metrics.asset_pinned_as_description_position_two_count",
+"metrics.asset_pinned_as_headline_position_one_count",
+"metrics.asset_pinned_as_headline_position_three_count",
+"metrics.asset_pinned_as_headline_position_two_count",
+"metrics.asset_pinned_total_count",
+"metrics.average_cost",
+"metrics.average_cpc",
+"metrics.clicks",
+"metrics.conversions",
+"metrics.conversions_from_interactions_rate",
+"metrics.conversions_from_interactions_value_per_interaction",
+"metrics.conversions_value",
+"metrics.conversions_value_per_cost",
+"metrics.cost_micros",
+"metrics.cost_per_all_conversions",
+"metrics.cost_per_conversion",
+"metrics.cross_device_conversions",
+"metrics.cross_device_conversions_value",
+"metrics.ctr",
+"metrics.engagement_rate",
+"metrics.engagements",
+"metrics.impressions",
+"metrics.interaction_rate",
+"metrics.interactions",
+"metrics.linked_entities_count",
+"metrics.linked_sample_entities",
+"metrics.value_per_all_conversions",
+"metrics.value_per_conversion",
+"metrics.view_through_conversions",
+"segments.date",
+"segments.day_of_week",
+"segments.month",
+"segments.quarter",
 "segments.week",
 "segments.year"
 ],
@@ -6161,6 +6657,180 @@
 "from_metrics_segments": [],
 "segmenting": []
 },
+"change_status": {
+"attributed": [
+"ad_group",
+"asset",
+"asset_group",
+"asset_set",
+"campaign",
+"campaign_budget",
+"combined_audience",
+"customer",
+"shared_set"
+],
+"fields": {
+"change_status.ad_group": {
+"filterable": true,
+"selectable": true
+},
+"change_status.ad_group_ad": {
+"filterable": true,
+"selectable": true
+},
+"change_status.ad_group_asset": {
+"filterable": true,
+"selectable": true
+},
+"change_status.ad_group_bid_modifier": {
+"filterable": true,
+"selectable": true
+},
+"change_status.ad_group_criterion": {
+"filterable": true,
+"selectable": true
+},
+"change_status.asset": {
+"filterable": true,
+"selectable": true
+},
+"change_status.asset_group": {
+"filterable": true,
+"selectable": true
+},
+"change_status.asset_set": {
+"filterable": true,
+"selectable": true
+},
+"change_status.campaign": {
+"filterable": true,
+"selectable": true
+},
+"change_status.campaign_asset": {
+"filterable": true,
+"selectable": true
+},
+"change_status.campaign_asset_set": {
+"filterable": true,
+"selectable": true
+},
+"change_status.campaign_budget": {
+"filterable": true,
+"selectable": true
+},
+"change_status.campaign_criterion": {
+"filterable": true,
+"selectable": true
+},
+"change_status.campaign_shared_set": {
+"filterable": true,
+"selectable": true
+},
+"change_status.combined_audience": {
+"filterable": true,
+"selectable": true
+},
+"change_status.customer_asset": {
+"filterable": true,
+"selectable": true
+},
+"change_status.last_change_date_time": {
+"filterable": true,
+"selectable": true
+},
+"change_status.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"change_status.resource_status": {
+"filterable": true,
+"selectable": true
+},
+"change_status.resource_type": {
+"filterable": true,
+"selectable": true
+},
+"change_status.shared_set": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"channel_aggregate_asset_view": {
+"attributed": [
+"customer"
+],
+"fields": {
+"channel_aggregate_asset_view.advertising_channel_type": {
+"filterable": true,
+"selectable": true
+},
+"channel_aggregate_asset_view.asset": {
+"filterable": true,
+"selectable": true
+},
+"channel_aggregate_asset_view.asset_source": {
+"filterable": true,
+"selectable": true
+},
+"channel_aggregate_asset_view.field_type": {
+"filterable": true,
+"selectable": true
+},
+"channel_aggregate_asset_view.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [
+"metrics.all_conversions",
+"metrics.all_conversions_from_interactions_rate",
+"metrics.all_conversions_from_interactions_value_per_interaction",
+"metrics.all_conversions_value",
+"metrics.all_conversions_value_per_cost",
+"metrics.asset_pinned_as_description_position_one_count",
+"metrics.asset_pinned_as_description_position_two_count",
+"metrics.asset_pinned_as_headline_position_one_count",
+"metrics.asset_pinned_as_headline_position_three_count",
+"metrics.asset_pinned_as_headline_position_two_count",
+"metrics.asset_pinned_total_count",
+"metrics.average_cost",
+"metrics.average_cpc",
+"metrics.clicks",
+"metrics.conversions",
+"metrics.conversions_from_interactions_rate",
+"metrics.conversions_from_interactions_value_per_interaction",
+"metrics.conversions_value",
+"metrics.conversions_value_per_cost",
+"metrics.cost_micros",
+"metrics.cost_per_all_conversions",
+"metrics.cost_per_conversion",
+"metrics.cross_device_conversions",
+"metrics.cross_device_conversions_value",
+"metrics.ctr",
+"metrics.engagement_rate",
+"metrics.engagements",
+"metrics.impressions",
+"metrics.interaction_rate",
+"metrics.interactions",
+"metrics.linked_entities_count",
+"metrics.linked_sample_entities",
+"metrics.value_per_all_conversions",
+"metrics.value_per_conversion",
+"metrics.view_through_conversions",
+"segments.date",
+"segments.day_of_week",
+"segments.month",
+"segments.quarter",
+"segments.week",
+"segments.year"
+],
+"segmenting": [
+"asset"
+]
+},
 "combined_audience": {
 "attributed": [
 "customer"
@@ -6352,6 +7022,111 @@
 "selectable": true
 },
 "conversion_goal_campaign_config.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"conversion_value_rule": {
+"attributed": [
+"customer"
+],
+"fields": {
+"conversion_value_rule.action.operation": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.action.value": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.audience_condition.user_interests": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.audience_condition.user_lists": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.device_condition.device_types": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.geo_location_condition.excluded_geo_match_type": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.geo_location_condition.excluded_geo_target_constants": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.geo_location_condition.geo_match_type": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.geo_location_condition.geo_target_constants": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.id": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.advance_booking_window.max_days": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.advance_booking_window.min_days": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_length.max_nights": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_length.min_nights": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.friday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.monday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.saturday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.sunday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.thursday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.tuesday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.itinerary_condition.travel_start_day.wednesday": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.owner_customer": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"conversion_value_rule.status": {
 "filterable": true,
 "selectable": true
 }
@@ -6975,6 +7750,35 @@
 "from_metrics_segments": [],
 "segmenting": []
 },
+"customer_client_link": {
+"attributed": [
+"customer"
+],
+"fields": {
+"customer_client_link.client_customer": {
+"filterable": true,
+"selectable": true
+},
+"customer_client_link.hidden": {
+"filterable": true,
+"selectable": true
+},
+"customer_client_link.manager_link_id": {
+"filterable": true,
+"selectable": true
+},
+"customer_client_link.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"customer_client_link.status": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "customer_conversion_goal": {
 "attributed": [
 "customer"
@@ -6993,6 +7797,168 @@
 "selectable": true
 },
 "customer_conversion_goal.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"customer_manager_link": {
+"attributed": [
+"customer"
+],
+"fields": {
+"customer_manager_link.manager_customer": {
+"filterable": true,
+"selectable": true
+},
+"customer_manager_link.manager_link_id": {
+"filterable": true,
+"selectable": true
+},
+"customer_manager_link.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"customer_manager_link.status": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"customer_negative_criterion": {
+"attributed": [
+"customer",
+"mobile_app_category_constant",
+"shared_set"
+],
+"fields": {
+"customer_negative_criterion.content_label.type": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.id": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.ip_block.ip_address": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.mobile_app_category.mobile_app_category_constant": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.mobile_application.app_id": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.mobile_application.name": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.negative_keyword_list.shared_set": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.placement.url": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.placement_list.shared_set": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.type": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.youtube_channel.channel_id": {
+"filterable": true,
+"selectable": true
+},
+"customer_negative_criterion.youtube_video.video_id": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"customer_user_access": {
+"attributed": [
+"customer"
+],
+"fields": {
+"customer_user_access.access_creation_date_time": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.access_role": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.email_address": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.inviter_user_email_address": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.passkey_enabled": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.pending_multi_party_auth_review": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access.user_id": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"customer_user_access_invitation": {
+"attributed": [
+"customer"
+],
+"fields": {
+"customer_user_access_invitation.access_role": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access_invitation.creation_date_time": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access_invitation.email_address": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access_invitation.invitation_id": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access_invitation.invitation_status": {
+"filterable": true,
+"selectable": true
+},
+"customer_user_access_invitation.resource_name": {
 "filterable": true,
 "selectable": true
 }
@@ -7165,6 +8131,175 @@
 "segmenting": [
 "bidding_strategy"
 ]
+},
+"experiment": {
+"attributed": [
+"customer",
+"lift_measurement_config"
+],
+"fields": {
+"experiment.description": {
+"filterable": true,
+"selectable": true
+},
+"experiment.end_date": {
+"filterable": true,
+"selectable": true
+},
+"experiment.experiment_id": {
+"filterable": true,
+"selectable": true
+},
+"experiment.goals": {
+"filterable": false,
+"selectable": true
+},
+"experiment.lift_measurement_config": {
+"filterable": true,
+"selectable": true
+},
+"experiment.long_running_operation": {
+"filterable": false,
+"selectable": true
+},
+"experiment.name": {
+"filterable": true,
+"selectable": true
+},
+"experiment.optimize_assets_experiment.optimize_assets_experiment_subtype": {
+"filterable": true,
+"selectable": true
+},
+"experiment.promote_status": {
+"filterable": true,
+"selectable": true
+},
+"experiment.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"experiment.start_date": {
+"filterable": true,
+"selectable": true
+},
+"experiment.status": {
+"filterable": true,
+"selectable": true
+},
+"experiment.suffix": {
+"filterable": true,
+"selectable": true
+},
+"experiment.sync_enabled": {
+"filterable": true,
+"selectable": true
+},
+"experiment.type": {
+"filterable": true,
+"selectable": true
+},
+"experiment.video_experiment.video_experiment_subtype": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [
+"metrics.clicks",
+"metrics.clicks_margin_of_error",
+"metrics.clicks_p_value",
+"metrics.clicks_point_estimate",
+"metrics.control_clicks",
+"metrics.control_conversion_value",
+"metrics.control_conversion_value_per_cost",
+"metrics.control_conversions",
+"metrics.control_cost_micros",
+"metrics.control_cost_per_conversion",
+"metrics.control_impressions",
+"metrics.conversion_value_change_point_estimate",
+"metrics.conversion_value_margin_of_error",
+"metrics.conversion_value_p_value",
+"metrics.conversion_value_per_cost_change_point_estimate",
+"metrics.conversion_value_per_cost_margin_of_error",
+"metrics.conversion_value_per_cost_p_value",
+"metrics.conversions",
+"metrics.conversions_absolute_change_margin_of_error",
+"metrics.conversions_absolute_change_p_value",
+"metrics.conversions_absolute_change_point_estimate",
+"metrics.conversions_value",
+"metrics.conversions_value_per_cost",
+"metrics.cost_micros",
+"metrics.cost_micros_change_point_estimate",
+"metrics.cost_micros_margin_of_error",
+"metrics.cost_micros_p_value",
+"metrics.cost_per_conversion",
+"metrics.cost_per_conversion_change_point_estimate",
+"metrics.cost_per_conversion_margin_of_error",
+"metrics.cost_per_conversion_p_value",
+"metrics.impressions",
+"metrics.impressions_margin_of_error",
+"metrics.impressions_p_value",
+"metrics.impressions_point_estimate",
+"segments.date"
+],
+"segmenting": []
+},
+"experiment_arm": {
+"attributed": [
+"customer",
+"experiment"
+],
+"fields": {
+"experiment_arm.asset_groups.asset_group": {
+"filterable": true,
+"selectable": false
+},
+"experiment_arm.asset_groups.asset_group_assets.asset": {
+"filterable": true,
+"selectable": false
+},
+"experiment_arm.asset_testing_info.asset_variation_infos.asset_details.asset": {
+"filterable": true,
+"selectable": false
+},
+"experiment_arm.asset_testing_info.asset_variation_infos.base_ad": {
+"filterable": true,
+"selectable": false
+},
+"experiment_arm.asset_testing_info.asset_variation_infos.base_ad_group": {
+"filterable": true,
+"selectable": false
+},
+"experiment_arm.campaigns": {
+"filterable": true,
+"selectable": true
+},
+"experiment_arm.control": {
+"filterable": true,
+"selectable": true
+},
+"experiment_arm.experiment": {
+"filterable": true,
+"selectable": true
+},
+"experiment_arm.in_design_campaigns": {
+"filterable": true,
+"selectable": true
+},
+"experiment_arm.name": {
+"filterable": true,
+"selectable": true
+},
+"experiment_arm.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"experiment_arm.traffic_split": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
 },
 "gender_view": {
 "attributed": [
@@ -7748,6 +8883,183 @@
 "from_metrics_segments": [],
 "segmenting": []
 },
+"lead_form_submission_data": {
+"attributed": [
+"ad_group",
+"ad_group_ad",
+"asset",
+"campaign",
+"customer"
+],
+"fields": {
+"lead_form_submission_data.ad_group": {
+"filterable": true,
+"selectable": true
+},
+"lead_form_submission_data.ad_group_ad": {
+"filterable": true,
+"selectable": true
+},
+"lead_form_submission_data.asset": {
+"filterable": true,
+"selectable": true
+},
+"lead_form_submission_data.campaign": {
+"filterable": true,
+"selectable": true
+},
+"lead_form_submission_data.custom_lead_form_submission_fields": {
+"filterable": false,
+"selectable": true
+},
+"lead_form_submission_data.gclid": {
+"filterable": false,
+"selectable": true
+},
+"lead_form_submission_data.id": {
+"filterable": true,
+"selectable": true
+},
+"lead_form_submission_data.lead_form_submission_fields": {
+"filterable": false,
+"selectable": true
+},
+"lead_form_submission_data.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"lead_form_submission_data.submission_date_time": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"local_services_lead": {
+"attributed": [
+"campaign",
+"customer"
+],
+"fields": {
+"local_services_lead.campaign": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.category_id": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.contact_details": {
+"filterable": false,
+"selectable": true
+},
+"local_services_lead.creation_date_time": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.credit_details.credit_state": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.credit_details.credit_state_last_update_date_time": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.id": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.lead_charged": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.lead_feedback_submitted": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.lead_status": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.lead_type": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.locale": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.note.description": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.note.edit_date_time": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead.service_id": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"local_services_lead_conversation": {
+"attributed": [
+"customer",
+"local_services_lead"
+],
+"fields": {
+"local_services_lead_conversation.conversation_channel": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead_conversation.event_date_time": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead_conversation.id": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead_conversation.lead": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead_conversation.message_details.attachment_urls": {
+"filterable": false,
+"selectable": true
+},
+"local_services_lead_conversation.message_details.text": {
+"filterable": false,
+"selectable": true
+},
+"local_services_lead_conversation.participant_type": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead_conversation.phone_call_details.call_duration_millis": {
+"filterable": true,
+"selectable": true
+},
+"local_services_lead_conversation.phone_call_details.call_recording_url": {
+"filterable": false,
+"selectable": true
+},
+"local_services_lead_conversation.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
 "location_view": {
 "attributed": [
 "campaign",
@@ -7893,6 +9205,80 @@
 "selectable": true
 },
 "mobile_app_category_constant.resource_name": {
+"filterable": true,
+"selectable": true
+}
+},
+"from_metrics_segments": [],
+"segmenting": []
+},
+"offline_user_data_job": {
+"attributed": [
+"customer",
+"user_list"
+],
+"fields": {
+"offline_user_data_job.customer_match_user_list_metadata.user_list": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.external_id": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.failure_reason": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.id": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.operation_metadata.match_rate_range": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.resource_name": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.status": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.loyalty_fraction": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.third_party_metadata.advertiser_upload_date_time": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.third_party_metadata.bridge_map_version_id": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.third_party_metadata.partner_id": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.third_party_metadata.partner_match_fraction": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.third_party_metadata.partner_upload_fraction": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.third_party_metadata.valid_transaction_fraction": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.store_sales_metadata.transaction_upload_fraction": {
+"filterable": true,
+"selectable": true
+},
+"offline_user_data_job.type": {
 "filterable": true,
 "selectable": true
 }
