@@ -145,9 +145,11 @@ export const getSegmentPerformance = googleRead({
     const ads = ctx.services.ads;
     const p = PLAN[a.segment];
     const extra = p.from === "geographic_view" ? ["geographic_view.location_type"] : [];
+    // GAQL rejects a WHERE field that is not also selected (geographic_view enforces it); rows are still grouped by segment value.
+    const byCampaign = a.campaign_ids?.length ? ["campaign.id"] : [];
     const rows = await ads.query(
       new Gaql()
-        .select(p.field, ...extra, "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value")
+        .select(p.field, ...extra, ...byCampaign, "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value")
         .from(p.from)
         .where(dateClause(a))
         .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined),
