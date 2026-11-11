@@ -10,11 +10,12 @@ import { conversionGoalTools } from "./conversion-goals";
 import { conversionValueRuleTools } from "./conversion-value-rules";
 
 /**
- * Google Ads tools: upload_click_conversions, upload_call_conversions, upload_conversion_adjustments, get_conversion_goals, update_conversion_goals, list_conversion_value_rules, create_conversion_value_rule, remove_conversion_value_rule.
+ * Google Ads tools: upload_call_conversions, upload_conversion_adjustments, get_conversion_goals, update_conversion_goals, list_conversion_value_rules, create_conversion_value_rule, remove_conversion_value_rule.
  * Approved by the owner on 2026-11-11 (inventory/tool-registry.json); API surfaces in inventory/mapping.ts.
  *
  * Offline conversion uploads (this file). They follow Google's v26 guides:
- *   https://developers.google.com/google-ads/api/docs/conversions/upload-offline (click conversions)
+ *   upload_click_conversions was removed on 2026-11-11: since 2026-06-15 Google refuses UploadClickConversions from API
+ *   projects without earlier use and points to its Data Manager API.
  *   https://developers.google.com/google-ads/api/docs/conversions/upload-calls
  *   https://developers.google.com/google-ads/api/docs/conversions/upload-adjustments
  * - partial_failure must be true ("Setting partial_failure = false or omitting the field is not supported"): Google imports the
@@ -112,7 +113,7 @@ function uploadTool<I extends z.ZodObject>(o: {
   title: string;
   description: string;
   input: I;
-  method: "uploadClickConversions" | "uploadCallConversions" | "uploadConversionAdjustments";
+  method: "uploadCallConversions" | "uploadConversionAdjustments";
   bodyKey: "conversions" | "conversionAdjustments";
   rowsField: string[];
   types: readonly string[];
@@ -174,60 +175,6 @@ function noRepeats<T>(rows: T[], key: (r: T) => string | null, what: string) {
     seen.set(k, i);
   });
 }
-
-// ------------------------------------------------------------------------------------------- upload_click_conversions
-const clickRow = z
-  .object({
-    gclid: clickId.optional(),
-    gbraid: clickId.optional(),
-    wbraid: clickId.optional(),
-    conversion_date_time: dateTime.describe('When the conversion happened, after the click: "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. "2026-06-01 14:30:00-04:00".'),
-    value: z.number().min(0).max(1_000_000_000).optional().describe("Conversion value."),
-    currency_code: currencyCode.optional().describe("ISO 4217 code of value (e.g. USD). Needs value."),
-    order_id: noControl(255).optional().describe("Transaction id; Google counts one conversion per order id and conversion action, and adjustments must use it."),
-  })
-  .refine((r) => [r.gclid, r.gbraid, r.wbraid].filter((x) => x !== undefined).length === 1, "give exactly one of gclid, gbraid or wbraid")
-  .refine((r) => r.currency_code === undefined || r.value !== undefined, "currency_code needs value");
-
-const clickInput = z.object({
-  account_id: accountId,
-  conversion_action_id: idSchema.describe("An ENABLED conversion action of type UPLOAD_CLICKS (list_conversion_actions)."),
-  conversions: z.array(clickRow).min(1).max(2000).describe("Up to 2,000 rows (Google's limit per request)."),
-  ad_user_data_consent: consent.optional().describe("Consent for ad user data, applied to every row (Google strongly recommends setting it; without it conversions may not be attributable)."),
-});
-
-const uploadClickConversions = uploadTool({
-  name: "upload_click_conversions",
-  title: "Upload offline click conversions",
-  description:
-    "Imports offline click conversions (sales or leads that happened after an ad click) into one ENABLED conversion action of type UPLOAD_CLICKS, after a person approves it. Each row has exactly one click id (gclid, gbraid or wbraid), the conversion time with a time zone offset, and optionally value, currency and order id; up to 2,000 rows. Imported conversions change reporting and Smart Bidding, so this is high impact. Google imports the valid rows and rejects invalid ones individually; the result lists both. Uploads cannot be read back right away (statistics take up to 3 hours), so the result is Google's response, not a confirmation from re-reading. Note: since 2026-06-15 Google refuses UploadClickConversions (CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE) for API projects that had not uploaded click conversions before, and points new integrations to the Data Manager API.",
-  input: clickInput,
-  method: "uploadClickConversions",
-  bodyKey: "conversions",
-  rowsField: ["conversions"],
-  types: ["UPLOAD_CLICKS"],
-  what: "click conversion uploads",
-  field: "uploaded_click_conversions",
-  count: (a) => a.conversions.length,
-  checks: (a) => {
-    noRepeats(a.conversions, (r) => (r.order_id === undefined ? null : r.order_id), "order_id");
-    noRepeats(a.conversions, (r) => `${r.gclid ?? ""}|${r.gbraid ?? ""}|${r.wbraid ?? ""}|${parseDateTime(r.conversion_date_time)}`, "click id and conversion time");
-  },
-  rows: (a, conversionAction) =>
-    a.conversions.map((r) => ({
-      conversionAction,
-      ...(r.gclid ? { gclid: r.gclid } : r.gbraid ? { gbraid: r.gbraid } : { wbraid: r.wbraid }),
-      conversionDateTime: r.conversion_date_time,
-      ...(r.value !== undefined ? { conversionValue: r.value } : {}),
-      ...(r.currency_code ? { currencyCode: r.currency_code } : {}),
-      ...(r.order_id ? { orderId: r.order_id } : {}),
-      ...(a.ad_user_data_consent ? { consent: { adUserData: a.ad_user_data_consent } } : {}),
-    })),
-  describe: (a, s) => {
-    const kinds = (["gclid", "gbraid", "wbraid"] as const).map((k) => [k, a.conversions.filter((r) => r[k] !== undefined).length] as const).filter(([, n]) => n);
-    return `Upload ${a.conversions.length} offline click conversion(s) to conversion action "${s.conversion_action.name ?? s.conversion_action.id}" (UPLOAD_CLICKS): ${kinds.map(([k, n]) => `${n} by ${k}`).join(", ")}${totals(a.conversions)}${a.ad_user_data_consent ? `; ad user data consent ${a.ad_user_data_consent}` : "; no consent set"}.`;
-  },
-});
 
 // -------------------------------------------------------------------------------------------- upload_call_conversions
 const callRow = z
@@ -331,4 +278,4 @@ const uploadConversionAdjustments = uploadTool({
   },
 });
 
-export const conversionOpsTools: AnyTool[] = [uploadClickConversions, uploadCallConversions, uploadConversionAdjustments, ...conversionGoalTools, ...conversionValueRuleTools];
+export const conversionOpsTools: AnyTool[] = [uploadCallConversions, uploadConversionAdjustments, ...conversionGoalTools, ...conversionValueRuleTools];

@@ -750,7 +750,8 @@ Defects found by the docs check:
 
 Restricted by Google (tools pass Google's error through; see README):
 - `UploadClickConversions` and Customer Match upload jobs: `CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE` for projects
-  without earlier use (since 2026-06-15 and 2026-04-01); Google points to the Data Manager API.
+  without earlier use (since 2026-06-15 and 2026-04-01); Google points to the Data Manager API. The two tools
+  (`upload_click_conversions`, `upload_customer_match_members`) were removed on 2026-11-11.
 - `metrics.auction_insight_search_*`: "not publicly available".
 - SET conversion value rules and itinerary conditions: allowlist only (not offered).
 - Keyword policy exemptions: an existing keyword exposes no exemptible violation keys in v26 (ads only).

@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 381,
+    "implemented": 379,
     "external_limitation": 3,
     "pending": 0
   },
@@ -2359,23 +2359,6 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "upload_click_conversions",
-      "platform": "google_ads",
-      "action": "Create",
-      "domain": "conversions",
-      "api": "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)",
-      "risk": "high_impact",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "upload_call_conversions",
       "platform": "google_ads",
       "action": "Create",
@@ -2909,23 +2892,6 @@
       "domain": "other",
       "api": "UserListService create (CRM-based)",
       "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "upload_customer_match_members",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "other",
-      "api": "OfflineUserDataJobService create, add operations, run (SHA-256 hashed emails and phone numbers)",
-      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"

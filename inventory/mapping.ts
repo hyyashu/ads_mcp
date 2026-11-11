@@ -97,7 +97,6 @@ const googleApi: Rule[] = [
   [/^dismiss_recommendations$/, { api: "RecommendationService.DismissRecommendation", feasibility: "api" }],
   [/^get_change_history$/, { api: "GAQL: change_event (who, when, what, old/new values; last 30 days) and change_status", feasibility: "api" }],
   [/^get_auction_insights$/, { api: "GAQL: customer / campaign / ad_group with metrics.auction_insight_search_* segmented by segments.auction_insight_domain (access may be restricted by Google)", feasibility: "api" }],
-  [/^upload_click_conversions$/, { api: "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)", feasibility: "api" }],
   [/^upload_call_conversions$/, { api: "ConversionUploadService.UploadCallConversions", feasibility: "api" }],
   [/^upload_conversion_adjustments$/, { api: "ConversionAdjustmentUploadService.UploadConversionAdjustments (retraction, restatement)", feasibility: "api" }],
   [/^get_conversion_goals$/, { api: "GAQL: customer_conversion_goal, campaign_conversion_goal, conversion_goal_campaign_config", feasibility: "api" }],
@@ -131,7 +130,6 @@ const googleApi: Rule[] = [
   [/^list_user_lists$/, { api: "GAQL: user_list (type, size, membership status)", feasibility: "api" }],
   [/^create_remarketing_list$/, { api: "UserListService create (rule-based website visitors)", feasibility: "api" }],
   [/^create_customer_match_list$/, { api: "UserListService create (CRM-based)", feasibility: "api" }],
-  [/^upload_customer_match_members$/, { api: "OfflineUserDataJobService create, add operations, run (SHA-256 hashed emails and phone numbers)", feasibility: "api" }],
   [/^remove_user_list$/, { api: "UserListService remove; GAQL ad_group_criterion, campaign_criterion, audience and user_list to check where the list is used", feasibility: "api" }],
   [/^add_promotion_asset$/, { api: "AssetService (PromotionAsset) + CustomerAsset / CampaignAsset / AdGroupAsset", feasibility: "api" }],
   [/^add_price_asset$/, { api: "AssetService (PriceAsset) + CustomerAsset / CampaignAsset / AdGroupAsset", feasibility: "api" }],
@@ -417,7 +415,7 @@ const productRisk: Record<string, Risk> = {
 };
 const PRODUCTS = new Set(["google_search_console", "google_analytics", "google_tag_manager", "bing_webmaster"]);
 
-const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$|^apply_recommendations$|^upload_(click|call)_conversions$|^upload_conversion_adjustments$|^update_conversion_goals$|^create_conversion_value_rule$|^add_account_exclusions$|^set_auto_tagging$|^set_location_bid_modifiers$|^assign_bid_strategy$|^create_(seasonality_adjustment|data_exclusion|experiment)$|^(schedule|end|promote)_experiment$|^upload_customer_match_members$|^request_policy_exemption$|^update_user_access$|^invite_user$|^(create|link)_client_account$/;
+const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$|^apply_recommendations$|^upload_call_conversions$|^upload_conversion_adjustments$|^update_conversion_goals$|^create_conversion_value_rule$|^add_account_exclusions$|^set_auto_tagging$|^set_location_bid_modifiers$|^assign_bid_strategy$|^create_(seasonality_adjustment|data_exclusion|experiment)$|^(schedule|end|promote)_experiment$|^request_policy_exemption$|^update_user_access$|^invite_user$|^(create|link)_client_account$/;
 const metaHighImpact = /^create_meta_.*_campaign$|^duplicate_meta_campaign$|^resume_meta_campaign$|^update_meta_(campaign|catalog_campaign|ad_set|catalog_ad_set|ad|catalog_ad)$|^add_meta_(ad_set|catalog_ad_set|ad|catalog_ad)$|^create_meta_dco_ad$/;
 
 function firstMatch<T>(rules: [RegExp, T][], name: string, fallback: T): T {
