@@ -84,6 +84,7 @@ const googleApi: Rule[] = [
   [/^analyze_search_terms$/, { api: "GAQL: search_term_view metrics, deterministic classification", feasibility: "derived" }],
   [/^analyze_pmax_search_terms$/, { api: "GAQL: campaign_search_term_view / campaign_search_term_insight", feasibility: "derived" }],
   [/^analyze_pmax_search_categories$/, { api: "GAQL: campaign_search_term_insight (categories)", feasibility: "derived" }],
+  [/^analyze_wasted_spend$/, { api: "GAQL: campaign/ad_group/keyword/search_term metrics, deterministic thresholds", feasibility: "derived" }],
   [/^explain_performance_anomaly$/, { api: "GAQL: metrics by date/segment, deterministic period comparison", feasibility: "derived" }],
   [/^optimize_budget_allocation$/, { api: "GAQL: campaign_budget + campaign metrics, deterministic reallocation math", feasibility: "derived" }],
   [/^discover_existing_assets$/, { api: "GAQL: asset, asset_group_asset, campaign_asset, customer_asset", feasibility: "api" }],

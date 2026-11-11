@@ -71,7 +71,7 @@ describe("tool contract additions", () => {
   it("operation category comes from the inventory", () => {
     const reg = new ToolRegistry(inv);
     expect(reg.operationOf("list_campaigns")).toBe("read");
-    expect(reg.operationOf("analyze_search_terms")).toBe("analyze");
+    expect(reg.operationOf("analyze_wasted_spend")).toBe("analyze");
     expect(reg.operationOf("create_ad")).toBe("create");
     expect(reg.operationOf("pause_campaign")).toBe("update");
     expect(reg.operationOf("remove_ad")).toBe("delete");

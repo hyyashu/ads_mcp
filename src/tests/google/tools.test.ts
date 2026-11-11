@@ -290,25 +290,39 @@ describe("other batch-1 reads", () => {
   });
 });
 
-// ----------------------------------------------------------- wasted spend (analyze_wasted_spend was retired) ----
-describe("wasted spend through analyze_search_terms", () => {
+// ------------------------------------------------------------------------------ analyze_wasted_spend ----
+describe("analyze_wasted_spend", () => {
   const term = (t: string, cost: number, conv: number, clicks = 10, impr = 100) => ({ searchTermView: { searchTerm: t }, campaign: { id: "1" }, adGroup: { id: "2" }, metrics: { costMicros: String(cost * 1_000_000), clicks: String(clicks), impressions: String(impr), conversions: conv } });
 
-  it("reports the terms and totals the retired analyze_wasted_spend flagged", async () => {
+  it("flags only terms that meet the stated rule, and computes the shares exactly", async () => {
     responder = () => ({ results: [term("big waste", 60, 0), term("converting", 100, 3), term("small waste", 5, 0), term("mid waste", 40, 0)] });
-    const d = (await run("analyze_search_terms", { min_cost: 10 })).data as any;
-    expect(d.rules.wasted).toBe("conversions = 0 and cost >= 10");
-    expect(d.wasted.map((f: any) => f.search_term)).toEqual(["big waste", "mid waste"]); // sorted by cost, small/converting excluded
-    expect(d.summary.wasted).toMatchObject({ terms: 2, cost: 100 });
+    const d = (await run("analyze_wasted_spend", { min_cost: 10 })).data as any;
+    expect(d.rule).toBe("cost >= 10 and conversions = 0");
+    expect(d.flagged.map((f: any) => f.search_term)).toEqual(["big waste", "mid waste"]); // sorted by cost, small/converting excluded
+    expect(d.flagged_cost).toBe(100);
+    expect(d.analyzed_cost).toBe(205);
+    expect(d.flagged_share_of_analyzed_cost).toBe(0.4878);
     expect(d.terms_analyzed).toBe(4);
-    expect(d.covers_all_terms).toBe(true);
+    expect(d.covers_all_spend).toBe(true);
   });
 
-  it("covers the whole account when no campaign or ad group is given", async () => {
+  it("says when it could not analyze all search terms", async () => {
+    responder = () => ({ results: Array.from({ length: 1000 }, (_, i) => term(`t${i}`, 1, 0)) });
+    const d = (await run("analyze_wasted_spend", { min_cost: 0, limit: 5 })).data as any;
+    expect(d.covers_all_spend).toBe(false);
+    expect(d.flagged).toHaveLength(5);
+  });
+
+  it("handles no data without dividing by zero", async () => {
     responder = () => ({ results: [] });
-    await run("analyze_search_terms", { start_date: "2026-03-01", end_date: "2026-03-31" });
+    const d = (await run("analyze_wasted_spend", {})).data as any;
+    expect(d).toMatchObject({ terms_analyzed: 0, flagged_cost: 0, analyzed_cost: 0, flagged_share_of_analyzed_cost: null, flagged: [] });
+  });
+
+  it("uses an explicit date range and a bounded query", async () => {
+    responder = () => ({ results: [] });
+    await run("analyze_wasted_spend", { start_date: "2026-03-01", end_date: "2026-03-31" });
     expect(lastQuery()).toContain("segments.date BETWEEN '2026-03-01' AND '2026-03-31'");
-    expect(lastQuery()).not.toContain("campaign.id =");
     expect(lastQuery()).toMatch(/FROM search_term_view .*LIMIT 1000$/);
   });
 });

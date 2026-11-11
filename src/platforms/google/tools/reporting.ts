@@ -226,6 +226,49 @@ export const getAdPolicyViolations = googleRead({
 });
 
 // ---------------------------------------------------------------------------------------------------------------
+export const analyzeWastedSpend = googleRead({
+  name: "analyze_wasted_spend",
+  title: "Analyze wasted spend",
+  description:
+    "Finds search terms that spent at least a minimum amount with zero conversions in the period. This is a fixed rule over real metrics (cost >= min_cost and conversions = 0), not a prediction: review each term before excluding it. Covers up to the top 1,000 search terms by cost. Returns the account-wide wasted total and its share of spend; to also see converting terms, or to look at one campaign or ad group, use analyze_search_terms.",
+  input: z.object({ account_id: accountId, ...dateFields, min_cost: z.number().min(0).max(1_000_000).default(10).describe("Minimum cost, in the account's currency, for a term to be flagged."), limit: z.number().int().min(1).max(200).default(50) }).refine(datesOk, datesMsg),
+  output: z.object({
+    period: z.string(),
+    rule: z.string(),
+    terms_analyzed: z.number(),
+    covers_all_spend: z.boolean().describe("False when the account has more search terms than the 1,000 analyzed."),
+    flagged: z.array(z.object({ search_term: z.string().nullable(), campaign_id: z.string().nullable(), ad_group_id: z.string().nullable(), cost: Money, clicks: z.number(), impressions: z.number() })),
+    flagged_cost: Money,
+    analyzed_cost: Money,
+    flagged_share_of_analyzed_cost: z.number().nullable(),
+  }),
+  handler: async (a, ctx) => {
+    const MAX = 1000;
+    const q = new Gaql()
+      .select("search_term_view.search_term", "campaign.id", "ad_group.id", "metrics.cost_micros", "metrics.clicks", "metrics.impressions", "metrics.conversions")
+      .from("search_term_view")
+      .where(dateClause(a))
+      .orderBy("metrics.cost_micros", "DESC")
+      .limit(MAX);
+    const rows = await ctx.services.ads.query(q, { maxRows: MAX });
+    const parsed = rows.map((r) => ({ term: str(r, "search_term_view.search_term"), campaign: str(r, "campaign.id"), adGroup: str(r, "ad_group.id"), cost: fromMicros(pick(r, "metrics.cost_micros")), clicks: num(pick(r, "metrics.clicks")), impressions: num(pick(r, "metrics.impressions")), conversions: num(pick(r, "metrics.conversions")) }));
+    const flaggedAll = parsed.filter((t) => t.cost >= a.min_cost && t.conversions === 0).sort((x, y) => y.cost - x.cost);
+    const analyzed = parsed.reduce((s, t) => s + t.cost, 0);
+    const flaggedCost = flaggedAll.reduce((s, t) => s + t.cost, 0);
+    return {
+      period: a.start_date && a.end_date ? `${a.start_date}..${a.end_date}` : a.date_range,
+      rule: `cost >= ${a.min_cost} and conversions = 0`,
+      terms_analyzed: parsed.length,
+      covers_all_spend: rows.length < MAX,
+      flagged: flaggedAll.slice(0, a.limit).map((t) => ({ search_term: t.term, campaign_id: t.campaign, ad_group_id: t.adGroup, cost: round(t.cost, 2)!, clicks: t.clicks, impressions: t.impressions })),
+      flagged_cost: round(flaggedCost, 2)!,
+      analyzed_cost: round(analyzed, 2)!,
+      flagged_share_of_analyzed_cost: round(ratio(flaggedCost, analyzed)),
+    };
+  },
+});
+
+// ---------------------------------------------------------------------------------------------------------------
 const usageInput = z.object({ days: z.number().int().min(1).max(90).default(7) });
 const usageOutput = z.object({
   period_days: z.number(),
@@ -332,5 +375,5 @@ export const listAccounts: ReadTool<typeof listAccountsInput, typeof listAccount
   },
 };
 
-export const reportingTools = [listCampaigns, getCampaignPerformance, listConversionActions, listNegativeKeywordLists, getCampaignTracking, getAdPolicyViolations, getUsageStatus, listAccounts];
+export const reportingTools = [listCampaigns, getCampaignPerformance, listConversionActions, listNegativeKeywordLists, getCampaignTracking, getAdPolicyViolations, analyzeWastedSpend, getUsageStatus, listAccounts];
 void ADS_SCOPE;
