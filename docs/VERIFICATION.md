@@ -178,7 +178,7 @@ The four items the review left open were closed on 2026-11-10:
   `partial` because it shows a page and reports `truncated` itself. Fixed GAQL `LIMIT`s on lists that must be complete (duplicate
   checks before writes, negative list members and attached campaigns, label links, ad groups, frequency caps, shopping settings, PMax
   asset groups, the language list) were removed, because a LIMIT hides the overflow from the client. Paged reads that had no
-  `truncated` flag got one (`get_campaign_dates`, `get_ad_group_settings`, `list_conversion_actions`, `list_labels`,
+  `truncated` flag got one (`get_campaign_dates`, `get_ad_group_settings`, `list_conversion_actions`, `list_labels` (retired 2026-11-11),
   `list_negative_keyword_lists`, `get_campaign_tracking`, `search_audiences`, `analyze_pmax_search_categories`), and the change history
   in `explain_performance_anomaly` notes when it lists only the latest 200 changes. Regression tests in `row-caps.test.ts`.
 - **R7, several API calls per write.** Kept by design: plan, re-check at approval time, execute and read back are what make approvals

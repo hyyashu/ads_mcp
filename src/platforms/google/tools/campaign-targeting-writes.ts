@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import { type Change, type Effect, moneyChange } from "../../../policy/change-set";
 import type { GoogleAdsClient, Row } from "../client";
-import { Gaql, isRealDate, lit, num, pick } from "../gaql";
+import { Gaql, lit, num, pick } from "../gaql";
 import { mapCaps, tailId } from "./campaign-reads";
 import { accountId, idSchema, str, toMicros } from "./common";
 import { rn, stateWrite } from "./write-kit";
@@ -285,10 +285,10 @@ export const setAdGroupDeviceBidModifiers = stateWrite({
 // ------------------------------------------------------------------------------------------- frequency caps
 const capInput = z.object({ event_type: z.enum(["IMPRESSION", "VIDEO_VIEW"]).default("IMPRESSION"), level: z.enum(["CAMPAIGN", "AD_GROUP", "AD_GROUP_AD"]).default("CAMPAIGN"), time_unit: z.enum(["DAY", "WEEK", "MONTH"]), time_length: z.number().int().min(1).max(1).default(1), cap: z.number().int().min(1).max(1000) });
 const capKey = (c: { level: string | null; event_type: string | null; time_unit: string | null; time_length: number | null }) => `${c.level}|${c.event_type}|${c.time_unit}|${c.time_length ?? 1}`;
-function frequencyCapsTool(name: "update_campaign_frequency_caps" | "update_display_frequency_caps", channels: string[]) {
+function frequencyCapsTool(name: "update_campaign_frequency_caps", channels: string[]) {
   return stateWrite({
     name,
-    title: name === "update_display_frequency_caps" ? "Update Display frequency caps" : "Update campaign frequency caps",
+    title: "Update campaign frequency caps",
     risk: "write",
     description: `Replaces the frequency caps (how many times one person may see ads per day, week or month) on a ${channels.join(" or ")} campaign, after approval. An empty list removes all caps (high impact because it widens delivery). One cap per level, event type and time unit. Confirmed by re-reading.`,
     input: z.object({ account_id: accountId, campaign_id: idSchema, caps: z.array(capInput).max(10) }),
@@ -323,7 +323,6 @@ function frequencyCapsTool(name: "update_campaign_frequency_caps" | "update_disp
   });
 }
 export const updateCampaignFrequencyCaps = frequencyCapsTool("update_campaign_frequency_caps", ["DISPLAY", "VIDEO", "DEMAND_GEN"]);
-export const updateDisplayFrequencyCaps = frequencyCapsTool("update_display_frequency_caps", ["DISPLAY"]);
 
 // ----------------------------------------------------------------------------------------------- update_bid_strategy
 const STRATEGIES = ["MANUAL_CPC", "MAXIMIZE_CONVERSIONS", "MAXIMIZE_CONVERSION_VALUE", "TARGET_SPEND"] as const;
@@ -365,39 +364,4 @@ export const updateBidStrategy = stateWrite({
   result: (a, after) => ({ campaign_id: a.campaign_id, strategy: after.strategy, target_cpa: after.target_cpa_micros === null ? null : after.target_cpa_micros / 1e6, target_roas: after.target_roas, max_cpc: after.max_cpc_micros === null ? null : after.max_cpc_micros / 1e6 }),
 });
 
-// --------------------------------------------------------------------------------------- update_display_campaign_schedule
-const day = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(isRealDate, "not a real date");
-export const updateDisplayCampaignSchedule = stateWrite({
-  name: "update_display_campaign_schedule",
-  title: "Update Display campaign dates",
-  risk: "write",
-  description: "Changes a Display campaign's start and/or end date (whole days in the account's time zone), or removes the end date, after approval. Starting earlier, ending later or removing the end is high impact. For other campaign types use update_campaign_dates. Confirmed by re-reading.",
-  input: z.object({ account_id: accountId, campaign_id: idSchema, start_date: day.optional(), end_date: day.optional(), clear_end_date: z.boolean().default(false) }).refine((v) => v.start_date || v.end_date || v.clear_end_date, "give start_date, end_date or clear_end_date").refine((v) => !(v.end_date && v.clear_end_date), "end_date and clear_end_date conflict"),
-  output: z.object({ campaign_id: z.string(), start_date_time: z.string().nullable(), end_date_time: z.string().nullable() }),
-  read: async (a, ads) => {
-    const { c, row } = await readCampaign(ads, a.campaign_id, ["campaign.start_date_time", "campaign.end_date_time"]);
-    if (c.channel !== "DISPLAY") throw new ToolError("invalid_argument", `Campaign ${a.campaign_id} is not a Display campaign (it is ${c.channel}). Use update_campaign_dates.`);
-    return { campaign: c, start: str(row, "campaign.start_date_time"), end: str(row, "campaign.end_date_time") };
-  },
-  build: (a, s, ads) => {
-    const start = a.start_date ? `${a.start_date} 00:00:00` : s.start;
-    const end = a.clear_end_date ? null : a.end_date ? `${a.end_date} 23:59:59` : s.end;
-    if (start && end && start > end) throw new ToolError("invalid_argument", "The end would be before the start.");
-    if (start === s.start && end === s.end) throw new ToolError("invalid_argument", "Nothing would change: the campaign already has these dates.");
-    const update: Row = { resourceName: rn(ads, "campaigns", a.campaign_id) };
-    const mask: string[] = [];
-    if (a.start_date) (update.startDateTime = start), mask.push("start_date_time");
-    if (a.end_date) (update.endDateTime = end), mask.push("end_date_time");
-    if (a.clear_end_date) mask.push("end_date_time");
-    const ref = { resource: "campaign", id: a.campaign_id, name: s.campaign.name };
-    const changes: Change[] = [];
-    if (start !== s.start) changes.push(change(ref, "start_date_time", s.start, start, "enable"));
-    // A later (or no) end date runs the campaign longer; an earlier one stops it sooner.
-    if (end !== s.end) changes.push(change(ref, "end_date_time", s.end, end, end === null || (s.end !== null && end > s.end) ? "enable" : "pause"));
-    return { summary: `Display campaign "${s.campaign.name ?? a.campaign_id}": start ${s.start ?? "none"} -> ${start ?? "none"}; end ${s.end ?? "none"} -> ${end ?? "none"}`, changes, ops: [{ campaignOperation: { update, updateMask: mask.join(",") } }] };
-  },
-  landed: (a, b, after) => after.start === (a.start_date ? `${a.start_date} 00:00:00` : b.start) && after.end === (a.clear_end_date ? null : a.end_date ? `${a.end_date} 23:59:59` : b.end),
-  result: (a, after) => ({ campaign_id: a.campaign_id, start_date_time: after.start, end_date_time: after.end }),
-});
-
-export const campaignTargetingWriteTools = [updateLocationTargeting, addCampaignProximity, removeCampaignProximity, setCampaignAdSchedule, setCampaignDeviceBidModifiers, setAdGroupDeviceBidModifiers, updateCampaignFrequencyCaps, updateDisplayFrequencyCaps, updateBidStrategy, updateDisplayCampaignSchedule];
+export const campaignTargetingWriteTools = [updateLocationTargeting, addCampaignProximity, removeCampaignProximity, setCampaignAdSchedule, setCampaignDeviceBidModifiers, setAdGroupDeviceBidModifiers, updateCampaignFrequencyCaps, updateBidStrategy];

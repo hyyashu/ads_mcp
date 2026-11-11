@@ -30,6 +30,20 @@ describe("ad group criteria reads", () => {
     expect((await run("get_ad_group_audiences", {})).error?.code).toBe("invalid_argument");
   });
 
+  it("campaign_type lists every campaign of that type; it replaced the Display and Demand Gen copies", async () => {
+    g.search.ad_group_criterion = [{ campaign: { id: "51" }, adGroup: { id: "61" }, adGroupCriterion: { criterionId: "1", type: "USER_LIST", userList: { userList: `${C}/userLists/501` } }, userList: { name: "Buyers" } }];
+    expect((await data("get_ad_group_audiences", { campaign_type: "DISPLAY" })).criteria[0]).toMatchObject({ campaign_id: "51", detail: { name: "Buyers" } });
+    expect(g.queries.at(-1)).toContain("campaign.advertising_channel_type = 'DISPLAY'");
+    await data("get_ad_group_audiences", { campaign_type: "DEMAND_GEN", campaign_id: "70" });
+    expect(g.queries.at(-1)).toContain("campaign.advertising_channel_type = 'DEMAND_GEN'");
+    expect(g.queries.at(-1)).toContain("campaign.id = 70");
+    await data("get_ad_group_demographics", { campaign_type: "DISPLAY" });
+    expect(g.queries.at(-1)).toMatch(/type IN \('AGE_RANGE'.*campaign\.advertising_channel_type = 'DISPLAY'/);
+    await data("get_ad_group_audiences", { campaign_id: "11" });
+    expect(g.queries.at(-1)).not.toContain("advertising_channel_type");
+    expect((await run("get_ad_group_audiences", { campaign_type: "SHOPPING" })).error?.code).toBe("invalid_argument");
+  });
+
   it("demographics and device modifiers", async () => {
     g.search.ad_group_criterion = [{ adGroup: { id: "21" }, adGroupCriterion: { criterionId: "503001", type: "AGE_RANGE", negative: true, ageRange: { type: "AGE_RANGE_18_24" } } }];
     expect((await data("get_ad_group_demographics", { ad_group_ids: ["21"] })).criteria[0]).toMatchObject({ negative: true, detail: { age_range: "AGE_RANGE_18_24" } });
@@ -63,7 +77,7 @@ describe("ad group criteria reads", () => {
     const dg = await data("get_demandgen_channel_controls");
     expect(dg.ad_groups[0]).toMatchObject({ channel_config: "SELECTED_CHANNELS", channel_strategy: null, selected_channels: { youtube_shorts: true, gmail: false, maps: null } });
     g.search.campaign = [{ campaign: { id: "51", name: "Disp", frequencyCaps: [{ key: { level: "AD_GROUP", eventType: "IMPRESSION", timeUnit: "WEEK", timeLength: 1 }, cap: 5 }] } }];
-    expect((await data("get_display_frequency_caps")).campaigns[0].frequency_caps[0]).toMatchObject({ level: "AD_GROUP", cap: 5 });
+    expect((await data("get_campaign_frequency_caps")).campaigns[0].frequency_caps[0]).toMatchObject({ level: "AD_GROUP", cap: 5 });
   });
 });
 

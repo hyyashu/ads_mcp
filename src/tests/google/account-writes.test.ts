@@ -20,7 +20,7 @@ const fake: FetchLike = async (url, init) => {
   const body = JSON.parse(String(init?.body ?? "{}"));
   if (path.endsWith("googleAds:search")) {
     const q: string = body.query;
-    if (q.includes("FROM label")) return J({ results: labels.filter((l) => l.status !== "REMOVED").map((l) => ({ label: l })) });
+    if (q.includes("FROM label")) return J({ results: labels.filter((l) => l.status !== "REMOVED" && (!q.includes("label.id IN") || ids(q, "label.id").includes(l.id))).map((l) => ({ label: l })) });
     if (q.includes("FROM campaign_label")) return J({ results: campLabels.map((k) => ({ campaign: { id: k.split("~")[0] }, label: { id: k.split("~")[1] } })) });
     if (q.includes("FROM campaign")) return J({ results: ids(q, "campaign.id").filter((i) => camps[i]).map((i) => ({ campaign: { id: i, ...camps[i] } })) });
     if (q.includes("FROM ad_group_ad")) {
@@ -85,13 +85,15 @@ describe("labels", () => {
     expect(mutates[0]).toEqual([{ labelOperation: { create: { name: "Holiday", textLabel: { description: "season", backgroundColor: "#FF0000" } } } }]);
     expect((await run("create_label", { name: "holiday" })).error?.message).toContain("already exists");
 
-    const add = await run("add_campaign_label", { campaign_ids: ["11", "12"], label_id: "3" });
+    // Campaign labels go through add_entity_labels / remove_entity_labels (add_campaign_label and remove_campaign_label were retired).
+    const add = await run("add_entity_labels", { entity_type: "campaign", entities: [{ campaign_id: "11" }, { campaign_id: "12" }], label_ids: ["3"] });
     expect(add.approval?.summary).toContain("1 campaign");
     expect((await approve(add.approval!.approval_id)).status).toBe("executed");
     expect(mutates[1]).toEqual([{ campaignLabelOperation: { create: { campaign: `${C}/campaigns/12`, label: `${C}/labels/3` } } }]);
-    expect((await run("add_campaign_label", { campaign_ids: ["11"], label_id: "999" })).error?.code).toBe("not_found");
+    expect((await run("add_entity_labels", { entity_type: "campaign", entities: [{ campaign_id: "11" }], label_ids: ["999"] })).error?.code).toBe("not_found");
+    expect((await run("add_entity_labels", { entity_type: "campaign", entities: [{ campaign_id: "11", ad_group_id: "21" }], label_ids: ["3"] })).error?.code).toBe("invalid_argument");
 
-    const rm = await run("remove_campaign_label", { campaign_ids: ["11"], label_id: "3" });
+    const rm = await run("remove_entity_labels", { entity_type: "campaign", entities: [{ campaign_id: "11" }], label_ids: ["3"] });
     expect(rm.approval?.risk).toBe("destructive");
     expect((await approve(rm.approval!.approval_id, kit.second)).status).toBe("executed");
     expect(mutates[2]).toEqual([{ campaignLabelOperation: { remove: `${C}/campaignLabels/11~3` } }]);
@@ -110,18 +112,15 @@ describe("bulk status and removals", () => {
     expect((await run("bulk_update_campaign_status", { ids: ["99"], status: "PAUSED" })).error?.code).toBe("not_found");
   });
 
-  it("removes ad groups and Display ads (destructive), checking the channel", async () => {
-    const rm = await run("remove_display_ad_group", { ad_group_id: "61" });
+  it("removes ad groups of any campaign type (destructive)", async () => {
+    const rm = await run("remove_ad_group", { ad_group_id: "61" });
     expect(rm.approval?.risk).toBe("destructive");
     expect((await approve(rm.approval!.approval_id, kit.second)).result).toEqual({ ad_group_id: "61", status: "REMOVED" });
-    expect((await run("remove_display_ad_group", { ad_group_id: "21" })).error?.message).toContain("not in a DISPLAY");
-    const ad = await run("remove_display_ad", { ad_group_id: "61", ad_id: "801" });
-    expect((await approve(ad.approval!.approval_id, kit.second)).status).toBe("executed");
-    expect(mutates[1]).toEqual([{ adGroupAdOperation: { remove: `${C}/adGroupAds/61~801` } }]);
-    expect((await run("remove_display_ad", { ad_group_id: "21", ad_id: "802" })).error?.message).toContain("not in a Display");
+    expect(mutates[0]).toEqual([{ adGroupOperation: { remove: `${C}/adGroups/61` } }]);
     const g = await run("remove_ad_group", { ad_group_id: "21" });
     expect((await approve(g.approval!.approval_id, kit.second)).status).toBe("executed");
     expect((await run("remove_ad_group", { ad_group_id: "21" })).error?.message).toContain("already removed");
+    expect((await run("remove_ad_group", { ad_group_id: "99" })).error?.code).toBe("not_found");
   });
 });
 

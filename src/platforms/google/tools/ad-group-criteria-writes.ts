@@ -72,37 +72,33 @@ const audienceKey = (a: Audience) => `${a.kind.toUpperCase()}:${a.id}`;
 const audienceBody = (ads: GoogleAdsClient, a: Audience): Row =>
   a.kind === "user_list" ? { userList: { userList: rn(ads, "userLists", a.id) } } : a.kind === "user_interest" ? { userInterest: { userInterestCategory: rn(ads, "userInterests", a.id) } } : { customAudience: { customAudience: rn(ads, "customAudiences", a.id) } };
 
-function addAudiencesTool(name: "add_ad_group_audiences" | "add_display_audiences", channel?: Channel) {
-  return stateWrite({
-    name,
-    title: channel === "DISPLAY" ? "Add Display audiences" : "Add ad group audiences",
-    risk: "write",
-    description: `Adds audiences to ${channel === "DISPLAY" ? "a Display" : "an"} ad group (data segments, affinity/in-market user interests or custom audiences, ids from search_audiences), as targets or exclusions, after approval. Whether targets narrow reach or only observe depends on the ad group's targeting setting. Audiences already on the ad group are skipped. Applied atomically and confirmed by re-reading.`,
-    input: z.object({ account_id: accountId, ad_group_id: idSchema, audiences: z.array(audience).min(1).max(50) }),
-    output: z.object({ ad_group_id: z.string(), added: z.array(z.string()), skipped_existing: z.array(z.string()) }),
-    read: (a, ads) => readGroup(ads, a.ad_group_id, AUDIENCE_TYPES, channel),
-    build: (a, s, ads) => {
-      const have = new Map(s.criteria.map((x) => [x.key, x]));
-      const ops: Row[] = [];
-      const changes: Change[] = [];
-      for (const au of a.audiences) {
-        const cur = have.get(audienceKey(au));
-        if (cur && cur.negative === au.exclude) continue;
-        if (cur) throw new ToolError("invalid_argument", `${audienceKey(au)} is already ${cur.negative ? "excluded" : "targeted"}; remove it first.`);
-        ops.push({ adGroupCriterionOperation: { create: { adGroup: rn(ads, "adGroups", a.ad_group_id), ...(au.exclude ? { negative: true } : {}), ...audienceBody(ads, au) } } });
-        changes.push(change({ resource: "ad_group", id: a.ad_group_id, name: s.ad_group.name }, au.exclude ? "excluded_audience" : "audience", null, audienceKey(au), "neutral"));
-      }
-      return { summary: `Ad group "${s.ad_group.name ?? a.ad_group_id}": add ${changes.map((x) => `${x.field === "excluded_audience" ? "exclusion " : ""}${x.after}`).join(", ")}`, changes, ops };
-    },
-    landed: (a, _b, after) => a.audiences.every((au) => after.criteria.some((x) => x.key === audienceKey(au) && x.negative === au.exclude)),
-    result: (a, _after, _r, before) => {
-      const had = new Set(before.criteria.map((x) => x.key));
-      return { ad_group_id: a.ad_group_id, added: a.audiences.filter((au) => !had.has(audienceKey(au))).map(audienceKey), skipped_existing: a.audiences.filter((au) => had.has(audienceKey(au))).map(audienceKey) };
-    },
-  });
-}
-export const addAdGroupAudiences = addAudiencesTool("add_ad_group_audiences");
-export const addDisplayAudiences = addAudiencesTool("add_display_audiences", "DISPLAY");
+export const addAdGroupAudiences = stateWrite({
+  name: "add_ad_group_audiences",
+  title: "Add ad group audiences",
+  risk: "write",
+  description: `Adds audiences to an ad group of any campaign type, Display included (data segments, affinity/in-market user interests or custom audiences, ids from search_audiences), as targets or exclusions, after approval. Whether targets narrow reach or only observe depends on the ad group's targeting setting. Audiences already on the ad group are skipped. Applied atomically and confirmed by re-reading.`,
+  input: z.object({ account_id: accountId, ad_group_id: idSchema, audiences: z.array(audience).min(1).max(50) }),
+  output: z.object({ ad_group_id: z.string(), added: z.array(z.string()), skipped_existing: z.array(z.string()) }),
+  read: (a, ads) => readGroup(ads, a.ad_group_id, AUDIENCE_TYPES),
+  build: (a, s, ads) => {
+    const have = new Map(s.criteria.map((x) => [x.key, x]));
+    const ops: Row[] = [];
+    const changes: Change[] = [];
+    for (const au of a.audiences) {
+      const cur = have.get(audienceKey(au));
+      if (cur && cur.negative === au.exclude) continue;
+      if (cur) throw new ToolError("invalid_argument", `${audienceKey(au)} is already ${cur.negative ? "excluded" : "targeted"}; remove it first.`);
+      ops.push({ adGroupCriterionOperation: { create: { adGroup: rn(ads, "adGroups", a.ad_group_id), ...(au.exclude ? { negative: true } : {}), ...audienceBody(ads, au) } } });
+      changes.push(change({ resource: "ad_group", id: a.ad_group_id, name: s.ad_group.name }, au.exclude ? "excluded_audience" : "audience", null, audienceKey(au), "neutral"));
+    }
+    return { summary: `Ad group "${s.ad_group.name ?? a.ad_group_id}": add ${changes.map((x) => `${x.field === "excluded_audience" ? "exclusion " : ""}${x.after}`).join(", ")}`, changes, ops };
+  },
+  landed: (a, _b, after) => a.audiences.every((au) => after.criteria.some((x) => x.key === audienceKey(au) && x.negative === au.exclude)),
+  result: (a, _after, _r, before) => {
+    const had = new Set(before.criteria.map((x) => x.key));
+    return { ad_group_id: a.ad_group_id, added: a.audiences.filter((au) => !had.has(audienceKey(au))).map(audienceKey), skipped_existing: a.audiences.filter((au) => had.has(audienceKey(au))).map(audienceKey) };
+  },
+});
 
 export const replaceDemandgenAudiences = stateWrite({
   name: "replace_demandgen_audiences",
@@ -147,43 +143,39 @@ const demoBody = (key: string): Row => {
   const [t, v] = key.split(":") as [string, string];
   return t === "AGE_RANGE" ? { ageRange: { type: v } } : t === "GENDER" ? { gender: { type: v } } : t === "INCOME_RANGE" ? { incomeRange: { type: v } } : { parentalStatus: { type: v } };
 };
-function demographicsTool(name: "update_ad_group_demographics" | "update_display_demographics", channel?: Channel) {
-  return stateWrite({
-    name,
-    title: channel ? "Update Display demographics" : "Update ad group demographics",
-    risk: "write",
-    description: `Excludes demographic groups from ${channel ? "a Display" : "an"} ad group, or includes previously excluded ones again (age ranges, genders, household income, parental status), after approval. By default every group is reached; excluding narrows reach, including again widens it and is high impact. Applied atomically and confirmed by re-reading.`,
-    input: z.object({ account_id: accountId, ad_group_id: idSchema, exclude: demo.default({ age_ranges: [], genders: [], income_ranges: [], parental_statuses: [] }), include_again: demo.default({ age_ranges: [], genders: [], income_ranges: [], parental_statuses: [] }) }),
-    output: z.object({ ad_group_id: z.string(), excluded: z.array(z.string()) }),
-    read: (a, ads) => readGroup(ads, a.ad_group_id, ["AGE_RANGE", "GENDER", "INCOME_RANGE", "PARENTAL_STATUS"], channel),
-    build: (a, s, ads) => {
-      const ex = demoKeys(a.exclude);
-      const inc = demoKeys(a.include_again);
-      if (ex.some((k) => inc.includes(k))) throw new ToolError("invalid_argument", "The same group cannot be excluded and included again.");
-      const ops: Row[] = [];
-      const changes: Change[] = [];
-      const ref = { resource: "ad_group", id: a.ad_group_id, name: s.ad_group.name };
-      for (const k of ex) {
-        const cur = s.criteria.find((x) => x.key === k);
-        if (cur?.negative) continue;
-        if (cur) ops.push({ adGroupCriterionOperation: { remove: agcRn(ads, a.ad_group_id, cur.criterion_id) } }); // a positive criterion is replaced by the exclusion
-        ops.push({ adGroupCriterionOperation: { create: { adGroup: rn(ads, "adGroups", a.ad_group_id), negative: true, ...demoBody(k) } } });
-        changes.push(change(ref, "demographic", k, "excluded", "pause"));
-      }
-      for (const k of inc) {
-        const cur = s.criteria.find((x) => x.key === k && x.negative);
-        if (!cur) continue;
-        ops.push({ adGroupCriterionOperation: { remove: agcRn(ads, a.ad_group_id, cur.criterion_id) } });
-        changes.push(change(ref, "demographic", `${k} excluded`, k, "enable"));
-      }
-      return { summary: `Ad group "${s.ad_group.name ?? a.ad_group_id}" demographics: ${changes.map((x) => (x.after === "excluded" ? `exclude ${x.before}` : `include ${x.after}`)).join(", ")}`, changes, ops };
-    },
-    landed: (a, _b, after) => demoKeys(a.exclude).every((k) => after.criteria.some((x) => x.key === k && x.negative)) && demoKeys(a.include_again).every((k) => !after.criteria.some((x) => x.key === k && x.negative)),
-    result: (a, after) => ({ ad_group_id: a.ad_group_id, excluded: after.criteria.filter((x) => x.negative).map((x) => x.key) }),
-  });
-}
-export const updateAdGroupDemographics = demographicsTool("update_ad_group_demographics");
-export const updateDisplayDemographics = demographicsTool("update_display_demographics", "DISPLAY");
+export const updateAdGroupDemographics = stateWrite({
+  name: "update_ad_group_demographics",
+  title: "Update ad group demographics",
+  risk: "write",
+  description: `Excludes demographic groups from an ad group of any campaign type, Display included, or includes previously excluded ones again (age ranges, genders, household income, parental status), after approval. By default every group is reached; excluding narrows reach, including again widens it and is high impact. Applied atomically and confirmed by re-reading.`,
+  input: z.object({ account_id: accountId, ad_group_id: idSchema, exclude: demo.default({ age_ranges: [], genders: [], income_ranges: [], parental_statuses: [] }), include_again: demo.default({ age_ranges: [], genders: [], income_ranges: [], parental_statuses: [] }) }),
+  output: z.object({ ad_group_id: z.string(), excluded: z.array(z.string()) }),
+  read: (a, ads) => readGroup(ads, a.ad_group_id, ["AGE_RANGE", "GENDER", "INCOME_RANGE", "PARENTAL_STATUS"]),
+  build: (a, s, ads) => {
+    const ex = demoKeys(a.exclude);
+    const inc = demoKeys(a.include_again);
+    if (ex.some((k) => inc.includes(k))) throw new ToolError("invalid_argument", "The same group cannot be excluded and included again.");
+    const ops: Row[] = [];
+    const changes: Change[] = [];
+    const ref = { resource: "ad_group", id: a.ad_group_id, name: s.ad_group.name };
+    for (const k of ex) {
+      const cur = s.criteria.find((x) => x.key === k);
+      if (cur?.negative) continue;
+      if (cur) ops.push({ adGroupCriterionOperation: { remove: agcRn(ads, a.ad_group_id, cur.criterion_id) } }); // a positive criterion is replaced by the exclusion
+      ops.push({ adGroupCriterionOperation: { create: { adGroup: rn(ads, "adGroups", a.ad_group_id), negative: true, ...demoBody(k) } } });
+      changes.push(change(ref, "demographic", k, "excluded", "pause"));
+    }
+    for (const k of inc) {
+      const cur = s.criteria.find((x) => x.key === k && x.negative);
+      if (!cur) continue;
+      ops.push({ adGroupCriterionOperation: { remove: agcRn(ads, a.ad_group_id, cur.criterion_id) } });
+      changes.push(change(ref, "demographic", `${k} excluded`, k, "enable"));
+    }
+    return { summary: `Ad group "${s.ad_group.name ?? a.ad_group_id}" demographics: ${changes.map((x) => (x.after === "excluded" ? `exclude ${x.before}` : `include ${x.after}`)).join(", ")}`, changes, ops };
+  },
+  landed: (a, _b, after) => demoKeys(a.exclude).every((k) => after.criteria.some((x) => x.key === k && x.negative)) && demoKeys(a.include_again).every((k) => !after.criteria.some((x) => x.key === k && x.negative)),
+  result: (a, after) => ({ ad_group_id: a.ad_group_id, excluded: after.criteria.filter((x) => x.negative).map((x) => x.key) }),
+});
 
 // ------------------------------------------------------------------------------- Display keywords, placements, topics
 function addDisplayCriteriaTool<T>(o: { name: string; title: string; description: string; types: readonly string[]; item: z.ZodType<T>; key: (it: T) => string; body: (it: T) => Row }) {
@@ -352,4 +344,4 @@ export const updateDemandgenChannelControls = stateWrite({
   result: (a, after) => ({ ad_group_id: a.ad_group_id, mode: after.mode, selected: after.selected }),
 });
 
-export const adGroupCriteriaWriteTools = [addAdGroupAudiences, addDisplayAudiences, replaceDemandgenAudiences, updateAdGroupDemographics, updateDisplayDemographics, addDisplayKeywords, addDisplayPlacements, addDisplayTopics, removeDisplayCriteria, addPlacementExclusions, updateDemandgenChannelControls];
+export const adGroupCriteriaWriteTools = [addAdGroupAudiences, replaceDemandgenAudiences, updateAdGroupDemographics, addDisplayKeywords, addDisplayPlacements, addDisplayTopics, removeDisplayCriteria, addPlacementExclusions, updateDemandgenChannelControls];

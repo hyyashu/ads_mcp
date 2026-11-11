@@ -92,15 +92,15 @@ const u = (s: string) => `${s} ${n}`;
 const heads = (...t: string[]) => t.map((text) => ({ text }));
 
 describe("registration", () => {
-  it("registers the four tools as write tools", () => {
-    for (const name of ["create_ad", "update_ad_headlines", "update_ad_descriptions", "update_ad_content"]) { const t = d.registry.get(name)!; expect(t.kind === "write" && t.risk).toBe("write"); }
+  it("registers the two tools as write tools", () => {
+    for (const name of ["create_ad", "update_ad_content"]) { const t = d.registry.get(name)!; expect(t.kind === "write" && t.risk).toBe("write"); }
   });
 });
 
-describe("update_ad_headlines", () => {
+describe("update_ad_content", () => {
   it("validates with Google at request time (changing nothing), then applies after approval and reads back", async () => {
     const want = [{ text: u("Run faster"), pinned_field: "HEADLINE_1" }, { text: "Free shipping" }, { text: "Official store" }];
-    const r = await run("update_ad_headlines", { ad_group_id: "21", ad_id: "301", headlines: want });
+    const r = await run("update_ad_content", { ad_group_id: "21", ad_id: "301", headlines: want });
     expect(r.approval?.status).toBe("pending_approval");
     expect(r.approval?.summary).toContain(`adding "${u("Run faster")}"`);
     expect(r.approval?.summary).toContain('removing "Buy running shoes"');
@@ -118,7 +118,7 @@ describe("update_ad_headlines", () => {
   });
 
   it("surfaces Google's validation error at request time and queues nothing", async () => {
-    const r = await run("update_ad_headlines", { ad_group_id: "21", ad_id: "301", headlines: heads("x".repeat(31), "b", "c") });
+    const r = await run("update_ad_content", { ad_group_id: "21", ad_id: "301", headlines: heads("x".repeat(31), "b", "c") });
     expect(r.ok).toBe(false);
     expect(r.error?.code).toBe("invalid_argument");
     expect(r.error?.message).toContain("Too long");
@@ -129,28 +129,28 @@ describe("update_ad_headlines", () => {
   it("enforces the documented counts and pinning positions locally", async () => {
     const t = (a: number) => heads(...Array.from({ length: a }, (_, i) => `h${i}${n}`));
     for (const headlines of [t(2), t(16), [...t(2), { text: "x", pinned_field: "HEADLINE_4" }], [...t(2), { text: "" }], [...t(2), { text: "a\nb" }], [...t(2), { text: "x", pinned_field: "DESCRIPTION_1" }]]) {
-      expect((await run("update_ad_headlines", { ad_group_id: "21", ad_id: "301", headlines })).error?.code).toBe("invalid_argument");
+      expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "301", headlines })).error?.code).toBe("invalid_argument");
     }
-    expect((await run("update_ad_headlines", { ad_group_id: "21", ad_id: "abc", headlines: t(3) })).error?.code).toBe("invalid_argument");
+    expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "abc", headlines: t(3) })).error?.code).toBe("invalid_argument");
     expect(calls).toHaveLength(0);
   });
 
   it("refuses a no-op, and does not warn that a paused ad is live", async () => {
-    expect((await run("update_ad_headlines", { ad_group_id: "21", ad_id: "301", headlines: heads("Buy running shoes", "Free shipping", "Official store") })).error?.message).toContain("Nothing would change");
-    const r = await run("update_ad_headlines", { ad_group_id: "21", ad_id: "302", headlines: heads(u("A"), u("B"), u("C")) });
+    expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "301", headlines: heads("Buy running shoes", "Free shipping", "Official store") })).error?.message).toContain("Nothing would change");
+    const r = await run("update_ad_content", { ad_group_id: "21", ad_id: "302", headlines: heads(u("A"), u("B"), u("C")) });
     expect(r.approval?.summary).not.toContain("live");
   });
 
   it("refuses unsupported, removed and unknown ads", async () => {
     const hl = heads(u("A"), u("B"), u("C"));
-    expect((await run("update_ad_headlines", { ad_group_id: "21", ad_id: "303", headlines: hl })).error?.code).toBe("unsupported");
-    expect((await run("update_ad_headlines", { ad_group_id: "21", ad_id: "304", headlines: hl })).error?.message).toContain("removed");
-    expect((await run("update_ad_headlines", { ad_group_id: "21", ad_id: "999", headlines: hl })).error?.code).toBe("not_found");
-    expect((await run("update_ad_headlines", { ad_group_id: "99", ad_id: "301", headlines: hl })).error?.code).toBe("not_found");
+    expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "303", headlines: hl })).error?.code).toBe("unsupported");
+    expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "304", headlines: hl })).error?.message).toContain("removed");
+    expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "999", headlines: hl })).error?.code).toBe("not_found");
+    expect((await run("update_ad_content", { ad_group_id: "99", ad_id: "301", headlines: hl })).error?.code).toBe("not_found");
   });
 
   it("fails safely when the ad changed after the request", async () => {
-    const r = await run("update_ad_headlines", { ad_group_id: "21", ad_id: "302", headlines: heads(u("D1"), u("D2"), u("D3")) });
+    const r = await run("update_ad_content", { ad_group_id: "21", ad_id: "302", headlines: heads(u("D1"), u("D2"), u("D3")) });
     ads.find((a) => a.id === "302")!.headlines = h("Someone", "Else", "Edited");
     const done = await approve(r.approval!.approval_id);
     expect(done.status).toBe("failed");
@@ -159,20 +159,20 @@ describe("update_ad_headlines", () => {
   });
 
   it("does not claim success when the content does not read back", async () => {
-    const r = await run("update_ad_headlines", { ad_group_id: "21", ad_id: "302", headlines: heads(u("E1"), u("E2"), u("E3")) });
+    const r = await run("update_ad_content", { ad_group_id: "21", ad_id: "302", headlines: heads(u("E1"), u("E2"), u("E3")) });
     dropWrites = true;
     expect((await approve(r.approval!.approval_id)).status).toBe("unknown_outcome");
   });
 });
 
-describe("update_ad_descriptions and update_ad_content", () => {
+describe("update_ad_content: descriptions, URL and paths", () => {
   it("replaces descriptions with the right mask", async () => {
-    const r = await run("update_ad_descriptions", { ad_group_id: "21", ad_id: "302", descriptions: [{ text: u("New copy one."), pinned_field: "DESCRIPTION_1" }, { text: u("New copy two.") }] });
+    const r = await run("update_ad_content", { ad_group_id: "21", ad_id: "302", descriptions: [{ text: u("New copy one."), pinned_field: "DESCRIPTION_1" }, { text: u("New copy two.") }] });
     const done = await approve(r.approval!.approval_id);
     expect(done.status).toBe("executed");
     expect(calls.at(-1)!.body.operations[0].updateMask).toBe("responsive_search_ad.descriptions");
     expect(calls.at(-1)!.body.operations[0].update.responsiveSearchAd.descriptions[0]).toEqual({ text: u("New copy one."), pinnedField: "DESCRIPTION_1" });
-    for (const descriptions of [[{ text: "one" }], Array.from({ length: 5 }, (_, i) => ({ text: `d${i}` })), [{ text: "a", pinned_field: "DESCRIPTION_3" }, { text: "b" }]]) expect((await run("update_ad_descriptions", { ad_group_id: "21", ad_id: "302", descriptions })).error?.code).toBe("invalid_argument");
+    for (const descriptions of [[{ text: "one" }], Array.from({ length: 5 }, (_, i) => ({ text: `d${i}` })), [{ text: "a", pinned_field: "DESCRIPTION_3" }, { text: "b" }]]) expect((await run("update_ad_content", { ad_group_id: "21", ad_id: "302", descriptions })).error?.code).toBe("invalid_argument");
   });
 
   it("changes final URL and paths together, and clears paths with null", async () => {

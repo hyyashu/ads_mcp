@@ -71,16 +71,16 @@ describe("tool contract additions", () => {
   it("operation category comes from the inventory", () => {
     const reg = new ToolRegistry(inv);
     expect(reg.operationOf("list_campaigns")).toBe("read");
-    expect(reg.operationOf("analyze_wasted_spend")).toBe("analyze");
+    expect(reg.operationOf("analyze_search_terms")).toBe("analyze");
     expect(reg.operationOf("create_ad")).toBe("create");
     expect(reg.operationOf("pause_campaign")).toBe("update");
     expect(reg.operationOf("remove_ad")).toBe("delete");
   });
 
   it("rejects out-of-range deadlines", () => {
-    const t: ReadTool = { kind: "read", name: "list_labels", platform: "google_ads", title: "x", description: "A test tool with an invalid timeout setting.", input: z.object({ account_id: z.string() }), output: z.object({}), permissions: { scope: "ads:read", platformPermissions: ["x"] }, handler: async () => ({}), timeoutMs: 50 };
-    expect(validateTool(t, inv.find((x) => x.name === "list_labels")).join()).toMatch(/timeoutMs/);
-    expect(validateTool({ ...t, timeoutMs: 5000 }, inv.find((x) => x.name === "list_labels"))).toEqual([]);
+    const t: ReadTool = { kind: "read", name: "list_negative_keyword_lists", platform: "google_ads", title: "x", description: "A test tool with an invalid timeout setting.", input: z.object({ account_id: z.string() }), output: z.object({}), permissions: { scope: "ads:read", platformPermissions: ["x"] }, handler: async () => ({}), timeoutMs: 50 };
+    expect(validateTool(t, inv.find((x) => x.name === "list_negative_keyword_lists")).join()).toMatch(/timeoutMs/);
+    expect(validateTool({ ...t, timeoutMs: 5000 }, inv.find((x) => x.name === "list_negative_keyword_lists"))).toEqual([]);
   });
 });
 
@@ -93,7 +93,7 @@ describe("pipeline deadlines, cancellation and execution records", () => {
   const seen = { signalAbortedLater: false };
 
   const slowRead: ReadTool = {
-    kind: "read", name: "list_labels", platform: "google_ads", title: "Slow", description: "Never finishes on its own (test fixture).", timeoutMs: 150,
+    kind: "read", name: "list_negative_keyword_lists", platform: "google_ads", title: "Slow", description: "Never finishes on its own (test fixture).", timeoutMs: 150,
     input: z.object({ account_id: z.string() }), output: z.object({ ok: z.boolean() }), permissions: { scope: "ads:read", platformPermissions: ["x"] },
     handler: async (_a, ctx) => {
       ctx.signal.addEventListener("abort", () => (seen.signalAbortedLater = true));
@@ -125,7 +125,7 @@ describe("pipeline deadlines, cancellation and execution records", () => {
     expect(env.meta.request_id).toBe("req-deadline-1");
     expect(seen.signalAbortedLater).toBe(true); // upstream requests made with ctx.signal are aborted too
     const [row] = await rowsFor("req-deadline-1");
-    expect(row).toMatchObject({ tool: "list_labels", outcome: "error", errorCode: "deadline_exceeded", operation: "read", accountId });
+    expect(row).toMatchObject({ tool: "list_negative_keyword_lists", outcome: "error", errorCode: "deadline_exceeded", operation: "read", accountId });
   });
 
   it("a client cancellation returns cancelled (not retryable)", async () => {

@@ -220,7 +220,7 @@ describe("account and ad group levels", () => {
     const done = await approve(r.approval!.approval_id);
     expect(mutates[0]).toEqual([{ customerAssetOperation: { create: { asset: `${C}/assets/700`, fieldType: "CALL" } } }]);
     expect(done.result).toEqual({ level: "account", campaign_id: null, ad_group_id: null, field_type: "CALL", linked: [{ asset_id: "700", label: "IN 8404802214" }], skipped_existing: [] });
-    const rm = await kit.run("remove_call_assets", { level: "account", asset_ids: ["700"] });
+    const rm = await kit.run("remove_extensions", { field_type: "CALL", level: "account", asset_ids: ["700"] });
     expect((await approve(rm.approval!.approval_id, kit.second)).status).toBe("executed");
     expect(mutates[1]).toEqual([{ customerAssetOperation: { remove: `${C}/customerAssets/700~CALL` } }]);
   });
@@ -231,7 +231,7 @@ describe("account and ad group levels", () => {
     const done = await approve(r.approval!.approval_id);
     expect(mutates[0]).toEqual([{ adGroupAssetOperation: { create: { asset: `${C}/assets/500`, adGroup: `${C}/adGroups/21`, fieldType: "SITELINK" } } }]);
     expect(done.result).toMatchObject({ level: "ad_group", ad_group_id: "21", linked: [{ asset_id: "500" }] });
-    const rm = await kit.run("remove_sitelinks", { level: "ad_group", ad_group_id: "21", asset_ids: ["500"] });
+    const rm = await kit.run("remove_extensions", { field_type: "SITELINK", level: "ad_group", ad_group_id: "21", asset_ids: ["500"] });
     expect((await approve(rm.approval!.approval_id, kit.second)).status).toBe("executed");
     expect(mutates[1]).toEqual([{ adGroupAssetOperation: { remove: `${C}/adGroupAssets/21~500~SITELINK` } }]);
   });
@@ -241,7 +241,7 @@ describe("account and ad group levels", () => {
     expect((await kit.run("link_existing_assets", { level: "ad_group", field_type: "CALL", asset_ids: ["700"] })).error?.code).toBe("invalid_argument");
     expect((await kit.run("link_existing_assets", { field_type: "CALL", asset_ids: ["700"] })).error?.code).toBe("invalid_argument");
     expect((await kit.run("link_existing_assets", { level: "ad_group", ad_group_id: "99", field_type: "CALL", asset_ids: ["700"] })).error?.code).toBe("not_found");
-    expect((await kit.run("remove_call_assets", { level: "account", asset_ids: ["600"] })).error?.message).toContain("Not linked to the account");
+    expect((await kit.run("remove_extensions", { field_type: "CALL", level: "account", asset_ids: ["600"] })).error?.message).toContain("Not linked to the account");
     expect(mutates).toHaveLength(0);
   });
 });
@@ -315,14 +315,14 @@ describe("exclude_account_assets_from_campaign", () => {
 });
 
 describe("remove and status", () => {
-  it("remove_sitelinks is destructive, is high impact, and removes only the link", async () => {
-    const r = await run("remove_sitelinks", { asset_ids: ["500"] });
+  it("remove_extensions is destructive, is high impact, and removes only the link", async () => {
+    const r = await run("remove_extensions", { field_type: "SITELINK", asset_ids: ["500"] });
     expect(r.approval).toMatchObject({ risk: "destructive", change_set: { changes: [{ effect: "remove", before: "Sale -> https://shop.example/sale" }] } });
     const done = await approve(r.approval!.approval_id, kit.second);
     expect(done.status).toBe("executed");
     expect(mutates[0]).toEqual([{ campaignAssetOperation: { remove: `${C}/campaignAssets/11~500~SITELINK` } }]);
     expect(assets.has("500")).toBe(true);
-    expect((await run("remove_callouts", { asset_ids: ["500"] })).error?.message).toContain("Not linked");
+    expect((await run("remove_extensions", { field_type: "CALLOUT", asset_ids: ["500"] })).error?.message).toContain("Not linked");
   });
 
   it("set_call_asset_status updates the link status with a mask", async () => {

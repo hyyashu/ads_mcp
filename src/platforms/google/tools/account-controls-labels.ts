@@ -7,36 +7,47 @@ import { accountId, entityStatus, googleRead, idSchema, str } from "./common";
 import { rn, stateWrite } from "./write-kit";
 
 /**
- * Labels on ad groups, ads and keywords: get_entity_labels, add_entity_labels, remove_entity_labels.
- * Links are AdGroupLabel, AdGroupAdLabel and AdGroupCriterionLabel (v26), with resource names
+ * Labels on campaigns, ad groups, ads and keywords: get_entity_labels (not campaigns: get_campaign_labels lists those),
+ * add_entity_labels and remove_entity_labels (which replaced add_campaign_label and remove_campaign_label on 2026-11-11).
+ * Links are CampaignLabel, AdGroupLabel, AdGroupAdLabel and AdGroupCriterionLabel (v26), with resource names
+ *   customers/{customer_id}/campaignLabels/{campaign_id}~{label_id}
  *   customers/{customer_id}/adGroupLabels/{ad_group_id}~{label_id}
  *   customers/{customer_id}/adGroupAdLabels/{ad_group_id}~{ad_id}~{label_id}
  *   customers/{customer_id}/adGroupCriterionLabels/{ad_group_id}~{criterion_id}~{label_id}
  * All fields are Immutable: links are only created and removed.
  */
-type EntityType = "ad_group" | "ad" | "keyword";
+type EntityType = "campaign" | "ad_group" | "ad" | "keyword";
 const ENTITY_TYPES = ["ad_group", "ad", "keyword"] as const;
+const WRITE_TYPES = ["campaign", "ad_group", "ad", "keyword"] as const;
 const SPEC = {
+  campaign: { from: "campaign_label", op: "campaignLabelOperation", collection: "campaignLabels", target: "campaign" },
   ad_group: { from: "ad_group_label", op: "adGroupLabelOperation", collection: "adGroupLabels", target: "adGroup" },
   ad: { from: "ad_group_ad_label", op: "adGroupAdLabelOperation", collection: "adGroupAdLabels", target: "adGroupAd" },
   keyword: { from: "ad_group_criterion_label", op: "adGroupCriterionLabelOperation", collection: "adGroupCriterionLabels", target: "adGroupCriterion" },
 } as const;
 
 const entity = z.object({ ad_group_id: idSchema, ad_id: idSchema.optional(), criterion_id: idSchema.optional().describe("Keyword criterion id (entity_type keyword).") });
-type Entity = z.infer<typeof entity>;
-const entityOk = (t: EntityType, e: Entity) => (t === "ad_group" ? !e.ad_id && !e.criterion_id : t === "ad" ? !!e.ad_id && !e.criterion_id : !!e.criterion_id && !e.ad_id);
-const SHAPE_MSG = "entity_type ad_group takes ad_group_id only; ad takes ad_group_id and ad_id; keyword takes ad_group_id and criterion_id";
-/** The entity's id inside its link's resource name: "{ad_group_id}", "{ad_group_id}~{ad_id}" or "{ad_group_id}~{criterion_id}". */
-const entityKey = (t: EntityType, e: Entity) => (t === "ad_group" ? e.ad_group_id : `${e.ad_group_id}~${t === "ad" ? e.ad_id : e.criterion_id}`);
-const entityRn = (ads: GoogleAdsClient, t: EntityType, key: string) => `customers/${ads.customerId}/${t === "ad_group" ? "adGroups" : t === "ad" ? "adGroupAds" : "adGroupCriteria"}/${key}`;
+const writeEntity = z.object({ campaign_id: idSchema.optional().describe("Campaign id (entity_type campaign)."), ad_group_id: idSchema.optional(), ad_id: idSchema.optional(), criterion_id: idSchema.optional().describe("Keyword criterion id (entity_type keyword).") });
+type Entity = z.infer<typeof writeEntity>;
+const entityOk = (t: EntityType, e: Entity) =>
+  t === "campaign" ? !!e.campaign_id && !e.ad_group_id && !e.ad_id && !e.criterion_id : !e.campaign_id && !!e.ad_group_id && (t === "ad_group" ? !e.ad_id && !e.criterion_id : t === "ad" ? !!e.ad_id && !e.criterion_id : !!e.criterion_id && !e.ad_id);
+const SHAPE_MSG = "entity_type campaign takes campaign_id only; ad_group takes ad_group_id only; ad takes ad_group_id and ad_id; keyword takes ad_group_id and criterion_id";
+/** The entity's id inside its link's resource name: "{campaign_id}", "{ad_group_id}", "{ad_group_id}~{ad_id}" or "{ad_group_id}~{criterion_id}". */
+const entityKey = (t: EntityType, e: Entity) => (t === "campaign" ? e.campaign_id! : t === "ad_group" ? e.ad_group_id! : `${e.ad_group_id}~${t === "ad" ? e.ad_id : e.criterion_id}`);
+const entityRn = (ads: GoogleAdsClient, t: EntityType, key: string) => `customers/${ads.customerId}/${t === "campaign" ? "campaigns" : t === "ad_group" ? "adGroups" : t === "ad" ? "adGroupAds" : "adGroupCriteria"}/${key}`;
 
 /** Selects and reads the entity side of a label link row (attributed resources of the *_label views). */
 const ENTITY_FIELDS: Record<EntityType, string[]> = {
+  campaign: ["campaign.id", "campaign.name"],
   ad_group: ["ad_group.id", "ad_group.name"],
   ad: ["ad_group.id", "ad_group_ad.ad.id", "ad_group_ad.ad.name"],
   keyword: ["ad_group.id", "ad_group_criterion.criterion_id", "ad_group_criterion.keyword.text", "ad_group_criterion.keyword.match_type"],
 };
 function rowEntity(t: EntityType, r: Row): { key: string; ad_group_id: string; ad_id: string | null; criterion_id: string | null; name: string | null } {
+  if (t === "campaign") {
+    const c = String(pick(r, "campaign.id") ?? "");
+    return { key: c, ad_group_id: "", ad_id: null, criterion_id: null, name: str(r, "campaign.name") };
+  }
   const g = String(pick(r, "ad_group.id") ?? "");
   if (t === "ad_group") return { key: g, ad_group_id: g, ad_id: null, criterion_id: null, name: str(r, "ad_group.name") };
   if (t === "ad") {
@@ -50,7 +61,8 @@ function rowEntity(t: EntityType, r: Row): { key: string; ad_group_id: string; a
 }
 /** GAQL filters that narrow a label view to the given entities (exact pairs are checked afterwards). */
 function entityWhere(t: EntityType, entities: Entity[]): string[] {
-  const groups = [...new Set(entities.map((e) => e.ad_group_id))].sort();
+  if (t === "campaign") return [`campaign.id IN ${lit.list([...new Set(entities.map((e) => e.campaign_id!))].sort().map(lit.id))}`];
+  const groups = [...new Set(entities.map((e) => e.ad_group_id!))].sort();
   const out = [`ad_group.id IN ${lit.list(groups.map(lit.id))}`];
   if (t === "ad") out.push(`ad_group_ad.ad.id IN ${lit.list([...new Set(entities.map((e) => e.ad_id!))].sort().map(lit.id))}`);
   if (t === "keyword") out.push(`ad_group_criterion.criterion_id IN ${lit.list([...new Set(entities.map((e) => e.criterion_id!))].sort().map(lit.id))}`);
@@ -62,7 +74,7 @@ export const getEntityLabels = googleRead({
   name: "get_entity_labels",
   title: "Labels on ad groups, ads or keywords",
   description:
-    "Shows which labels are attached to ad groups, ads or keywords (entity_type): either for the given entities, or every entity of that type carrying label_id (or both). Label and keyword text come from Google. Use list_labels for the account's labels.",
+    "Shows which labels are attached to ad groups, ads or keywords (entity_type): either for the given entities, or every entity of that type carrying label_id (or both). Label and keyword text come from Google. For campaigns, and for the account's labels, use get_campaign_labels.",
   input: z
     .object({
       account_id: accountId,
@@ -104,9 +116,9 @@ export const getEntityLabels = googleRead({
 const writeInput = z
   .object({
     account_id: accountId,
-    entity_type: z.enum(ENTITY_TYPES),
-    entities: z.array(entity).min(1).max(100).describe("Ad groups (ad_group_id), ads (ad_group_id + ad_id) or keywords (ad_group_id + criterion_id)."),
-    label_ids: z.array(idSchema).min(1).max(20).describe("Label ids from list_labels."),
+    entity_type: z.enum(WRITE_TYPES),
+    entities: z.array(writeEntity).min(1).max(100).describe("Campaigns (campaign_id), ad groups (ad_group_id), ads (ad_group_id + ad_id) or keywords (ad_group_id + criterion_id)."),
+    label_ids: z.array(idSchema).min(1).max(20).describe("Label ids from get_campaign_labels (it lists every label in the account) or create_label."),
   })
   .refine((v) => v.entities.every((e) => entityOk(v.entity_type, e)), SHAPE_MSG);
 type WriteInput = z.infer<typeof writeInput>;
@@ -119,12 +131,16 @@ async function readLinks(a: WriteInput, ads: GoogleAdsClient) {
   const labelRows = await ads.query(new Gaql().select("label.id", "label.name", "label.status").from("label").where(`label.id IN ${lit.list(labelIds.map(lit.id))}`), { maxRows: labelIds.length });
   const labels = labelRows.filter((r) => str(r, "label.status") !== "REMOVED").map((r) => ({ id: String(pick(r, "label.id")), name: str(r, "label.name") }));
   const missingLabels = labelIds.filter((l) => !labels.some((x) => x.id === l));
-  if (missingLabels.length) throw new ToolError("not_found", `No label ${missingLabels.join(", ")} in this account (see list_labels).`);
+  if (missingLabels.length) throw new ToolError("not_found", `No label ${missingLabels.join(", ")} in this account (see get_campaign_labels).`);
 
   const keys = [...new Set(a.entities.map((e) => entityKey(t, e)))].sort();
   const where = entityWhere(t, a.entities);
   let found: { key: string; name: string | null; status: string | null; type?: string | null }[];
-  if (t === "ad_group") {
+  if (t === "campaign") {
+    const q = new Gaql().select("campaign.id", "campaign.name", "campaign.status").from("campaign");
+    where.forEach((w) => q.where(w));
+    found = (await ads.query(q, { maxRows: keys.length })).map((r) => ({ key: String(pick(r, "campaign.id")), name: str(r, "campaign.name"), status: str(r, "campaign.status") }));
+  } else if (t === "ad_group") {
     const q = new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status").from("ad_group");
     where.forEach((w) => q.where(w));
     found = (await ads.query(q, { maxRows: keys.length })).map((r) => ({ key: String(pick(r, "ad_group.id")), name: str(r, "ad_group.name"), status: str(r, "ad_group.status") }));
@@ -167,10 +183,10 @@ const entityName = (s: LinkState, key: string) => s.entities.find((e) => e.key =
 
 export const addEntityLabels = stateWrite({
   name: "add_entity_labels",
-  title: "Label ad groups, ads or keywords",
+  title: "Label campaigns, ad groups, ads or keywords",
   risk: "write",
   description:
-    "Attaches existing labels (ids from list_labels or create_label) to ad groups (ad_group_id), ads (ad_group_id + ad_id) or keywords (ad_group_id + criterion_id), chosen by entity_type, after approval. Pairs that already exist are skipped. Confirmed by re-reading.",
+    "Attaches existing labels (ids from get_campaign_labels or create_label) to campaigns (campaign_id), ad groups (ad_group_id), ads (ad_group_id + ad_id) or keywords (ad_group_id + criterion_id), chosen by entity_type, after approval. Pairs that already exist are skipped. Confirmed by re-reading.",
   input: writeInput,
   output: z.object({ entity_type: z.string(), attached: z.array(z.object({ entity: z.string(), label_id: z.string() })), skipped_existing: z.array(z.object({ entity: z.string(), label_id: z.string() })) }),
   read: readLinks,
@@ -194,10 +210,10 @@ export const addEntityLabels = stateWrite({
 
 export const removeEntityLabels = stateWrite({
   name: "remove_entity_labels",
-  title: "Remove labels from ad groups, ads or keywords",
+  title: "Remove labels from campaigns, ad groups, ads or keywords",
   risk: "destructive",
   description:
-    "Detaches labels from ad groups (ad_group_id), ads (ad_group_id + ad_id) or keywords (ad_group_id + criterion_id), chosen by entity_type, after a person approves it. The labels themselves stay in the account. Pairs that are not attached are skipped. Confirmed by re-reading.",
+    "Detaches labels from campaigns (campaign_id), ad groups (ad_group_id), ads (ad_group_id + ad_id) or keywords (ad_group_id + criterion_id), chosen by entity_type, after a person approves it. The labels themselves stay in the account. Pairs that are not attached are skipped. Confirmed by re-reading.",
   input: writeInput,
   output: z.object({ entity_type: z.string(), detached: z.array(z.object({ entity: z.string(), label_id: z.string() })), not_attached: z.array(z.object({ entity: z.string(), label_id: z.string() })) }),
   read: readLinks,
