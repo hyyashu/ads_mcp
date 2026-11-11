@@ -7,7 +7,7 @@ import type { InternalServices, ReadTool } from "../../mcp/tool";
 const LinkedSide = z.object({
   account_id: z.string().describe("This server's id for the account. Tools accept it or external_id."),
   platform: z.enum(PLATFORMS),
-  external_id: z.string().describe("The platform's own id: Google Ads customer id, Meta act_ id, Search Console site URL, GA4 properties/N or Tag Manager accounts/N/containers/N."),
+  external_id: z.string().describe("The platform's own id: Google Ads customer id, Meta act_ id, Search Console site URL, GA4 properties/N, Tag Manager accounts/N/containers/N or Bing Webmaster site URL."),
   name: z.string().describe("Name as the platform reported it at connect time (untrusted text)."),
   status: z.string().describe("Connection status: active, or needs_reauth (reconnect on the Connections page)."),
 });
@@ -29,7 +29,7 @@ export const getPropertyLinks: ReadTool<typeof input, typeof output, InternalSer
   platform: "google_analytics",
   title: "Get property links",
   description:
-    "Lists which Search Console site, GA4 property and Tag Manager container is linked to each ad account in this workspace (links are set on the Connections page). Each link names both accounts with platform, account_id, platform id and name. Combined tools use these links when no account is named explicitly.",
+    "Lists which Search Console site, Bing Webmaster site, GA4 property and Tag Manager container is linked to each ad account in this workspace (links are set on the Connections page). Each link names both accounts with platform, account_id, platform id and name. Combined tools use these links when no account is named explicitly.",
   accountScope: "none",
   input,
   output,

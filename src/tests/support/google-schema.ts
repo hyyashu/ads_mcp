@@ -11,8 +11,11 @@ const index = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google
 export const SCHEMA_VERSION = index.version;
 /** Selection rules per FROM resource, from the v26 field reference pages (scripts/fetch-google-gaql-rules.py). */
 const rules = JSON.parse(readFileSync(join(__dirname, "../../../inventory/google-ads-v26-gaql.json"), "utf8")) as {
-  resources: Record<string, { attributed: string[]; fields: Record<string, { selectable: boolean | null; filterable: boolean | null }>; from_metrics_segments: string[] }>;
+  segments_selectable_with?: Record<string, string[]>;
+  resources: Record<string, { attributed: string[]; segmenting?: string[]; fields: Record<string, { selectable: boolean | null; filterable: boolean | null }>; from_metrics_segments: string[] }>;
 };
+/** Date segments a WHERE clause may filter on without selecting them (developers.google.com/google-ads/api/docs/query/structure). */
+const CORE_DATE_SEGMENTS = new Set(["segments.date", "segments.week", "segments.month", "segments.quarter", "segments.year"]);
 
 const camel = (s: string) => s.replace(/_([a-z0-9])/g, (_, c: string) => c.toUpperCase());
 
@@ -52,7 +55,8 @@ export function checkGaql(query: string): string[] {
   const r = from ? rules.resources[from] : undefined;
   if (from && resolveField(from) && !r) problems.push(`no GAQL rules recorded for ${from}: run scripts/fetch-google-gaql-rules.py v26 ${from}`);
   if (r) {
-    const allowed = new Set([from!, ...r.attributed, "metrics", "segments"]);
+    const segmenting = new Set(r.segmenting ?? []);
+    const allowed = new Set([from!, ...r.attributed, ...segmenting, "metrics", "segments"]);
     const select = /SELECT\s+(.*?)\s+FROM\s/is.exec(noStrings)?.[1] ?? "";
     const where = /\bWHERE\s+(.*?)(?:\s+ORDER BY\s|\s+LIMIT\s|$)/is.exec(noStrings)?.[1] ?? "";
     const fieldsIn = (part: string) => [...part.matchAll(/\b([a-z][a-z0-9_]*(?:\.[a-z][a-z0-9_]*)+)\b/g)].map((m) => m[1]!);
@@ -64,6 +68,24 @@ export function checkGaql(query: string): string[] {
       else if ((owner === "metrics" || owner === "segments") && !metricsOk.has(f)) problems.push(`${f} cannot be used with FROM ${from}`);
     }
     for (const f of fieldsIn(select)) if (r.fields[f]?.selectable === false) problems.push(`${f} is not selectable`);
+    // Segments in WHERE must also be selected, except core date segments. Fields of a segmenting resource act as segments.
+    const selected = new Set(fieldsIn(select));
+    for (const f of new Set(fieldsIn(where))) {
+      const owner = f.split(".")[0]!;
+      const isSegment = (owner === "segments" && !CORE_DATE_SEGMENTS.has(f)) || segmenting.has(owner);
+      if (isSegment && !selected.has(f)) problems.push(`${f} is filtered in WHERE but not selected (FROM ${from} treats it as a segment)`);
+    }
+    // Every segment in the query must be selectable with each selected metric and segment (its "Selectable with" list on
+    // the v26 segments reference page). A segment missing from the record is not checked.
+    const compat = rules.segments_selectable_with ?? {};
+    for (const seg of new Set([...selected, ...fieldsIn(where)])) {
+      const ok = seg.startsWith("segments.") ? compat[seg] : undefined;
+      if (!ok) continue;
+      for (const f of selected) if (f !== seg && (f.startsWith("metrics.") || f.startsWith("segments.")) && !ok.includes(f)) problems.push(`${f} cannot be selected with ${seg}`);
+    }
+    // Selecting a core date segment requires a finite range on one in WHERE.
+    if ([...selected].some((f) => CORE_DATE_SEGMENTS.has(f)) && !fieldsIn(where).some((f) => CORE_DATE_SEGMENTS.has(f)))
+      problems.push(`a core date segment is selected but WHERE has no date range`);
     // GAQL selects only the fields in Google's field reference. A path below one of them (a sub-field of a message such as
     // recommendation.campaign_budget_recommendation) exists in the REST schema but is rejected by the API as unrecognized.
     for (const f of [...fieldsIn(select), ...fieldsIn(where)]) {
@@ -107,6 +129,15 @@ export function checkBody(schema: string, body: unknown, at = ""): string[] {
 
 /** The request schema for a REST path such as customers/1/campaigns:mutate or customers/1/googleAds:search. */
 export function requestSchemaFor(path: string): string | null {
+  // A method on one resource, e.g. customers/1/offlineUserDataJobs/2:addOperations -> AddOfflineUserDataJobOperationsRequest
+  // and :run -> RunOfflineUserDataJobRequest (the verb, the resource in the singular, then the rest of the method name).
+  const onResource = /(?:^|\/)customers\/\d+\/([A-Za-z]+)\/\d+:([a-z]+)([A-Za-z]*)$/.exec(path);
+  if (onResource) {
+    const [, collection, verb, rest] = onResource;
+    const name = `Services__${verb![0]!.toUpperCase()}${verb!.slice(1)}${collection![0]!.toUpperCase()}${collection!.slice(1).replace(/s$/, "")}${rest}Request`;
+    // Otherwise the method names its own request (experiments/1:scheduleExperiment -> ScheduleExperimentRequest): below.
+    if (index.schemas[name]) return name;
+  }
   const m = /(?:^|\/)([A-Za-z]+|\d+):([A-Za-z]+)$/.exec(path);
   if (!m) return null;
   const [, service, method] = m;
@@ -119,7 +150,10 @@ export function requestSchemaFor(path: string): string | null {
   if (index.schemas[name]) return name;
   // Single-resource services name the request in the singular: productLinks:create -> CreateProductLinkRequest.
   const singular = `Services__${M}${pascal.replace(/s$/, "")}Request`;
-  return index.schemas[singular] ? singular : null;
+  if (index.schemas[singular]) return singular;
+  // customerUserAccesses:mutate -> MutateCustomerUserAccessRequest.
+  const sses = `Services__${M}${pascal.replace(/sses$/, "ss")}Request`;
+  return index.schemas[sses] ? sses : null;
 }
 
 /** All problems with one Google Ads REST request (path and JSON body). */

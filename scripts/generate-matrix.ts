@@ -34,7 +34,7 @@ const esc = (s: string) => s.replace(/\|/g, "\\|");
 const table = (list: typeof rows) =>
   ["| Tool | Action | Risk | Domain | Official API surface | Feasibility | Status | Verified |", "|---|---|---|---|---|---|---|---|", ...list.map((r) => `| \`${r.tool}\` | ${r.action} | ${r.risk} | ${r.domain} | ${esc(r.api)} | ${r.feasibility} | ${r.status} | ${r.verification} |`)].join("\n");
 
-const LABEL: Record<Platform, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics 4", google_tag_manager: "Tag Manager" };
+const LABEL: Record<Platform, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics 4", google_tag_manager: "Tag Manager", bing_webmaster: "Bing Webmaster" };
 const statusRow = (title: string, pred: (r: (typeof rows)[number]) => boolean, total: number | string) => `| ${title} | ${PLATFORMS.map((p) => by((r) => r.platform === p && pred(r))).join(" | ")} | ${total} |`;
 const flagged = rows.filter((r) => r.feasibility === "limitation_candidate" || r.feasibility === "needs_decision");
 const md = `# Implementation tracking matrix

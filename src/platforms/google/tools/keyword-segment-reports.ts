@@ -8,12 +8,12 @@ import { activeLists, attachedCampaigns, members } from "./negative-lists";
 import { stateWrite } from "./write-kit";
 
 /** Added by the project owner (2026-11-04) beyond the Adspirer inventory. Fields checked against the v26 field reference. */
-const period = (a: { date_range: string; start_date?: string; end_date?: string }) => (a.start_date ? `${a.start_date}..${a.end_date}` : a.date_range);
+export const period = (a: { date_range: string; start_date?: string; end_date?: string }) => (a.start_date ? `${a.start_date}..${a.end_date}` : a.date_range);
 const n = (r: Row, f: string): number | null => (pick(r, f) === undefined || pick(r, f) === null ? null : num(pick(r, f)));
 const money = (r: Row, f: string): number | null => (pick(r, f) === undefined ? null : fromMicros(pick(r, f)));
-const perfSchema = z.object({ impressions: z.number(), clicks: z.number(), cost: Money, conversions: z.number(), conversion_value: z.number(), ctr: z.number().nullable(), average_cpc: Money.nullable(), conversion_rate: z.number().nullable(), cost_per_conversion: Money.nullable(), roas: z.number().nullable() });
-type Totals = { impressions: number; clicks: number; cost: number; conversions: number; value: number };
-const add = (t: Totals, r: Row) => {
+export const perfSchema = z.object({ impressions: z.number(), clicks: z.number(), cost: Money, conversions: z.number(), conversion_value: z.number(), ctr: z.number().nullable(), average_cpc: Money.nullable(), conversion_rate: z.number().nullable(), cost_per_conversion: Money.nullable(), roas: z.number().nullable() });
+export type Totals = { impressions: number; clicks: number; cost: number; conversions: number; value: number };
+export const add = (t: Totals, r: Row) => {
   t.impressions += num(pick(r, "metrics.impressions"));
   t.clicks += num(pick(r, "metrics.clicks"));
   t.cost += fromMicros(pick(r, "metrics.cost_micros"));
@@ -21,8 +21,8 @@ const add = (t: Totals, r: Row) => {
   t.value += num(pick(r, "metrics.conversions_value"));
   return t;
 };
-const zero = (): Totals => ({ impressions: 0, clicks: 0, cost: 0, conversions: 0, value: 0 });
-const perf = (t: Totals) => ({ impressions: t.impressions, clicks: t.clicks, cost: round(t.cost, 2)!, conversions: round(t.conversions, 2)!, conversion_value: round(t.value, 2)!, ctr: round(ratio(t.clicks, t.impressions)), average_cpc: round(ratio(t.cost, t.clicks), 2), conversion_rate: round(ratio(t.conversions, t.clicks)), cost_per_conversion: round(ratio(t.cost, t.conversions), 2), roas: round(ratio(t.value, t.cost)) });
+export const zero = (): Totals => ({ impressions: 0, clicks: 0, cost: 0, conversions: 0, value: 0 });
+export const perf = (t: Totals) => ({ impressions: t.impressions, clicks: t.clicks, cost: round(t.cost, 2)!, conversions: round(t.conversions, 2)!, conversion_value: round(t.value, 2)!, ctr: round(ratio(t.clicks, t.impressions)), average_cpc: round(ratio(t.cost, t.clicks), 2), conversion_rate: round(ratio(t.conversions, t.clicks)), cost_per_conversion: round(ratio(t.cost, t.conversions), 2), roas: round(ratio(t.value, t.cost)) });
 
 // -------------------------------------------------------------------------------------------- get_keyword_performance
 export const getKeywordPerformance = googleRead({
@@ -145,9 +145,11 @@ export const getSegmentPerformance = googleRead({
     const ads = ctx.services.ads;
     const p = PLAN[a.segment];
     const extra = p.from === "geographic_view" ? ["geographic_view.location_type"] : [];
+    // GAQL rejects a WHERE field that is not also selected (geographic_view enforces it); rows are still grouped by segment value.
+    const byCampaign = a.campaign_ids?.length ? ["campaign.id"] : [];
     const rows = await ads.query(
       new Gaql()
-        .select(p.field, ...extra, "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value")
+        .select(p.field, ...extra, ...byCampaign, "metrics.impressions", "metrics.clicks", "metrics.cost_micros", "metrics.conversions", "metrics.conversions_value")
         .from(p.from)
         .where(dateClause(a))
         .where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined),

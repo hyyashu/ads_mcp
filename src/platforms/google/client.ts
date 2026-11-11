@@ -74,16 +74,34 @@ export class GoogleAdsClient {
   }
 
   /**
-   * Sends a mutating RPC that is not part of GoogleAdsService.Mutate, e.g. "customers/{customer}/productLinks:create".
+   * Sends a mutating RPC that is not part of GoogleAdsService.Mutate, e.g. "customers/{customer}/productLinks:create" or
+   * "customers/{customer}/recommendations:apply", "customers/{customer}/offlineUserDataJobs/{id}:run" or
+   * "customers/{customer}/experiments/{id}:scheduleExperiment".
    * Counted and never retried, exactly like mutate().
    */
   async sendRpc<T = Row>(path: string, body: Row): Promise<T> {
     const p = path.replace("{customer}", this.o.customerId);
-    if (!new RegExp(`^customers/${this.o.customerId}/[A-Za-z]+:(create|remove|update)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
+    // Service methods (create, remove, update; RecommendationService apply and dismiss); the services whose Mutate takes a single
+    // `operation`; and resource-level methods only where listed: OfflineUserDataJobService adds operations to and runs one job,
+    // ExperimentService schedules, ends and promotes one, CustomerService creates a client under this manager account.
+    const service = `[A-Za-z]+:(create|remove|update|apply|dismiss)|(customerUserAccesses|customerUserAccessInvitations|customerClientLinks):mutate`;
+    const onResource = `offlineUserDataJobs/\\d{1,20}:(addOperations|run)|experiments/\\d{1,20}:(scheduleExperiment|endExperiment|promoteExperiment)`;
+    if (!new RegExp(`^customers/${this.o.customerId}(/(${service}|${onResource})|:createCustomerClient)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
     const base = await this.base();
     this.assertNotAborted();
     this.sent++;
     return this.o.http.call<T>({ ...base, path: p, body, idempotent: false });
+  }
+
+  /**
+   * Sends a conversion upload (ConversionUploadService / ConversionAdjustmentUploadService), e.g.
+   * POST customers/{id}:uploadClickConversions. Counted and never retried, exactly like mutate().
+   */
+  async upload<T = Row>(method: "uploadClickConversions" | "uploadCallConversions" | "uploadConversionAdjustments", body: Row): Promise<T> {
+    const base = await this.base();
+    this.assertNotAborted();
+    this.sent++;
+    return this.o.http.call<T>({ ...base, path: `customers/${this.o.customerId}:${method}`, body, idempotent: false });
   }
 
   /**
@@ -95,6 +113,16 @@ export class GoogleAdsClient {
     const p = path.replace("{customer}", this.o.customerId);
     if (!/^(customers\/\d+[:/])?[A-Za-z/0-9]*:?[A-Za-z]+$/.test(p) || /:mutate$/i.test(p)) throw new ToolError("internal", "invalid read-only rpc path");
     return this.o.http.call<T>({ ...(await this.base()), path: p, body, idempotent: true });
+  }
+
+  /**
+   * A read-only REST GET on this account, e.g. get("invoices", { billingSetup, issueYear, issueMonth }) for
+   * InvoiceService.ListInvoices (GET customers/{id}/invoices). Retried like reads.
+   */
+  async get<T = Row>(collection: string, params: Record<string, string>): Promise<T> {
+    if (!/^[A-Za-z]+$/.test(collection)) throw new ToolError("internal", "invalid read-only collection");
+    const qs = new URLSearchParams(params).toString();
+    return this.o.http.call<T>({ ...(await this.base()), path: `customers/${this.o.customerId}/${collection}${qs ? `?${qs}` : ""}`, method: "GET", idempotent: true });
   }
 
   /**

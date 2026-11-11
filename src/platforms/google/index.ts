@@ -9,6 +9,14 @@ import { statusTools } from "./tools/status";
 import { campaignReadTools } from "./tools/campaign-reads";
 import { targetingReadTools } from "./tools/targeting-reads";
 import { pmaxReadTools } from "./tools/pmax-reads";
+import { assetReportTools } from "./tools/asset-reports";
+import { insightTools } from "./tools/insights";
+import { conversionOpsTools } from "./tools/conversion-ops";
+import { accountControlTools } from "./tools/account-controls";
+import { biddingExperimentTools } from "./tools/bidding-experiments";
+import { audienceTools } from "./tools/audiences";
+import { moreAssetTools } from "./tools/more-assets";
+import { accountAdminTools } from "./tools/account-admin";
 import { assetWriteTools } from "./tools/asset-writes";
 import { campaignTargetingWriteTools } from "./tools/campaign-targeting-writes";
 import { adGroupCriteriaWriteTools } from "./tools/ad-group-criteria-writes";
@@ -22,4 +30,4 @@ import { businessAssetTools } from "./tools/business-assets";
 import { keywordSegmentTools } from "./tools/keyword-segment-reports";
 
 /** Google Ads tools. A tool is added here only when it has a real handler, schemas and tests. */
-export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools, ...pmaxWriteTools, ...campaignCreateTools, ...adGroupAdTools, ...listingTreeTools, ...planningTools, ...businessAssetTools, ...keywordSegmentTools] as AnyTool[];
+export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...assetReportTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools, ...pmaxWriteTools, ...campaignCreateTools, ...adGroupAdTools, ...listingTreeTools, ...planningTools, ...businessAssetTools, ...keywordSegmentTools, ...insightTools, ...conversionOpsTools, ...accountControlTools, ...biddingExperimentTools, ...audienceTools, ...moreAssetTools, ...accountAdminTools] as AnyTool[];

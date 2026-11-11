@@ -98,6 +98,25 @@ describe("get_segment_performance", () => {
     search.age_range_view = () => [{ adGroupCriterion: { ageRange: { type: "AGE_RANGE_25_34" } }, metrics: { costMicros: "1000000" } }];
     expect((await data("get_segment_performance", { segment: "age" })).rows[0].value).toBe("AGE_RANGE_25_34");
   });
+
+  it("a campaign filter also selects campaign.id (Google rejects a WHERE field absent from SELECT) and rows still merge across campaigns", async () => {
+    search.geographic_view = () => [
+      { campaign: { id: "11" }, geographicView: { locationType: "AREA_OF_INTEREST" }, segments: { geoTargetCity: "geoTargetConstants/1007768" }, metrics: { costMicros: "3000000" } },
+      { campaign: { id: "12" }, geographicView: { locationType: "AREA_OF_INTEREST" }, segments: { geoTargetCity: "geoTargetConstants/1007768" }, metrics: { costMicros: "2000000" } },
+    ];
+    search.geo_target_constant = () => [{ geoTargetConstant: { id: "1007768", canonicalName: "Mumbai,Maharashtra,India" } }];
+    const d = await data("get_segment_performance", { segment: "city", campaign_ids: ["11", "12"] });
+    const q = queries.find((x) => x.includes("FROM geographic_view"))!;
+    expect(q).toMatch(/SELECT [^]*\bcampaign\.id\b[^]*FROM/);
+    expect(q).toContain("campaign.id IN (11, 12)");
+    expect(d.rows).toHaveLength(1);
+    expect(d.rows[0]).toMatchObject({ value: "1007768", name: "Mumbai,Maharashtra,India", performance: { cost: 5 } });
+  });
+
+  it.each(["device", "hour_of_day", "day_of_week", "country", "region", "city", "age", "gender"])("%s with a campaign filter is a valid query", async (segment) => {
+    // The schema guard fails the test if Google would reject the query (e.g. a segmenting field filtered but not selected).
+    expect((await kit.run("get_segment_performance", { segment, campaign_ids: ["11"] })).error).toBeUndefined();
+  });
 });
 
 describe("negative keyword list maintenance", () => {

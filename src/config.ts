@@ -14,6 +14,8 @@ const Env = z.object({
   META_APP_SECRET: z.string().optional(),
   META_API_VERSION: z.string().regex(/^v\d+\.\d+$/).optional(),
   YOUTUBE_API_KEY: z.string().optional(),
+  BING_OAUTH_CLIENT_ID: z.string().optional(),
+  BING_OAUTH_CLIENT_SECRET: z.string().optional(),
 });
 
 export interface AppConfig {
@@ -29,6 +31,8 @@ export interface AppConfig {
   google?: { clientId: string; clientSecret: string; apiVersion: string };
   meta?: { appId: string; appSecret: string; apiVersion: string };
   youtubeApiKey?: string;
+  /** Bing Webmaster Tools OAuth client (registered in Bing Webmaster Tools, Settings → API Access → OAuth Client). */
+  bing?: { clientId: string; clientSecret: string };
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -55,5 +59,6 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     if (!e.META_API_VERSION) throw new Error("META_API_VERSION (e.g. v27.0) is required when Meta OAuth is configured. Check Meta's changelog for the current version.");
     cfg.meta = { appId: e.META_APP_ID, appSecret: e.META_APP_SECRET, apiVersion: e.META_API_VERSION };
   }
+  if (e.BING_OAUTH_CLIENT_ID && e.BING_OAUTH_CLIENT_SECRET) cfg.bing = { clientId: e.BING_OAUTH_CLIENT_ID, clientSecret: e.BING_OAUTH_CLIENT_SECRET };
   return cfg;
 }

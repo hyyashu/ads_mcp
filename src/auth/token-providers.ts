@@ -78,6 +78,63 @@ export class GoogleTokenProvider {
   }
 }
 
+/**
+ * Bing Webmaster Tools: exchanges the stored refresh token at https://www.bing.com/webmasters/oauth/token for short-lived
+ * access tokens ("Accessing Bing Webmaster APIs using OAuth 2.0", step 7), cached in memory only. Bing's reference says
+ * refresh tokens are "valid until the user revokes access"; if a refresh response nevertheless carries a new refresh token,
+ * it replaces the stored one (re-encrypted with the same connection-bound key), so a rotated token is never lost.
+ * `invalid_grant` flips the connection to needs_reauth.
+ */
+export class BingTokenProvider {
+  private cache = new Map<string, { token: string; exp: number }>();
+
+  constructor(private o: { db: Db; cipher: CredentialCipher; clientId: string; clientSecret: string; fetch?: FetchLike; now?: () => number }) {}
+
+  async getAccessToken(tenantId: string, connectionId: string): Promise<string> {
+    const now = (this.o.now ?? Date.now)();
+    const cacheKey = `${tenantId}:${connectionId}`;
+    const hit = this.cache.get(cacheKey);
+    if (hit && hit.exp - 60_000 > now) return hit.token;
+
+    const conn = await load(this.o.db, tenantId, connectionId);
+    const aad = credentialAad(tenantId, connectionId);
+    const { refreshToken } = this.o.cipher.decrypt<{ refreshToken: string }>(conn.enc, aad);
+    let res: Response;
+    try {
+      res = await (this.o.fetch ?? fetch)("https://www.bing.com/webmasters/oauth/token", {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({ client_id: this.o.clientId, client_secret: this.o.clientSecret, refresh_token: refreshToken, grant_type: "refresh_token" }),
+        signal: AbortSignal.timeout(10_000),
+      });
+    } catch {
+      throw new ToolError("transient", "Could not reach Bing to refresh credentials.");
+    }
+    const body = (await res.json().catch(() => ({}))) as { access_token?: string; refresh_token?: string; expires_in?: number; error?: string };
+    if (!res.ok || !body.access_token) {
+      if (body.error === "invalid_grant" || body.error === "unauthorized_client" || body.error === "invalid_client") {
+        await markNeedsReauth(this.o.db, tenantId, connectionId);
+        this.forget(connectionId);
+        throw new ToolError("auth_expired", "Bing Webmaster access was revoked or expired. Reconnect Bing Webmaster on the Connections page.");
+      }
+      throw new ToolError(res.status >= 500 ? "transient" : "auth_expired", "Bing refused to refresh credentials.");
+    }
+    if (body.refresh_token && body.refresh_token !== refreshToken) {
+      await this.o.db
+        .update(platformConnection)
+        .set({ credentialsEnc: this.o.cipher.encrypt({ refreshToken: body.refresh_token }, aad).enc, keyVersion: this.o.cipher.activeVersion })
+        .where(and(eq(platformConnection.id, connectionId), eq(platformConnection.tenantId, tenantId), eq(platformConnection.status, "active")));
+    }
+    this.cache.set(cacheKey, { token: body.access_token, exp: now + (body.expires_in ?? 3600) * 1000 });
+    return body.access_token;
+  }
+
+  /** Drops cached tokens for a connection (call on disconnect and when it needs re-authentication). */
+  forget(connectionId: string) {
+    for (const k of this.cache.keys()) if (k.endsWith(`:${connectionId}`)) this.cache.delete(k);
+  }
+}
+
 /** Meta: long-lived user tokens expire and cannot be refreshed. Expiry flips the connection to needs_reauth. */
 export class MetaTokenProvider {
   constructor(private o: { db: Db; cipher: CredentialCipher; appSecret: string; now?: () => Date }) {}

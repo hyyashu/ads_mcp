@@ -1,8 +1,8 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 285,
-    "external_limitation": 1,
+    "implemented": 400,
+    "external_limitation": 3,
     "pending": 0
   },
   "rows": [
@@ -2443,6 +2443,1045 @@
       "inputSchema": "defined"
     },
     {
+      "tool": "link_existing_assets",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "GAQL: asset, customer_asset, campaign_asset, ad_group_asset; CustomerAssetService / CampaignAssetService / AdGroupAssetService (creates links only, no AssetService create)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-11): attach existing library assets (sitelink, callout, structured snippet, call) at account, campaign or ad group level. Business name is excluded: a campaign has one, set by add_business_name_asset.",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_extension_asset",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "AssetService update (sitelink, callout, structured snippet, call; update mask), GAQL: asset, customer_asset, campaign_asset, ad_group_asset for where it is used",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "notes": "DECISION (owner, 2026-11-11): edit mutable extension assets in place. Automatically created assets are refused.",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "exclude_account_assets_from_campaign",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "CampaignService update: campaign.excluded_parent_asset_field_types",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_asset_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: customer_asset, campaign_asset, ad_group_asset with metrics, segmented by segments.asset_interaction_target.interaction_on_this_asset",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_recommendations",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: recommendation (type, impact, campaign)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "apply_recommendations",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "RecommendationService.ApplyRecommendation",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "dismiss_recommendations",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "RecommendationService.DismissRecommendation",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_change_history",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: change_event (who, when, what, old/new values; last 30 days) and change_status",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_auction_insights",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: customer / campaign / ad_group with metrics.auction_insight_search_* segmented by segments.auction_insight_domain (access may be restricted by Google)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_click_conversions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_call_conversions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionUploadService.UploadCallConversions",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_conversion_adjustments",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "conversions",
+      "api": "ConversionAdjustmentUploadService.UploadConversionAdjustments (retraction, restatement)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_conversion_goals",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "conversions",
+      "api": "GAQL: customer_conversion_goal, campaign_conversion_goal, conversion_goal_campaign_config",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_conversion_goals",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "conversions",
+      "api": "CustomerConversionGoalService / CampaignConversionGoalService (biddable)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_conversion_value_rules",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "conversions",
+      "api": "GAQL: conversion_value_rule",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_conversion_value_rule",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "conversions",
+      "api": "ConversionValueRuleService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_conversion_value_rule",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "conversions",
+      "api": "ConversionValueRuleService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_account_exclusions",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: customer_negative_criterion",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_account_exclusions",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerNegativeCriterionService create (placements, YouTube channels and videos, mobile applications and app categories, content labels, IP blocks, the account-level negative keyword list, placement lists)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_account_exclusions",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "other",
+      "api": "CustomerNegativeCriterionService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_tracking_settings",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "CampaignService / AdGroupService update: tracking_url_template, final_url_suffix, url_custom_parameters",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "set_auto_tagging",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "GoogleAdsService.Mutate customer_operation (CustomerOperation, as CustomerService.MutateCustomer): customer.auto_tagging_enabled",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "set_location_bid_modifiers",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignCriterionService update: bid_modifier on LOCATION criteria",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_entity_labels",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "labels",
+      "api": "GAQL: ad_group_label, ad_group_ad_label, ad_group_criterion_label",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_entity_labels",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "labels",
+      "api": "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService create",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_entity_labels",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "labels",
+      "api": "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bid_strategies",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: bidding_strategy and accessible_bidding_strategy (portfolio strategies, including ones a manager account shares) and the campaigns using them",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_bid_strategy",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService create (portfolio)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "assign_bid_strategy",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "CampaignService update: campaign.bidding_strategy, or a standard scheme to detach (campaign_bidding_strategy union)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bid_strategy",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingStrategyService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bidding_adjustments",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "targeting_bidding_settings",
+      "api": "GAQL: bidding_seasonality_adjustment, bidding_data_exclusion",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_seasonality_adjustment",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "BiddingSeasonalityAdjustmentService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_data_exclusion",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "BiddingDataExclusionService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bidding_adjustment",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "targeting_bidding_settings",
+      "api": "BiddingSeasonalityAdjustmentService / BiddingDataExclusionService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_experiments",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: experiment, experiment_arm",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_experiment",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "ExperimentService + ExperimentArmService create (control and treatment arms, in-design campaign)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "schedule_experiment",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "targeting_bidding_settings",
+      "api": "ExperimentService.ScheduleExperiment (long-running; status read back via GAQL)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "end_experiment",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "ExperimentService.EndExperiment",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "promote_experiment",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "ExperimentService.PromoteExperiment (long-running; promote_status read back via GAQL)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_user_lists",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: user_list (type, size, membership status)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_remarketing_list",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "UserListService create (rule-based website visitors)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_customer_match_list",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "UserListService create (CRM-based)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "upload_customer_match_members",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "OfflineUserDataJobService create, add operations, run (SHA-256 hashed emails and phone numbers)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_user_list",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "other",
+      "api": "UserListService remove; GAQL ad_group_criterion, campaign_criterion, audience and user_list to check where the list is used",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_promotion_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (PromotionAsset) + CustomerAsset / CampaignAsset / AdGroupAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_price_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (PriceAsset) + CustomerAsset / CampaignAsset / AdGroupAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_lead_form_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (LeadFormAsset) + CampaignAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_lead_form_submissions",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: lead_form_submission_data",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_business_message_asset",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "assets_extensions",
+      "api": "AssetService (BusinessMessageAsset) + CustomerAsset / CampaignAsset / AdGroupAsset",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_asset_automation_settings",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: campaign.asset_automation_settings",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_asset_automation_settings",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "assets_extensions",
+      "api": "CampaignService update: campaign.asset_automation_settings",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_automated_asset_performance",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "assets_extensions",
+      "api": "GAQL: campaign_aggregate_asset_view, channel_aggregate_asset_view (asset source: advertiser or automatically created)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "request_policy_exemption",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "AdGroupAdService with policy_validation_parameter.ignorable_policy_topics (ads only; existing keywords expose no exemptible violation keys in v26)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_account_users",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: customer_user_access, customer_user_access_invitation",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_user_access",
+      "platform": "google_ads",
+      "action": "Update",
+      "domain": "other",
+      "api": "CustomerUserAccessService update (access_role)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_user_access",
+      "platform": "google_ads",
+      "action": "Delete",
+      "domain": "other",
+      "api": "CustomerUserAccessService remove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "invite_user",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerUserAccessInvitationService create",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_billing_info",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: billing_setup, account_budget; InvoiceService.ListInvoices",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "create_client_account",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerService.CreateCustomerClient (manager account)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "link_client_account",
+      "platform": "google_ads",
+      "action": "Create",
+      "domain": "other",
+      "api": "CustomerClientLinkService mutate (single operation, create, status PENDING; the client accepts outside this server)",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_local_services_leads",
+      "platform": "google_ads",
+      "action": "Read",
+      "domain": "other",
+      "api": "GAQL: local_services_lead, local_services_lead_conversation",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "https://www.googleapis.com/auth/adwords"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "schema-checked (v26), not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
       "tool": "set_campaign_ad_schedule",
       "platform": "google_ads",
       "action": "Update",
@@ -4796,15 +5835,16 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "Google Ads search_term_view (GAQL) + GSC searchAnalytics.query (dimension query) for the linked site",
+      "api": "Google Ads search_term_view (GAQL) + GSC searchAnalytics.query (dimension query) for the linked site; with search_engine bing/both, Bing GET GetQueryStats (weekly buckets) for the linked Bing site",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "webmaster.read"
       ],
       "accountScope": "required",
-      "notes": "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output.",
+      "notes": "Candidates only, never instructions. GSC dates are Pacific Time; Ads uses the account time zone: whole days, stated in the output. Bing has no date range: buckets dated inside the period are used and named; engines are shown side by side, never added.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4815,14 +5855,16 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "GSC searchAnalytics.query (query) + Google Ads keyword_view (GAQL)",
+      "api": "GSC searchAnalytics.query (query) and/or Bing GET GetQueryStats (weekly buckets) + Google Ads keyword_view (GAQL)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "webmaster.read"
       ],
       "accountScope": "required",
+      "notes": "search_engine google (default) / bing / both; Bing buckets dated inside the period are used and named.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4833,16 +5875,18 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "Google Ads ad final URLs (GAQL) and/or Meta creatives + GA4 runReport (landingPage) + GSC urlInspection.index.inspect (sampled: 2,000/day per site)",
+      "api": "Google Ads ad final URLs (GAQL) and/or Meta creatives + GA4 runReport (landingPage) + GSC urlInspection.index.inspect (sampled: 2,000/day per site) and/or Bing GET GetUrlInfo (sampled)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
         "https://www.googleapis.com/auth/analytics.readonly",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "ads_read",
+        "webmaster.read"
       ],
       "accountScope": "required",
-      "notes": "URL inspection is quota-limited, so it samples and says so.",
+      "notes": "URL inspection is quota-limited, so it samples and says so. Bing GetUrlInfo has no documented 'indexed' verdict: it reports Bing's index details (discovery and crawl dates).",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4927,14 +5971,17 @@
       "platform": "google_search_console",
       "action": "Analyze",
       "domain": "combined",
-      "api": "GSC searchAnalytics.query (date, query filtered to brand terms) + spend from linked ad accounts",
+      "api": "GSC searchAnalytics.query (date, query filtered to brand terms) + spend from linked ad accounts; with search_engine bing/both, Bing GET GetQueryStats (find branded top queries) + GetQueryTrafficStats per branded query (at most 20) + GetRankAndTrafficStats",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "https://www.googleapis.com/auth/adwords",
+        "ads_read",
+        "webmaster.read"
       ],
       "accountScope": "required",
-      "notes": "A trend next to spend only: no causal claim.",
+      "notes": "A trend next to spend only: no causal claim. Bing has no brand filter: only its top queries containing a brand term are counted, and the output says branded traffic is undercounted.",
       "status": "implemented",
       "verification": "docs-checked, not live",
       "tests": "see src/tests",
@@ -4945,14 +5992,16 @@
       "platform": "google_ads",
       "action": "Analyze",
       "domain": "combined",
-      "api": "Google Ads search_term_view with conversions (GAQL) + GSC searchAnalytics.query (query)",
+      "api": "Google Ads search_term_view with conversions (GAQL) + GSC searchAnalytics.query (query) and/or Bing GET GetQueryStats (weekly buckets)",
       "risk": "read",
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords",
-        "https://www.googleapis.com/auth/webmasters.readonly"
+        "https://www.googleapis.com/auth/webmasters.readonly",
+        "webmaster.read"
       ],
       "accountScope": "required",
+      "notes": "search_engine google (default) / bing / both; Bing lists only its top queries, which the output states.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -4988,6 +6037,965 @@
       "feasibility": "derived",
       "platformPermissions": [
         "https://www.googleapis.com/auth/analytics.readonly"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_sites",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUserSites",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_site",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddSite",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Acts on the Bing user of the named site's connection. Verification is separate (verify_bing_site).",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "verify_bing_site",
+      "platform": "bing_webmaster",
+      "action": "Update",
+      "domain": "bing_webmaster",
+      "api": "POST VerifySite",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_site",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveSite",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_site_users",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetSiteRoles",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_site_user",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddSiteRoles",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Gives another person access to the site's Bing data.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_site_user",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveSiteRole",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_site_moves",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetSiteMoves",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_site_move",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitSiteMove",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Tells Bing the site moved to another URL: affects how Bing indexes both.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_search_performance",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetRankAndTrafficStats (daily)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_top_queries",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryStats (weekly buckets, Bing's own window)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_top_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetPageStats (weekly buckets, Bing's own window)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_query_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryPageStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_page_queries",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetPageQueryStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_query_page_detail",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryPageDetailStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_query_trend",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryTrafficStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "compare_bing_search_periods",
+      "platform": "bing_webmaster",
+      "action": "Analyze",
+      "domain": "bing_webmaster",
+      "api": "GET GetRankAndTrafficStats / GetQueryStats / GetPageStats, deterministic diff of two periods",
+      "risk": "read",
+      "feasibility": "derived",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_keyword_volume",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetKeyword (country, language, date range)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_keyword_history",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetKeywordStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_related_keywords",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetRelatedKeywords",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "inspect_bing_url",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUrlInfo + GetUrlTrafficInfo",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_directory_index",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetChildrenUrlInfo + GetChildrenUrlTrafficInfo",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_urls",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitUrl / SubmitUrlBatch (at most 500 per batch, within GetUrlSubmissionQuota)",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_submission_quota",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUrlSubmissionQuota + GetContentSubmissionQuota",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_content",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitContent",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "fetch_url_as_bingbot",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST FetchUrl",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Asks Bingbot to fetch the page; changes nothing on the site or in the index.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_fetched_urls",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFetchedUrls",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_fetched_url",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFetchedUrlDetails",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_crawl_stats",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCrawlStats",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_crawl_issues",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCrawlIssues",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_crawl_settings",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCrawlSettings",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_bing_crawl_settings",
+      "platform": "bing_webmaster",
+      "action": "Update",
+      "domain": "bing_webmaster",
+      "api": "POST SaveCrawlSettings",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Changes how fast Bingbot crawls the site.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_sitemaps",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFeeds",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_sitemap",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetFeedDetails",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "submit_bing_sitemap",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST SubmitFeed",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_sitemap",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveFeed",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_linked_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetLinkCounts (paged)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "get_bing_backlinks",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetUrlLinks (paged)",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_connected_pages",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetConnectedPages",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_connected_page",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddConnectedPage",
+      "risk": "write",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_blocked_urls",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetBlockedUrls",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "block_bing_url",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddBlockedUrl",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Removes the page or directory from Bing results.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "unblock_bing_url",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveBlockedUrl",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_preview_blocks",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetActivePagePreviewBlocks",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_preview_block",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddPagePreviewBlock",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "external_limitation",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_bing_preview_block",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemovePagePreviewBlock",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_sitelink_blocks",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetDeepLinkBlocks",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_sitelink_block",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddDeepLinkBlock",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "external_limitation",
+      "verification": "n/a",
+      "tests": "none",
+      "inputSchema": "needs_api_mapping"
+    },
+    {
+      "tool": "remove_bing_sitelink_block",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveDeepLinkBlock",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_url_parameters",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetQueryParameters",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_url_parameter",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddQueryParameter",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "notes": "Bing then treats URLs differing only in this parameter as one page.",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "update_bing_url_parameter",
+      "platform": "bing_webmaster",
+      "action": "Update",
+      "domain": "bing_webmaster",
+      "api": "POST EnableDisableQueryParameter",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_url_parameter",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveQueryParameter",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "list_bing_country_targeting",
+      "platform": "bing_webmaster",
+      "action": "Read",
+      "domain": "bing_webmaster",
+      "api": "GET GetCountryRegionSettings",
+      "risk": "read",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.read"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "add_bing_country_targeting",
+      "platform": "bing_webmaster",
+      "action": "Create",
+      "domain": "bing_webmaster",
+      "api": "POST AddCountryRegionSettings",
+      "risk": "high_impact",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
+      ],
+      "accountScope": "required",
+      "status": "implemented",
+      "verification": "docs-checked, not live",
+      "tests": "see src/tests",
+      "inputSchema": "defined"
+    },
+    {
+      "tool": "remove_bing_country_targeting",
+      "platform": "bing_webmaster",
+      "action": "Delete",
+      "domain": "bing_webmaster",
+      "api": "POST RemoveCountryRegionSettings",
+      "risk": "destructive",
+      "feasibility": "api",
+      "platformPermissions": [
+        "webmaster.manage"
       ],
       "accountScope": "required",
       "status": "implemented",

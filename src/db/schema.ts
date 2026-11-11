@@ -59,7 +59,7 @@ export const platformConnection = pgTable(
     id: id(),
     tenantId: text("tenant_id").notNull().references(() => tenant.id, { onDelete: "cascade" }),
     userId: text("user_id").references(() => appUser.id, { onDelete: "set null" }),
-    platform: text("platform").notNull(), // google_ads | meta_ads | google_search_console | google_analytics | google_tag_manager
+    platform: text("platform").notNull(), // google_ads | meta_ads | google_search_console | google_analytics | google_tag_manager | bing_webmaster
     credentialsEnc: text("credentials_enc").notNull(),
     keyVersion: integer("key_version").notNull().default(1),
     grantedScopes: text("granted_scopes").array().notNull().default(sql`'{}'::text[]`),

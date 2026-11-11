@@ -6,7 +6,10 @@
     "These are implementation targets, not registered or operational MCP tools.",
     "Live mutations should require authorization and server-enforced approval.",
     "Four Google tools were added by the project owner on 2026-11-04 beyond the Adspirer extract: get_keyword_performance, get_segment_performance, remove_negative_keywords_from_list, detach_negative_keyword_list_from_campaign. On 2026-11-05 the owner added list_accounts (workspace-level), because no inventoried tool returned the account_id the other tools require.",
-    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names."
+    "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names.",
+    "On 2026-11-11 the owner added link_existing_assets (Google Ads): the add tools always create a new asset, so an asset already in the library (such as an existing phone number) could not be attached to another campaign. The same day the owner added get_asset_performance, update_extension_asset and exclude_account_assets_from_campaign, and account and ad group levels for link_existing_assets and the remove tools.",
+    "Also on 2026-11-11 the owner approved 57 more Google Ads tools covering the remaining Google Ads API gaps: recommendations, change history, auction insights, offline conversions and goals, account exclusions, tracking, location bids, entity labels, portfolio bidding, seasonality, experiments, audiences and Customer Match, promotion, price, lead form and business message assets, asset automation, policy exemptions, account users, billing, manager accounts and Local Services leads. Video, Smart and Hotel campaigns stay out of scope.",
+    "On 2026-11-10 the owner approved 56 Bing Webmaster Tools tools (platform bing_webmaster) and a Google/Bing/both choice on the existing combined search tools (docs/superpowers/specs/2026-11-10-bing-webmaster-design.md)."
   ],
   "tools": [
     {
@@ -1428,6 +1431,616 @@
       "implementation_status": "pending",
       "input_schema_status": "needs_api_mapping",
       "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "link_existing_assets",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_extension_asset",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "exclude_account_assets_from_campaign",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_asset_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_recommendations",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "apply_recommendations",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "dismiss_recommendations",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_change_history",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_auction_insights",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "upload_click_conversions",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "upload_call_conversions",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "upload_conversion_adjustments",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_conversion_goals",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_conversion_goals",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_conversion_value_rules",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_conversion_value_rule",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_conversion_value_rule",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_account_exclusions",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_account_exclusions",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_account_exclusions",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_tracking_settings",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "set_auto_tagging",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "set_location_bid_modifiers",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_entity_labels",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_entity_labels",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_entity_labels",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_bid_strategies",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_bid_strategy",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "assign_bid_strategy",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_bid_strategy",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_bidding_adjustments",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_seasonality_adjustment",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_data_exclusion",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_bidding_adjustment",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_experiments",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_experiment",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "schedule_experiment",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "end_experiment",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "promote_experiment",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_user_lists",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_remarketing_list",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_customer_match_list",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "upload_customer_match_members",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_user_list",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_promotion_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_price_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_lead_form_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_lead_form_submissions",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "add_business_message_asset",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_asset_automation_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_asset_automation_settings",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_automated_asset_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "request_policy_exemption",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "list_account_users",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "update_user_access",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "remove_user_access",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "invite_user",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_billing_info",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "google_ads",
+      "name": "create_client_account",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "link_client_account",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "google_ads",
+      "name": "get_local_services_leads",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
     },
     {
       "platform": "google_ads",
@@ -2868,6 +3481,566 @@
       "implementation_status": "pending",
       "input_schema_status": "needs_api_mapping",
       "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_sites",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_site",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "verify_bing_site",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_site",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_site_users",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_site_user",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_site_user",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_site_moves",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_site_move",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_search_performance",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_top_queries",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_top_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_query_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_page_queries",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_query_page_detail",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_query_trend",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "compare_bing_search_periods",
+      "action_type": "Analyze",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_keyword_volume",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_keyword_history",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_related_keywords",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "inspect_bing_url",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_directory_index",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_urls",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_submission_quota",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_content",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "fetch_url_as_bingbot",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_fetched_urls",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_fetched_url",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_crawl_stats",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_crawl_issues",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_crawl_settings",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "update_bing_crawl_settings",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_sitemaps",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_sitemap",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "submit_bing_sitemap",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_sitemap",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_linked_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "get_bing_backlinks",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_connected_pages",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_connected_page",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_blocked_urls",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "block_bing_url",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "unblock_bing_url",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_preview_blocks",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_preview_block",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_preview_block",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_sitelink_blocks",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_sitelink_block",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_sitelink_block",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_url_parameters",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_url_parameter",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "update_bing_url_parameter",
+      "action_type": "Update",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_url_parameter",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "list_bing_country_targeting",
+      "action_type": "Read",
+      "modifies_data": false,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": false
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "add_bing_country_targeting",
+      "action_type": "Create",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
+    },
+    {
+      "platform": "bing_webmaster",
+      "name": "remove_bing_country_targeting",
+      "action_type": "Delete",
+      "modifies_data": true,
+      "connected": true,
+      "implementation_status": "pending",
+      "input_schema_status": "needs_api_mapping",
+      "approval_required": true
     }
   ]
 }

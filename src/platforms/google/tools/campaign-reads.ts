@@ -187,7 +187,7 @@ export const getCampaignFrequencyCaps = googleRead({
 // -------------------------------------------------------------------------------------- list_campaign_extensions
 // AssetFieldType values (v26). Image extensions are AD_IMAGE; location extensions are linked through asset sets, not a field type.
 const EXTENSION_FIELD_TYPES = ["SITELINK", "CALLOUT", "STRUCTURED_SNIPPET", "CALL", "PRICE", "PROMOTION", "LEAD_FORM", "MOBILE_APP", "AD_IMAGE", "BUSINESS_NAME", "BUSINESS_LOGO"] as const;
-const assetFields = ["asset.id", "asset.name", "asset.type", "asset.final_urls", "asset.sitelink_asset.link_text", "asset.sitelink_asset.description1", "asset.sitelink_asset.description2", "asset.callout_asset.callout_text", "asset.structured_snippet_asset.header", "asset.structured_snippet_asset.values", "asset.call_asset.phone_number", "asset.call_asset.country_code", "asset.text_asset.text", "asset.image_asset.full_size.url", "asset.policy_summary.approval_status"];
+export const assetFields = ["asset.id", "asset.name", "asset.type", "asset.final_urls", "asset.sitelink_asset.link_text", "asset.sitelink_asset.description1", "asset.sitelink_asset.description2", "asset.callout_asset.callout_text", "asset.structured_snippet_asset.header", "asset.structured_snippet_asset.values", "asset.call_asset.phone_number", "asset.call_asset.country_code", "asset.text_asset.text", "asset.image_asset.full_size.url", "asset.policy_summary.approval_status"];
 /** A compact, type-specific description of an asset's content. */
 export function assetContent(r: Row): Record<string, string | string[] | null> {
   const t = str(r, "asset.type");

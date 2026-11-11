@@ -213,6 +213,7 @@ describe("automation settings page", () => {
 
   it("no MCP tool can change automation rules", () => {
     const names = kit.deps.registry.list().map((t) => t.name);
-    expect(names.filter((n) => /automation|tenant_policy|auto_approv/i.test(n))).toEqual([]);
+    // get/update_asset_automation_settings are Google Ads campaign settings (Google generating assets), not approval automation.
+    expect(names.filter((n) => /(?<!asset_)automation|tenant_policy|auto_approv/i.test(n))).toEqual([]);
   });
 });
