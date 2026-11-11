@@ -3,7 +3,8 @@ import { fileURLToPath } from "node:url";
 import { ApiTokenAuthenticator } from "./auth/api-token";
 import { CompositeAuthenticator, OAuthServer } from "./auth/oauth-server";
 import { PlatformOAuth } from "./auth/platform-oauth";
-import { GoogleTokenProvider, MetaTokenProvider } from "./auth/token-providers";
+import { BingTokenProvider, GoogleTokenProvider, MetaTokenProvider } from "./auth/token-providers";
+import { BingHttp } from "./platforms/bing/http";
 import { GoogleApiHttp } from "./platforms/gapi/http";
 import { GoogleAdsHttp } from "./platforms/google/http";
 import { MetaGraphHttp } from "./platforms/meta/http";
@@ -49,7 +50,13 @@ function main() {
   const approvals = new ApprovalService(db);
   const oauth = new OAuthServer({ db, config: { issuer: config.issuer, resource: config.resource } });
   const googleTokens = config.google ? new GoogleTokenProvider({ db, cipher, clientId: config.google.clientId, clientSecret: config.google.clientSecret }) : undefined;
-  const platform = new PlatformOAuth(db, cipher, { publicUrl: config.issuer, google: config.google, meta: config.meta }, { onRevoked: (id) => googleTokens?.forget(id) });
+  const bingTokens = config.bing ? new BingTokenProvider({ db, cipher, clientId: config.bing.clientId, clientSecret: config.bing.clientSecret }) : undefined;
+  const platform = new PlatformOAuth(db, cipher, { publicUrl: config.issuer, google: config.google, meta: config.meta, bing: config.bing }, {
+    onRevoked: (id) => {
+      googleTokens?.forget(id);
+      bingTokens?.forget(id);
+    },
+  });
 
   const deps: PipelineDeps = {
     db,
@@ -66,6 +73,7 @@ function main() {
       // Search Console, GA4 and Tag Manager share the Google OAuth client, so they share its token provider.
       // Tag Manager allows 25 requests per 100 seconds per Cloud project (its "Limits and quotas" page), shared by all tenants.
       gapi: googleTokens ? { tokens: googleTokens, http: new GoogleApiHttp(), gtmLimiter: limiter("gtm_project", num("GTM_RATE_BURST", 25), num("GTM_RATE_PER_SEC", 0.25)) } : undefined,
+      bing: bingTokens ? { tokens: bingTokens, http: new BingHttp() } : undefined,
       youtube: config.youtubeApiKey ? new YouTubeClient({ apiKey: config.youtubeApiKey }) : undefined,
       meta: config.meta ? { tokens: new MetaTokenProvider({ db, cipher, appSecret: config.meta.appSecret }), http: new MetaGraphHttp({ apiVersion: config.meta.apiVersion }) } : undefined,
     }),

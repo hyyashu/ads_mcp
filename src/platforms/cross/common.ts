@@ -45,6 +45,7 @@ export const LABEL: Record<Platform, string> = {
   google_search_console: "Search Console site",
   google_analytics: "GA4 property",
   google_tag_manager: "Tag Manager container",
+  bing_webmaster: "Bing Webmaster site",
 };
 const ownLabel = (ctx: ToolContext<unknown>) => (ctx.account ? LABEL[ctx.account.platform] : "account");
 

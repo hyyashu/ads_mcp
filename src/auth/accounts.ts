@@ -12,7 +12,7 @@ import type { ResolvedAccount } from "../mcp/tool";
  * An account can be named by this server's id (from list_accounts) or by the platform's own id: a Google Ads customer id
  * ("488-059-4061" or "4880594061"), a Meta ad account id ("act_123" or "123"), a Search Console site exactly as Search
  * Console returns it ("https://example.com/" or "sc-domain:example.com"), a GA4 property ("properties/123" or "123") or a
- * Tag Manager container path ("accounts/1/containers/2"). Either way the lookup stays scoped to the caller's workspace and
+ * Tag Manager container path ("accounts/1/containers/2") or a Bing Webmaster site URL as Bing returns it ("https://example.com/"). Either way the lookup stays scoped to the caller's workspace and
  * platform, and (tenant, platform, external id) is unique, so this cannot reach another workspace's account.
  */
 export function externalIdFor(accountId: string, platform: Platform): string | null {
@@ -29,6 +29,9 @@ export function externalIdFor(accountId: string, platform: Platform): string | n
       return /^(properties\/)?\d{1,20}$/.test(raw) ? (raw.startsWith("properties/") ? raw : `properties/${raw}`) : null;
     case "google_tag_manager":
       return /^accounts\/\d{1,20}\/containers\/\d{1,20}$/.test(raw) ? raw : null;
+    case "bing_webmaster":
+      // Exactly as Bing's GetUserSites returned it (stored at connect time); Bing names sites by URL, with or without a trailing slash.
+      return /^https?:\/\/\S+$/.test(raw) ? raw : null;
   }
 }
 

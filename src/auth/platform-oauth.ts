@@ -3,6 +3,9 @@ import { and, eq, gt, isNull, sql } from "drizzle-orm";
 import type { Db } from "../db";
 import { connectedAccount, platformConnection, platformOauthState } from "../db/schema";
 import { ToolError } from "../mcp/errors";
+import { discoverBingSites } from "../platforms/bing/client";
+import { BingHttp } from "../platforms/bing/http";
+import { BING_SCOPES } from "../platforms/bing/scopes";
 import { discoverGa4Properties } from "../platforms/ga4/client";
 import { GoogleApiClient } from "../platforms/gapi/client";
 import type { Discovery } from "../platforms/gapi/discovery";
@@ -31,7 +34,7 @@ export const META_SCOPES = {
 } as const;
 
 export type Access = "read" | "write";
-export type PlatformKey = "google_ads" | "meta_ads" | ProductPlatform;
+export type PlatformKey = "google_ads" | "meta_ads" | ProductPlatform | "bing_webmaster";
 
 /**
  * Search Console, GA4 and Tag Manager: each its own Connect button and its own Google grant (own refresh token and
@@ -45,9 +48,9 @@ const PRODUCTS: Record<ProductPlatform, { slug: string; label: string; discover:
 };
 export const isProduct = (p: string): p is ProductPlatform => Object.hasOwn(PRODUCTS, p);
 /** URL slug of each platform's /connect/{slug}/start and /callback routes. */
-export const CONNECT_SLUGS: Record<PlatformKey, string> = { google_ads: "google", meta_ads: "meta", google_search_console: "gsc", google_analytics: "ga4", google_tag_manager: "gtm" };
+export const CONNECT_SLUGS: Record<PlatformKey, string> = { google_ads: "google", meta_ads: "meta", google_search_console: "gsc", google_analytics: "ga4", google_tag_manager: "gtm", bing_webmaster: "bing" };
 /** Names shown on the Connections page. */
-export const PLATFORM_LABELS: Record<PlatformKey, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics", google_tag_manager: "Tag Manager" };
+export const PLATFORM_LABELS: Record<PlatformKey, string> = { google_ads: "Google Ads", meta_ads: "Meta Ads", google_search_console: "Search Console", google_analytics: "Google Analytics", google_tag_manager: "Tag Manager", bing_webmaster: "Bing Webmaster" };
 const STATE_TTL_MS = 10 * 60_000;
 const MAX_ACCOUNTS = 500;
 /** Meta ad account fields read at connect time. `currency` and `timezone_name` are the reporting units of every insight. */
@@ -57,6 +60,7 @@ export interface PlatformOAuthConfig {
   publicUrl: string;
   google?: { clientId: string; clientSecret: string; apiVersion: string };
   meta?: { appId: string; appSecret: string; apiVersion: string };
+  bing?: { clientId: string; clientSecret: string };
 }
 
 export interface Actor {
@@ -93,6 +97,7 @@ export class PlatformOAuth {
   }
 
   enabled(platform: PlatformKey) {
+    if (platform === "bing_webmaster") return !!this.cfg.bing;
     return platform === "meta_ads" ? !!this.cfg.meta : !!this.cfg.google;
   }
 
@@ -107,7 +112,7 @@ export class PlatformOAuth {
 
   /** Creates single-use state (bound to this user) and returns the URL to send the browser to. */
   async start(platform: PlatformKey, actor: Actor, access: Access): Promise<string> {
-    if (!this.enabled(platform)) throw new ToolError("unsupported", `${platform === "meta_ads" ? "Meta" : "Google"} connections are not configured on this server.`);
+    if (!this.enabled(platform)) throw new ToolError("unsupported", `${platform === "meta_ads" ? "Meta" : platform === "bing_webmaster" ? "Bing Webmaster" : "Google"} connections are not configured on this server.`);
     this.assertCanConnect(actor, access);
 
     const state = b64u(randomBytes(32));
@@ -123,6 +128,12 @@ export class PlatformOAuth {
       expiresAt: new Date(this.now().getTime() + STATE_TTL_MS),
     });
 
+    if (platform === "bing_webmaster") {
+      // Bing's OAuth page documents response_type, client_id, redirect_uri, scope (and state, which the redirect returns). It
+      // documents no PKCE parameters, so none are sent; the single-use state above still binds the flow to this user.
+      const q = new URLSearchParams({ response_type: "code", client_id: this.cfg.bing!.clientId, redirect_uri: this.redirectUri(platform), scope: BING_SCOPES[access].join(" "), state });
+      return `https://www.bing.com/webmasters/oauth/authorize?${q}`;
+    }
     if (platform !== "meta_ads") {
       const g = this.cfg.google!;
       const scopes = platform === "google_ads" ? [GOOGLE_ADS_SCOPE] : PRODUCT_SCOPES[platform][access];
@@ -180,6 +191,7 @@ export class PlatformOAuth {
     if (!code) throw new ToolError("invalid_argument", "Missing authorization code.");
     this.assertCanConnect(actor, access);
     if (platform === "meta_ads") return this.finishMeta(actor, code, access);
+    if (platform === "bing_webmaster") return this.finishBing(actor, code, access);
     return platform === "google_ads" ? this.finishGoogle(actor, code, verifier, access) : this.finishGoogleProduct(platform, actor, code, verifier, access);
   }
 
@@ -295,6 +307,50 @@ export class PlatformOAuth {
     return (Array.isArray(chunks) ? chunks : []).flatMap((c) => c.results ?? []);
   }
 
+  // -------------------------------------------------------------------- Bing ----
+  /**
+   * Bing Webmaster Tools: authorization code -> access + refresh token (POST https://www.bing.com/webmasters/oauth/token, form
+   * encoded; the code is valid for 5 minutes). Bing's token response documents no `scope` field, so when one is present it
+   * must include what the access level needs, and when absent the requested scopes are recorded (the consent screen lists
+   * them and has no per-scope opt-out documented). Discovery runs before anything is stored.
+   */
+  private async finishBing(actor: Actor, code: string, access: Access): Promise<FinishResult> {
+    const b = this.cfg.bing!;
+    const res = await this.f("https://www.bing.com/webmasters/oauth/token", {
+      method: "POST",
+      headers: { "content-type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ code, client_id: b.clientId, client_secret: b.clientSecret, redirect_uri: this.redirectUri("bing_webmaster"), grant_type: "authorization_code" }),
+      signal: AbortSignal.timeout(10_000),
+    });
+    const tok = (await res.json().catch(() => ({}))) as { access_token?: string; refresh_token?: string; scope?: string };
+    if (!res.ok || !tok.access_token) throw new ToolError("permission_denied", "Bing did not accept the authorization. Start again.");
+    if (!tok.refresh_token) throw new ToolError("invalid_argument", "Bing did not return a refresh token. Remove this app's access in Bing Webmaster Tools, then connect again.");
+    const requested: string[] = [...BING_SCOPES[access]];
+    const granted = tok.scope ? tok.scope.split(/[ ,]+/).filter(Boolean) : requested;
+    const missing = requested.filter((sc) => !granted.some((g) => g.toLowerCase() === sc.toLowerCase()));
+    if (missing.length) throw new ToolError("permission_denied", `The Bing Webmaster permission was not granted (${missing.join(", ")}). Connect again and allow it.`);
+
+    const http = new BingHttp({ fetch: this.f });
+    const signal = AbortSignal.timeout(60_000);
+    const found = await discoverBingSites((method) => http.call({ accessToken: tok.access_token!, method, idempotent: true, signal }));
+
+    const connectionId = randomUUID();
+    await this.db.insert(platformConnection).values({
+      id: connectionId,
+      tenantId: actor.tenantId,
+      userId: actor.userId,
+      platform: "bing_webmaster",
+      credentialsEnc: this.cipher.encrypt({ refreshToken: tok.refresh_token }, credentialAad(actor.tenantId, connectionId)).enc,
+      keyVersion: this.cipher.activeVersion,
+      grantedScopes: granted,
+      externalUserId: null, // Bing's token response carries no user identity
+      status: "active",
+    });
+    await this.saveAccounts(actor.tenantId, connectionId, "bing_webmaster", access, found.accounts);
+    await audit(this.db, { tenantId: actor.tenantId, userId: actor.userId, event: "connection.created", refId: connectionId, outcome: "bing_webmaster" });
+    return { connectionId, accounts: found.accounts.length, skipped: found.skipped, access };
+  }
+
   // -------------------------------------------------------------------- Meta ----
   private async finishMeta(actor: Actor, code: string, access: Access): Promise<FinishResult> {
     const m = this.cfg.meta!;
@@ -406,6 +462,8 @@ export class PlatformOAuth {
           const r = await this.f(`https://graph.facebook.com/${this.cfg.meta.apiVersion}/me/permissions?${new URLSearchParams({ appsecret_proof: proof })}`, { method: "DELETE", headers: { authorization: `Bearer ${creds.accessToken}` }, signal: AbortSignal.timeout(10_000) });
           revoked = r.ok;
         }
+        // Bing Webmaster documents no token revocation endpoint: the grant is removed here only, and the user can remove the
+        // app's access in Bing Webmaster Tools (the Connections page says so).
       } catch {
         /* the platform may be unreachable or the token already dead: we still remove it from our side */
       }

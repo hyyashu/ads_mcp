@@ -1,8 +1,11 @@
 import { safeFetchBytes } from "../auth/ssrf";
-import type { GoogleTokenProvider, MetaTokenProvider } from "../auth/token-providers";
+import type { BingTokenProvider, GoogleTokenProvider, MetaTokenProvider } from "../auth/token-providers";
 import type { Db } from "../db";
 import { ToolError } from "../mcp/errors";
 import type { Limiter } from "../security/rate-limit";
+import { BingClient } from "./bing/client";
+import type { BingHttp } from "./bing/http";
+import type { BingServices } from "./bing/services";
 import { GoogleAdsClient } from "./google/client";
 import type { GoogleAdsHttp } from "./google/http";
 import { type ImageFetcher, fetchImageSafely } from "./google/media";
@@ -27,6 +30,8 @@ export interface ServiceFactoryDeps {
   /** gtmLimiter: Tag Manager's quota is per Cloud project (25 requests per 100 s, Tag Manager "Limits and quotas"), shared by
    * every tenant, so one limiter for the whole server keeps a busy tenant from failing everyone's calls at Google. */
   gapi?: { tokens: Pick<GoogleTokenProvider, "getAccessToken">; http: GoogleApiHttp; gtmLimiter?: Limiter };
+  /** Bing Webmaster Tools: its own OAuth client and token provider. */
+  bing?: { tokens: Pick<BingTokenProvider, "getAccessToken">; http: BingHttp };
   fetchImage?: ImageFetcher;
   youtube?: YouTubeClient;
   fetchPage?: (url: string) => Promise<string>;
@@ -108,6 +113,12 @@ export function createServicesFactory(d: ServiceFactoryDeps) {
         : undefined;
       const gtm = new GtmClient({ ...base, containerPath: o.account.externalId, ...(beforeCall ? { beforeCall } : {}) });
       return { gtm, mutationsSent: () => gtm.mutationsSent } satisfies GtmServices;
+    }
+    if (o.account.platform === "bing_webmaster") {
+      if (!d.bing) throw new ToolError("unsupported", "Bing Webmaster is not configured on this server.");
+      const { tokens, http } = d.bing;
+      const bing = new BingClient({ http, siteUrl: o.account.externalId, getAccessToken: () => tokens.getAccessToken(o.tenantId, o.account.connectionId), signal: o.signal });
+      return { bing, mutationsSent: () => bing.mutationsSent } satisfies BingServices;
     }
     throw new ToolError("unsupported", `Platform ${o.account.platform} is not available yet.`);
   };
