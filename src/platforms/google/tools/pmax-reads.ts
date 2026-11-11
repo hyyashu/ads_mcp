@@ -196,20 +196,6 @@ export const getPmaxSearchThemes = googleRead({
   },
 });
 
-// ------------------------------------------------------------------------------------------ get_pmax_conversion_goals
-export const getPmaxConversionGoals = googleRead({
-  name: "get_pmax_conversion_goals",
-  title: "Performance Max conversion goals",
-  description: "Shows which conversion goals (category and origin, for example PURCHASE from WEBSITE) a Performance Max campaign bids for. Biddable goals are what Smart Bidding optimises toward. Fetched live.",
-  input: z.object({ account_id: accountId, campaign_id: idSchema }),
-  output: z.object({ campaign_id: z.string(), goals: z.array(z.object({ category: z.string().nullable(), origin: z.string().nullable(), biddable: z.boolean() })) }),
-  handler: async (a, ctx) => {
-    await requirePmax(ctx.services.ads, a.campaign_id);
-    const rows = await ctx.services.ads.query(new Gaql().select("campaign.id", "campaign_conversion_goal.category", "campaign_conversion_goal.origin", "campaign_conversion_goal.biddable").from("campaign_conversion_goal").where(`campaign.id = ${lit.id(a.campaign_id)}`), { maxRows: 500 });
-    return { campaign_id: a.campaign_id, goals: rows.map((r) => ({ category: str(r, "campaign_conversion_goal.category"), origin: str(r, "campaign_conversion_goal.origin"), biddable: pick(r, "campaign_conversion_goal.biddable") === true })) };
-  },
-});
-
 // ------------------------------------------------------------------------------------ get_asset_group_listing_filters
 export const getAssetGroupListingFilters = googleRead({
   name: "get_asset_group_listing_filters",
@@ -285,4 +271,4 @@ export const analyzePmaxSearchCategories = googleRead({
   },
 });
 
-export const pmaxReadTools = [getPmaxAssetGroups, listPmaxAssetGroupAssets, listPmaxAssetGroupImages, getPmaxAssetPerformance, getPmaxAudienceSignals, getPmaxSearchThemes, getPmaxConversionGoals, getAssetGroupListingFilters, analyzePmaxSearchTerms, analyzePmaxSearchCategories];
+export const pmaxReadTools = [getPmaxAssetGroups, listPmaxAssetGroupAssets, listPmaxAssetGroupImages, getPmaxAssetPerformance, getPmaxAudienceSignals, getPmaxSearchThemes, getAssetGroupListingFilters, analyzePmaxSearchTerms, analyzePmaxSearchCategories];

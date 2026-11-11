@@ -75,17 +75,16 @@ export class GoogleAdsClient {
 
   /**
    * Sends a mutating RPC that is not part of GoogleAdsService.Mutate, e.g. "customers/{customer}/productLinks:create" or
-   * "customers/{customer}/recommendations:apply", "customers/{customer}/offlineUserDataJobs/{id}:run" or
+   * "customers/{customer}/recommendations:apply" or
    * "customers/{customer}/experiments/{id}:scheduleExperiment".
    * Counted and never retried, exactly like mutate().
    */
   async sendRpc<T = Row>(path: string, body: Row): Promise<T> {
     const p = path.replace("{customer}", this.o.customerId);
     // Service methods (create, remove, update; RecommendationService apply and dismiss); the services whose Mutate takes a single
-    // `operation`; and resource-level methods only where listed: OfflineUserDataJobService adds operations to and runs one job,
-    // ExperimentService schedules, ends and promotes one, CustomerService creates a client under this manager account.
+    // `operation`; and resource-level methods only where listed: ExperimentService schedules, ends and promotes one, CustomerService creates a client under this manager account.
     const service = `[A-Za-z]+:(create|remove|update|apply|dismiss)|(customerUserAccesses|customerUserAccessInvitations|customerClientLinks):mutate`;
-    const onResource = `offlineUserDataJobs/\\d{1,20}:(addOperations|run)|experiments/\\d{1,20}:(scheduleExperiment|endExperiment|promoteExperiment)`;
+    const onResource = `experiments/\\d{1,20}:(scheduleExperiment|endExperiment|promoteExperiment)`;
     if (!new RegExp(`^customers/${this.o.customerId}(/(${service}|${onResource})|:createCustomerClient)$`).test(p)) throw new ToolError("internal", "invalid mutating rpc path");
     const base = await this.base();
     this.assertNotAborted();
@@ -95,9 +94,9 @@ export class GoogleAdsClient {
 
   /**
    * Sends a conversion upload (ConversionUploadService / ConversionAdjustmentUploadService), e.g.
-   * POST customers/{id}:uploadClickConversions. Counted and never retried, exactly like mutate().
+   * POST customers/{id}:uploadCallConversions. Counted and never retried, exactly like mutate().
    */
-  async upload<T = Row>(method: "uploadClickConversions" | "uploadCallConversions" | "uploadConversionAdjustments", body: Row): Promise<T> {
+  async upload<T = Row>(method: "uploadCallConversions" | "uploadConversionAdjustments", body: Row): Promise<T> {
     const base = await this.base();
     this.assertNotAborted();
     this.sent++;

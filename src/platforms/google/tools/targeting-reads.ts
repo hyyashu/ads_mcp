@@ -2,8 +2,8 @@ import { z } from "zod";
 import { ToolError } from "../../../mcp/errors";
 import type { GoogleAdsClient, Row } from "../client";
 import { Gaql, fromMicros, lit, num, pick } from "../gaql";
-import { mapCaps, tailId } from "./campaign-reads";
-import { Money, accountId, campaignIds, googleRead, idSchema, str } from "./common";
+import { tailId } from "./campaign-reads";
+import { Money, accountId, googleRead, idSchema, str } from "./common";
 
 const n = (r: Row, f: string): number | null => (pick(r, f) === undefined || pick(r, f) === null ? null : num(pick(r, f)));
 const money = (r: Row, f: string): number | null => (pick(r, f) === undefined ? null : fromMicros(pick(r, f)));
@@ -84,6 +84,7 @@ export async function adGroupCriteria(ads: GoogleAdsClient, o: { types: readonly
 const needScope = (a: { campaign_id?: string; ad_group_ids?: string[] }) => {
   if (!a.campaign_id && !a.ad_group_ids?.length) throw new ToolError("invalid_argument", "Give campaign_id or ad_group_ids.");
 };
+const CAMPAIGN_TYPES = ["DISPLAY", "DEMAND_GEN", "SEARCH", "VIDEO"] as const;
 const criteriaTool = (name: string, title: string, description: string, types: readonly string[], channel?: Channel, requireScope = true) =>
   googleRead({
     name,
@@ -97,14 +98,28 @@ const criteriaTool = (name: string, title: string, description: string, types: r
       return { criteria, returned: criteria.length };
     },
   });
+/**
+ * Like criteriaTool, with an optional campaign_type: given alone it lists every campaign of that type. This replaced the
+ * Display and Demand Gen copies of the audience and demographic reads (2026-11-11), so one tool answers every channel.
+ */
+const typedCriteriaTool = (name: string, title: string, description: string, types: readonly string[]) =>
+  googleRead({
+    name,
+    title,
+    description,
+    input: z.object({ ...scopeInput, campaign_type: z.enum(CAMPAIGN_TYPES).optional().describe("Only ad groups in campaigns of this type. Given alone, lists every campaign of this type.") }),
+    output: z.object({ criteria: z.array(criterionRow), returned: z.number() }),
+    handler: async (a, ctx) => {
+      if (!a.campaign_type) needScope(a);
+      const criteria = await adGroupCriteria(ctx.services.ads, { types, campaignId: a.campaign_id, adGroupIds: a.ad_group_ids, channel: a.campaign_type });
+      return { criteria, returned: criteria.length };
+    },
+  });
 
-export const getAdGroupAudiences = criteriaTool("get_ad_group_audiences", "Ad group audiences", "Lists the audiences on ad groups (your data segments, affinity and in-market segments, custom and combined audiences) with names, and whether each is targeted or excluded. Give campaign_id or ad_group_ids. Fetched live.", AUDIENCE_TYPES);
-export const getAdGroupDemographics = criteriaTool("get_ad_group_demographics", "Ad group demographics", "Lists the demographic criteria on ad groups (age range, gender, household income, parental status), whether each is excluded, and its bid adjustment. Give campaign_id or ad_group_ids. Fetched live.", DEMOGRAPHIC_TYPES);
-export const getDisplayAudiences = criteriaTool("get_display_audiences", "Display audiences", "Lists audience targeting and exclusions on Display campaign ad groups, with names. Optionally one campaign or some ad groups; otherwise every Display campaign. Fetched live.", AUDIENCE_TYPES, "DISPLAY", false);
-export const getDisplayDemographics = criteriaTool("get_display_demographics", "Display demographics", "Lists demographic targeting and exclusions (age, gender, income, parental status) on Display campaign ad groups. Optionally one campaign or some ad groups. Fetched live.", DEMOGRAPHIC_TYPES, "DISPLAY", false);
+export const getAdGroupAudiences = typedCriteriaTool("get_ad_group_audiences", "Ad group audiences", "Lists the audiences on ad groups (your data segments, affinity and in-market segments, custom and combined audiences) with names, and whether each is targeted or excluded. Give campaign_id or ad_group_ids, or campaign_type (DISPLAY, DEMAND_GEN, SEARCH, VIDEO) to list every campaign of that type; they can be combined. Fetched live.", AUDIENCE_TYPES);
+export const getAdGroupDemographics = typedCriteriaTool("get_ad_group_demographics", "Ad group demographics", "Lists the demographic criteria on ad groups (age range, gender, household income, parental status), whether each is excluded, and its bid adjustment. Give campaign_id or ad_group_ids, or campaign_type (DISPLAY, DEMAND_GEN, SEARCH, VIDEO) to list every campaign of that type; they can be combined. Fetched live.", DEMOGRAPHIC_TYPES);
 export const getDisplayKeywords = criteriaTool("get_display_keywords", "Display keywords", "Lists the content keywords on Display campaign ad groups (keywords that choose pages to show on, not search queries). Optionally one campaign or some ad groups. Fetched live.", ["KEYWORD"], "DISPLAY", false);
 export const getDisplayTopics = criteriaTool("get_display_topics", "Display topics", "Lists the topics targeted or excluded on Display campaign ad groups, with the topic path (for example Arts & Entertainment > Music). Optionally one campaign or some ad groups. Fetched live.", ["TOPIC"], "DISPLAY", false);
-export const getDemandgenAudiences = criteriaTool("get_demandgen_audiences", "Demand Gen audiences", "Lists audience targeting and exclusions on Demand Gen campaign ad groups, with names. Optionally one campaign or some ad groups. Fetched live.", AUDIENCE_TYPES, "DEMAND_GEN", false);
 
 // -------------------------------------------------------------------------------------------- get_display_placements
 export const getDisplayPlacements = googleRead({
@@ -189,22 +204,6 @@ export const getDisplayAdGroupSettings = googleRead({
         target_restrictions: ((pick(r, "ad_group.targeting_setting.target_restrictions") as Row[] | undefined) ?? []).map((t) => ({ dimension: str(t, "targeting_dimension"), bid_only: pick(t, "bid_only") === undefined ? null : pick(t, "bid_only") === true })),
       })),
     };
-  },
-});
-
-// ------------------------------------------------------------------------------------- get_display_frequency_caps
-export const getDisplayFrequencyCaps = googleRead({
-  name: "get_display_frequency_caps",
-  title: "Display frequency caps",
-  description: "Shows the frequency caps (maximum impressions per person per day, week or month) on Display campaigns. Optionally only given campaigns. Fetched live.",
-  input: z.object({ account_id: accountId, campaign_ids: campaignIds.optional() }),
-  output: z.object({ campaigns: z.array(z.object({ campaign_id: z.string().min(1), name: z.string().nullable(), frequency_caps: z.array(z.object({ level: z.string().nullable(), event_type: z.string().nullable(), time_unit: z.string().nullable(), time_length: z.number().nullable(), cap: z.number().nullable() })) })) }),
-  handler: async (a, ctx) => {
-    const rows = await ctx.services.ads.query(
-      new Gaql().select("campaign.id", "campaign.name", "campaign.frequency_caps").from("campaign").where("campaign.advertising_channel_type = 'DISPLAY'").where("campaign.status != 'REMOVED'").where(a.campaign_ids?.length ? `campaign.id IN ${lit.list(a.campaign_ids.map(lit.id))}` : undefined),
-      { maxRows: 1000 },
-    );
-    return { campaigns: rows.map((r) => ({ campaign_id: String(pick(r, "campaign.id") ?? ""), name: str(r, "campaign.name"), frequency_caps: mapCaps(pick(r, "campaign.frequency_caps")) })) };
   },
 });
 
@@ -302,4 +301,4 @@ export const searchAudiences = googleRead({
   },
 });
 
-export const targetingReadTools = [getAdGroupAudiences, getAdGroupDemographics, getAdGroupDeviceBidModifiers, getDisplayAdGroupSettings, getDisplayAudiences, getDisplayDemographics, getDisplayFrequencyCaps, getDisplayKeywords, getDisplayPlacements, getDisplayTopics, getDemandgenAudiences, getDemandgenChannelControls, listGoogleLanguages, resolveGoogleLocations, searchAudiences];
+export const targetingReadTools = [getAdGroupAudiences, getAdGroupDemographics, getAdGroupDeviceBidModifiers, getDisplayAdGroupSettings, getDisplayKeywords, getDisplayPlacements, getDisplayTopics, getDemandgenChannelControls, listGoogleLanguages, resolveGoogleLocations, searchAudiences];

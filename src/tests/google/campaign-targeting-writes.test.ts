@@ -146,13 +146,13 @@ describe("schedule and device adjustments", () => {
   });
 });
 
-describe("frequency caps, bidding and Display dates", () => {
+describe("frequency caps and bidding", () => {
   it("frequency caps replace the list; raising widens delivery; non-display campaigns are refused", async () => {
-    const r = await run("update_display_frequency_caps", { campaign_id: "51", caps: [{ time_unit: "DAY", cap: 5 }, { time_unit: "WEEK", cap: 20 }] });
+    const r = await run("update_campaign_frequency_caps", { campaign_id: "51", caps: [{ time_unit: "DAY", cap: 5 }, { time_unit: "WEEK", cap: 20 }] });
     expect(r.approval?.risk).toBe("high_impact");
     expect((await approve(r.approval!.approval_id)).status).toBe("executed");
     expect(camps["51"]!.frequencyCaps).toEqual([{ key: { level: "CAMPAIGN", eventType: "IMPRESSION", timeUnit: "DAY", timeLength: 1 }, cap: 5 }, { key: { level: "CAMPAIGN", eventType: "IMPRESSION", timeUnit: "WEEK", timeLength: 1 }, cap: 20 }]);
-    expect((await run("update_display_frequency_caps", { campaign_id: "11", caps: [] })).error?.message).toContain("SEARCH");
+    expect((await run("update_campaign_frequency_caps", { campaign_id: "11", caps: [] })).error?.message).toContain("SEARCH");
     const lower = await run("update_campaign_frequency_caps", { campaign_id: "51", caps: [{ time_unit: "DAY", cap: 2 }, { time_unit: "WEEK", cap: 20 }] });
     expect(lower.approval?.risk).toBe("write");
   });
@@ -168,18 +168,8 @@ describe("frequency caps, bidding and Display dates", () => {
     expect((await run("update_bid_strategy", { campaign_id: "11", strategy: "MANUAL_CPC" })).error?.message).toContain("portfolio");
   });
 
-  it("Display dates: earlier end is a write, clearing the end is high impact, non-Display refused", async () => {
-    const earlier = await run("update_display_campaign_schedule", { campaign_id: "51", end_date: "2026-11-30" });
-    expect(earlier.approval?.risk).toBe("write");
-    expect((await approve(earlier.approval!.approval_id, kit.owner)).status).toBe("executed");
-    expect(camps["51"]!.endDateTime).toBe("2026-11-30 23:59:59");
-    const { done } = await ok("update_display_campaign_schedule", { campaign_id: "51", clear_end_date: true });
-    expect(done.result).toMatchObject({ end_date_time: null });
-    expect((await run("update_display_campaign_schedule", { campaign_id: "11", end_date: "2026-12-01" })).error?.message).toContain("not a Display campaign");
-  });
-
   it("an unconfirmed write is unknown_outcome", async () => {
-    const r = await run("update_display_frequency_caps", { campaign_id: "51", caps: [{ time_unit: "DAY", cap: 1 }] });
+    const r = await run("update_campaign_frequency_caps", { campaign_id: "51", caps: [{ time_unit: "DAY", cap: 1 }] });
     dropWrites = true;
     expect((await approve(r.approval!.approval_id, kit.owner)).status).toBe("unknown_outcome");
   });

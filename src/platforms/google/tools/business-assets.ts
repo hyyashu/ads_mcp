@@ -254,7 +254,7 @@ export const suggestAdContent = googleRead({
   name: "suggest_ad_content",
   title: "Material for new ad text",
   description:
-    "Gives the AI client what it needs to write new ad text, from this account: the existing headlines and descriptions of responsive search ads with Google's performance label for each (BEST, GOOD, LOW, LEARNING), the top search terms by conversions, landing pages, and the character limits. This server does not write copy itself; draft the text from this material and create it with create_ad or update_ad_headlines (both go through approval).",
+    "Gives the AI client what it needs to write new ad text, from this account: the existing headlines and descriptions of responsive search ads with Google's performance label for each (BEST, GOOD, LOW, LEARNING), the top search terms by conversions, landing pages, and the character limits. This server does not write copy itself; draft the text from this material and create it with create_ad or update_ad_content (both go through approval).",
   input: z.object({ account_id: accountId, campaign_id: idSchema.optional(), ad_group_id: idSchema.optional() }),
   output: z.object({ assets: z.array(z.object({ field_type: z.string().nullable(), text: z.string().nullable(), performance_label: z.string().nullable(), ad_group_id: z.string().nullable() })), top_search_terms: z.array(z.object({ text: z.string(), conversions: z.number(), clicks: z.number() })), landing_pages: z.array(z.string()), limits: z.record(z.string(), z.number()) }),
   handler: async (a, ctx) => {

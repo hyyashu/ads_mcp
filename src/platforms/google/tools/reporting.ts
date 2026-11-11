@@ -155,19 +155,6 @@ export const listConversionActions = googleRead({
 });
 
 // ---------------------------------------------------------------------------------------------------------------
-export const listLabels = googleRead({
-  name: "list_labels",
-  title: "List labels",
-  description: "Lists the labels defined in a Google Ads account, which can be attached to campaigns, ad groups, ads and keywords.",
-  input: z.object({ account_id: accountId, limit: z.number().int().min(1).max(500).default(200) }),
-  output: z.object({ labels: z.array(z.object({ id: z.string().min(1), name: z.string().nullable(), status: z.string().nullable() })), returned: z.number(), truncated: z.boolean().describe("True when more matched than limit; raise limit to see the rest.") }),
-  handler: async (a, ctx) => {
-    const fetched = await ctx.services.ads.query(new Gaql().select("label.id", "label.name", "label.status").from("label").where("label.status != 'REMOVED'").orderBy("label.id").limit(a.limit + 1), { maxRows: a.limit + 1, partial: true });
-    const rows = fetched.slice(0, a.limit);
-    return { labels: rows.map((r) => ({ id: idStr(r, "label.id"), name: str(r, "label.name"), status: str(r, "label.status") })), returned: rows.length, truncated: fetched.length > a.limit };
-  },
-});
-
 export const listNegativeKeywordLists = googleRead({
   name: "list_negative_keyword_lists",
   title: "List negative keyword lists",
@@ -243,7 +230,7 @@ export const analyzeWastedSpend = googleRead({
   name: "analyze_wasted_spend",
   title: "Analyze wasted spend",
   description:
-    "Finds search terms that spent at least a minimum amount with zero conversions in the period. This is a fixed rule over real metrics (cost >= min_cost and conversions = 0), not a prediction: review each term before excluding it. Covers up to the top 1,000 search terms by cost.",
+    "Finds search terms that spent at least a minimum amount with zero conversions in the period. This is a fixed rule over real metrics (cost >= min_cost and conversions = 0), not a prediction: review each term before excluding it. Covers up to the top 1,000 search terms by cost. Returns the account-wide wasted total and its share of spend; to also see converting terms, or to look at one campaign or ad group, use analyze_search_terms.",
   input: z.object({ account_id: accountId, ...dateFields, min_cost: z.number().min(0).max(1_000_000).default(10).describe("Minimum cost, in the account's currency, for a term to be flagged."), limit: z.number().int().min(1).max(200).default(50) }).refine(datesOk, datesMsg),
   output: z.object({
     period: z.string(),
@@ -388,5 +375,5 @@ export const listAccounts: ReadTool<typeof listAccountsInput, typeof listAccount
   },
 };
 
-export const reportingTools = [listCampaigns, getCampaignPerformance, listConversionActions, listLabels, listNegativeKeywordLists, getCampaignTracking, getAdPolicyViolations, analyzeWastedSpend, getUsageStatus, listAccounts];
+export const reportingTools = [listCampaigns, getCampaignPerformance, listConversionActions, listNegativeKeywordLists, getCampaignTracking, getAdPolicyViolations, analyzeWastedSpend, getUsageStatus, listAccounts];
 void ADS_SCOPE;

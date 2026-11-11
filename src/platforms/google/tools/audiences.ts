@@ -5,11 +5,11 @@ import type { AnyTool } from "../../../mcp/tool";
 import type { GoogleAdsClient, Row } from "../client";
 import { Gaql, lit, num, pick } from "../gaql";
 import { accountId, googleRead, idSchema, str } from "./common";
-import { uploadCustomerMatchMembers } from "./customer-match";
 import { rn, stateWrite } from "./write-kit";
 
 /**
- * Remarketing lists and Customer Match (UserListService, GAQL user_list; uploads in customer-match.ts).
+ * Remarketing lists and Customer Match (UserListService, GAQL user_list). Members are not uploaded here: since 2026-04-01 Google refuses Customer Match
+ * upload jobs from API projects without earlier use and points to its Data Manager API, so upload_customer_match_members was removed.
  * Docs: https://developers.google.com/google-ads/api/reference/rpc/v26/UserList,
  * https://developers.google.com/google-ads/api/docs/remarketing/audience-segments/website-visitors and
  * https://developers.google.com/google-ads/api/docs/remarketing/audience-segments/customer-match/get-started.
@@ -198,7 +198,7 @@ export const createCustomerMatchList = stateWrite({
   title: "Create Customer Match list",
   risk: "write",
   description:
-    "Creates an empty Customer Match list for your own customers' contact information (emails and phone numbers; CRM-based, first-party data), after approval, with a membership duration of up to 540 days (Google's maximum and default). Add people to it with upload_customer_match_members. " +
+    "Creates an empty Customer Match list for your own customers' contact information (emails and phone numbers; CRM-based, first-party data), after approval, with a membership duration of up to 540 days (Google's maximum and default). This server cannot add people to it: add them in Google Ads (Tools > Audience manager) or through Google's Data Manager API (Google refuses Customer Match uploads through the Google Ads API for new integrations). " +
     "Customer Match is only available to accounts Google considers eligible (a good history of policy compliance and of payments, under Google's Customer Match policy); if the account is not eligible Google refuses the request and its error is returned as given. Google targets a list only once enough of its members are matched and active. Confirmed by re-reading.",
   input: z.object({
     account_id: accountId,
@@ -225,7 +225,7 @@ export const createCustomerMatchList = stateWrite({
     user_list_id: created(before, after)!.id,
     name: a.name,
     type: created(before, after)!.type ?? "CRM_BASED",
-    note: "The list is empty: add members with upload_customer_match_members. Google targets it once enough members are matched and active.",
+    note: "The list is empty: add members in Google Ads (Tools > Audience manager) or through Google's Data Manager API. Google targets it once enough members are matched and active.",
   }),
 });
 
@@ -287,7 +287,7 @@ export const removeUserList = stateWrite({
 });
 
 /**
- * Google Ads tools: list_user_lists, create_remarketing_list, create_customer_match_list, upload_customer_match_members, remove_user_list.
+ * Google Ads tools: list_user_lists, create_remarketing_list, create_customer_match_list, remove_user_list.
  * Approved by the owner on 2026-11-11 (inventory/tool-registry.json); API surfaces in inventory/mapping.ts.
  */
-export const audienceTools: AnyTool[] = [listUserLists, createRemarketingList, createCustomerMatchList, uploadCustomerMatchMembers, removeUserList];
+export const audienceTools: AnyTool[] = [listUserLists, createRemarketingList, createCustomerMatchList, removeUserList];

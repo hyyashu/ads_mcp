@@ -9,7 +9,9 @@
     "On 2026-11-10 the owner approved 54 tools for Google Search Console, Google Analytics 4 and Google Tag Manager, including 11 combined tools and get_property_links (docs/superpowers/specs/2026-11-10-gsc-ga4-gtm-design.md). A combined tool is filed under the platform of the account its account_id names.",
     "On 2026-11-11 the owner added link_existing_assets (Google Ads): the add tools always create a new asset, so an asset already in the library (such as an existing phone number) could not be attached to another campaign. The same day the owner added get_asset_performance, update_extension_asset and exclude_account_assets_from_campaign, and account and ad group levels for link_existing_assets and the remove tools.",
     "Also on 2026-11-11 the owner approved 57 more Google Ads tools covering the remaining Google Ads API gaps: recommendations, change history, auction insights, offline conversions and goals, account exclusions, tracking, location bids, entity labels, portfolio bidding, seasonality, experiments, audiences and Customer Match, promotion, price, lead form and business message assets, asset automation, policy exemptions, account users, billing, manager accounts and Local Services leads. Video, Smart and Hotel campaigns stay out of scope.",
-    "On 2026-11-10 the owner approved 56 Bing Webmaster Tools tools (platform bing_webmaster) and a Google/Bing/both choice on the existing combined search tools (docs/superpowers/specs/2026-11-10-bing-webmaster-design.md)."
+    "On 2026-11-10 the owner approved 56 Bing Webmaster Tools tools (platform bing_webmaster) and a Google/Bing/both choice on the existing combined search tools (docs/superpowers/specs/2026-11-10-bing-webmaster-design.md).",
+    "On 2026-11-11 the owner retired 20 duplicate Google Ads tools and added remove_extensions (Google Ads 237 -> 218). Removed because another tool already does the same: add_display_audiences (use add_ad_group_audiences), update_display_demographics (update_ad_group_demographics), update_display_frequency_caps and get_display_frequency_caps (update_/get_campaign_frequency_caps), remove_display_ad_group (remove_ad_group), remove_display_ad (remove_ad), update_display_campaign_schedule (update_campaign_dates), list_labels (get_campaign_labels), get_pmax_conversion_goals (get_conversion_goals), update_ad_headlines and update_ad_descriptions (update_ad_content). Merged: get_display_audiences, get_demandgen_audiences and get_display_demographics into get_ad_group_audiences and get_ad_group_demographics (campaign_type filter); remove_sitelinks, remove_callouts, remove_structured_snippets and remove_call_assets into remove_extensions (field_type); add_campaign_label and remove_campaign_label into add_entity_labels and remove_entity_labels (entity_type campaign).",
+    "Also on 2026-11-11 the owner removed upload_click_conversions and upload_customer_match_members (Google Ads 218 -> 216): Google refuses UploadClickConversions (since 2026-06-15) and Customer Match upload jobs (since 2026-04-01) from API projects without earlier use, and points new integrations to its Data Manager API. create_customer_match_list stays; members are added in Google Ads or through the Data Manager API."
   ],
   "tools": [
     {
@@ -74,16 +76,6 @@
     },
     {
       "platform": "google_ads",
-      "name": "add_campaign_label",
-      "action_type": "Create",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
       "name": "add_campaign_proximity",
       "action_type": "Create",
       "modifies_data": true,
@@ -125,16 +117,6 @@
     {
       "platform": "google_ads",
       "name": "add_display_ad_group",
-      "action_type": "Create",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "add_display_audiences",
       "action_type": "Create",
       "modifies_data": true,
       "connected": true,
@@ -734,16 +716,6 @@
     },
     {
       "platform": "google_ads",
-      "name": "get_demandgen_audiences",
-      "action_type": "Read",
-      "modifies_data": false,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": false
-    },
-    {
-      "platform": "google_ads",
       "name": "get_demandgen_channel_controls",
       "action_type": "Read",
       "modifies_data": false,
@@ -755,36 +727,6 @@
     {
       "platform": "google_ads",
       "name": "get_display_ad_group_settings",
-      "action_type": "Read",
-      "modifies_data": false,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": false
-    },
-    {
-      "platform": "google_ads",
-      "name": "get_display_audiences",
-      "action_type": "Read",
-      "modifies_data": false,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": false
-    },
-    {
-      "platform": "google_ads",
-      "name": "get_display_demographics",
-      "action_type": "Read",
-      "modifies_data": false,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": false
-    },
-    {
-      "platform": "google_ads",
-      "name": "get_display_frequency_caps",
       "action_type": "Read",
       "modifies_data": false,
       "connected": true,
@@ -875,16 +817,6 @@
     {
       "platform": "google_ads",
       "name": "get_pmax_audience_signals",
-      "action_type": "Read",
-      "modifies_data": false,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": false
-    },
-    {
-      "platform": "google_ads",
-      "name": "get_pmax_conversion_goals",
       "action_type": "Read",
       "modifies_data": false,
       "connected": true,
@@ -1034,16 +966,6 @@
     },
     {
       "platform": "google_ads",
-      "name": "list_labels",
-      "action_type": "Read",
-      "modifies_data": false,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": false
-    },
-    {
-      "platform": "google_ads",
       "name": "list_negative_keyword_lists",
       "action_type": "Read",
       "modifies_data": false,
@@ -1154,57 +1076,7 @@
     },
     {
       "platform": "google_ads",
-      "name": "remove_call_assets",
-      "action_type": "Delete",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "remove_callouts",
-      "action_type": "Delete",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "remove_campaign_label",
-      "action_type": "Delete",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
       "name": "remove_campaign_proximity",
-      "action_type": "Delete",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "remove_display_ad",
-      "action_type": "Delete",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "remove_display_ad_group",
       "action_type": "Delete",
       "modifies_data": true,
       "connected": true,
@@ -1304,17 +1176,7 @@
     },
     {
       "platform": "google_ads",
-      "name": "remove_sitelinks",
-      "action_type": "Delete",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "remove_structured_snippets",
+      "name": "remove_extensions",
       "action_type": "Delete",
       "modifies_data": true,
       "connected": true,
@@ -1521,16 +1383,6 @@
       "implementation_status": "pending",
       "input_schema_status": "needs_api_mapping",
       "approval_required": false
-    },
-    {
-      "platform": "google_ads",
-      "name": "upload_click_conversions",
-      "action_type": "Create",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
     },
     {
       "platform": "google_ads",
@@ -1854,16 +1706,6 @@
     },
     {
       "platform": "google_ads",
-      "name": "upload_customer_match_members",
-      "action_type": "Update",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
       "name": "remove_user_list",
       "action_type": "Delete",
       "modifies_data": true,
@@ -2094,16 +1936,6 @@
     },
     {
       "platform": "google_ads",
-      "name": "update_ad_descriptions",
-      "action_type": "Update",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
       "name": "update_ad_group_demographics",
       "action_type": "Update",
       "modifies_data": true,
@@ -2115,16 +1947,6 @@
     {
       "platform": "google_ads",
       "name": "update_ad_group_settings",
-      "action_type": "Update",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "update_ad_headlines",
       "action_type": "Update",
       "modifies_data": true,
       "connected": true,
@@ -2195,36 +2017,6 @@
     {
       "platform": "google_ads",
       "name": "update_display_ad_creative",
-      "action_type": "Update",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "update_display_campaign_schedule",
-      "action_type": "Update",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "update_display_demographics",
-      "action_type": "Update",
-      "modifies_data": true,
-      "connected": true,
-      "implementation_status": "pending",
-      "input_schema_status": "needs_api_mapping",
-      "approval_required": true
-    },
-    {
-      "platform": "google_ads",
-      "name": "update_display_frequency_caps",
       "action_type": "Update",
       "modifies_data": true,
       "connected": true,

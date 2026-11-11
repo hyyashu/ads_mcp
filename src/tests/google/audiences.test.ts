@@ -1,7 +1,6 @@
 import { createHash } from "node:crypto";
 import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { FetchLike } from "../../auth/token-providers";
-import { normalizeEmail, normalizePhone } from "../../platforms/google/tools/customer-match";
 import { googleHarness, type GoogleHarness } from "../support/harness";
 
 const C = "customers/1234567890";
@@ -214,7 +213,7 @@ describe("create_customer_match_list", () => {
     const done = await approve(r.approval!.approval_id);
     expect(done.status).toBe("executed");
     expect(calls.find((c) => c.path.endsWith("userLists:mutate"))!.body).toEqual({ operations: [{ create: { name: "Newsletter", description: "Subscribers", membershipLifeSpan: "540", crmBasedUserList: { uploadKeyType: "CONTACT_INFO", dataSourceType: "FIRST_PARTY" } } }] });
-    expect(done.result).toMatchObject({ user_list_id: "900", type: "CRM_BASED", note: expect.stringContaining("upload_customer_match_members") });
+    expect(done.result).toMatchObject({ user_list_id: "900", type: "CRM_BASED", note: expect.stringContaining("Data Manager API") });
   });
 
   it("validates the life span, refuses a taken name and passes Google's eligibility error through", async () => {
@@ -227,161 +226,6 @@ describe("create_customer_match_list", () => {
     const done = await approve(r.approval!.approval_id);
     expect(done.status).toBe("failed");
     expect(JSON.stringify(done.result)).toContain("allow-list");
-  });
-});
-
-describe("Customer Match normalization", () => {
-  it("follows Google's documented email and phone rules", () => {
-    expect(normalizeEmail("  Dana@Example.com ")).toBe("dana@example.com");
-    expect(normalizeEmail("Jane.Doe+Shopping@googlemail.com")).toBe("janedoe@googlemail.com");
-    expect(normalizeEmail("alex.2+myalias@gmail.com")).toBe("alex2@gmail.com");
-    expect(normalizeEmail("user.name+NYC@Example.com")).toBe("user.name+nyc@example.com");
-    expect(normalizeEmail("not an email")).toBeNull();
-    expect(normalizeEmail("+x@gmail.com")).toBeNull();
-    expect(normalizePhone("+1 (800) 555-0101")).toBe("+18005550101");
-    expect(normalizePhone("+44 20 7946 0000")).toBe("+442079460000");
-    expect(normalizePhone("800 555 0101")).toBeNull();
-    expect(normalizePhone("+0 800 555")).toBeNull();
-  });
-});
-
-describe("upload_customer_match_members", () => {
-  const consent = { ad_user_data: "GRANTED", ad_personalization: "GRANTED" };
-  const members = [{ email: " Dana@Example.com", phone: "+1 (800) 555-0101" }, { email: "Jane.Doe+Shopping@googlemail.com" }, { phone: "+44 20 7946 0000" }];
-  const RAW = ["dana", "Dana", "jane", "Jane", "555-0101", "5550101", "7946"];
-  const hashed = [
-    { userIdentifiers: [{ hashedEmail: sha("dana@example.com") }, { hashedPhoneNumber: sha("+18005550101") }] },
-    { userIdentifiers: [{ hashedEmail: sha("janedoe@googlemail.com") }] },
-    { userIdentifiers: [{ hashedPhoneNumber: sha("+442079460000") }] },
-  ];
-
-  it("hashes on the server, stores and shows only counts, then creates, fills and runs one job", async () => {
-    const r = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members, consent });
-    expect(r.approval).toMatchObject({ risk: "high_impact", summary: expect.stringContaining('Add 3 member(s) to Customer Match list "Customers" (6): 2 email(s) and 2 phone number(s)'), change_set: { changes: [{ resource: "user_list", id: "6", field: "members", before: null, after: "+3 (hashed)", effect: "create" }] } });
-    expect(mutations()).toHaveLength(0);
-    // Nothing raw is kept with the approval: the stored arguments hold only the hashes.
-    const row = await kit.approvals.get(kit.tenantId, r.approval!.approval_id);
-    const stored = JSON.stringify({ args: row!.args, summary: row!.summary, changes: row!.changeSet, snapshot: row!.planSnapshot, response: r });
-    for (const raw of RAW) expect(stored).not.toContain(raw);
-    expect((row!.args as any).members[0]).toEqual({ hashed_email: sha("dana@example.com"), hashed_phone_number: sha("+18005550101") });
-
-    const done = await approve(r.approval!.approval_id, kit.second);
-    expect(done.status).toBe("executed");
-    const sent = mutations();
-    expect(sent.map((c) => c.path)).toEqual(["customers/1234567890/offlineUserDataJobs:create", "customers/1234567890/offlineUserDataJobs/900:addOperations", "customers/1234567890/offlineUserDataJobs/900:run"]);
-    expect(sent[0]!.body).toEqual({ job: { type: "CUSTOMER_MATCH_USER_LIST", customerMatchUserListMetadata: { userList: `${C}/userLists/6`, consent: { adUserData: "GRANTED", adPersonalization: "GRANTED" } } } });
-    expect(sent[1]!.body).toEqual({ enablePartialFailure: true, operations: hashed.map((create) => ({ create })) });
-    expect(sent[2]!.body).toEqual({});
-    for (const raw of RAW) expect(JSON.stringify(calls)).not.toContain(raw);
-    expect(done.result).toEqual({
-      user_list_id: "6", user_list_name: "Customers", action: "add", members_sent: 3, identifiers_sent: { email: 2, phone: 2 }, rejected_members: 0, rejected_error_codes: [],
-      job_resource_name: `${C}/offlineUserDataJobs/900`, job_id: "900", job_status: "RUNNING", note: expect.stringContaining("not that anyone was matched"),
-    });
-    for (const raw of RAW) expect(JSON.stringify(done)).not.toContain(raw);
-  });
-
-  it("removes members without consent, as destructive, and accepts pre-hashed identifiers", async () => {
-    const h = sha("someone@example.com");
-    const r = await kit.run("upload_customer_match_members", { user_list_id: "7", action: "remove", members: [{ hashed_email: h }] });
-    expect(r.approval).toMatchObject({ risk: "destructive", change_set: { changes: [{ after: "-1 (hashed)", effect: "remove" }] } });
-    expect((await approve(r.approval!.approval_id, kit.second)).status).toBe("executed");
-    expect(mutations()[0]!.body.job.customerMatchUserListMetadata).toEqual({ userList: `${C}/userLists/7` });
-    expect(mutations()[1]!.body.operations).toEqual([{ remove: { userIdentifiers: [{ hashedEmail: h }] } }]);
-  });
-
-  it("validates members without echoing them, and requires consent to add", async () => {
-    const cases: [Record<string, unknown>, string][] = [
-      [{ members: [{ email: "dana.example.com" }], consent }, "dana"],
-      [{ members: [{ phone: "800 555 0101" }], consent }, "555"],
-      [{ members: [{}], consent }, ""],
-      [{ members: [{ email: "dana@example.com", hashed_phone_number: sha("x") }], consent }, "dana"],
-      [{ members: [{ hashed_email: "ABC" }], consent }, "ABC"],
-      [{ members: Array.from({ length: 1001 }, (_, i) => ({ email: `u${i}@example.com` })), consent }, "u1@"],
-      [{ members: [{ email: "dana@example.com" }] }, "dana"],
-      [{ members: [{ email: "dana@example.com" }], consent: { ad_user_data: "YES", ad_personalization: "GRANTED" } }, "dana"],
-    ];
-    for (const [args, raw] of cases) {
-      const r = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", ...args });
-      expect(r.error?.code).toBe("invalid_argument");
-      if (raw) expect(r.error!.message).not.toContain(raw);
-    }
-    expect(mutations()).toHaveLength(0);
-  });
-
-  it("refuses lists it cannot upload to, denied consent and a running job", async () => {
-    const add = (list: string, extra: Record<string, unknown> = {}) => kit.run("upload_customer_match_members", { user_list_id: list, action: "add", members: [{ email: "a@example.com" }], consent, ...extra });
-    expect((await add("99")).error?.code).toBe("not_found");
-    expect((await add("5")).error?.message).toContain("not a Customer Match list");
-    expect((await add("9")).error?.message).toContain("MOBILE_ADVERTISING_ID");
-    expect((await add("7")).error?.message).toContain("closed");
-    lists.push({ id: "10", name: "Theirs", type: "CRM_BASED", crmBasedUserList: { uploadKeyType: "CONTACT_INFO" }, accessReason: "SHARED", readOnly: true });
-    expect((await add("10")).error?.message).toContain("does not own");
-    expect((await add("6", { consent: { ad_user_data: "GRANTED", ad_personalization: "DENIED" } })).error?.message).toContain("consent DENIED");
-    jobs.push({ id: "1", list: `${C}/userLists/6`, status: "RUNNING", ops: [] });
-    expect((await add("6")).error).toMatchObject({ code: "conflict", message: expect.stringContaining("still running") });
-    expect(queries.at(-1)).toContain("offline_user_data_job.status = 'RUNNING'");
-    expect(mutations()).toHaveLength(0);
-  });
-
-  it("reports members Google rejects; when it rejects all, or a step fails before running, nothing is run", async () => {
-    const op = (i: number) => ({ errorCode: { offlineUserDataJobError: "INVALID_SHA256_FORMAT" }, message: "bad hash", trigger: { stringValue: "secret" }, location: { fieldPathElements: [{ fieldName: "operations", index: i }, { fieldName: "create" }] } });
-    partialFailure = { code: 3, message: "partial", details: [{ "@type": "type.googleapis.com/google.ads.googleads.v26.errors.GoogleAdsFailure", errors: [op(1)] }] };
-    const r = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "p1@example.com" }, { email: "p2@example.com" }], consent });
-    const done = await approve(r.approval!.approval_id, kit.second);
-    expect(done.status).toBe("executed");
-    expect(done.result).toMatchObject({ rejected_members: 1, rejected_error_codes: ["INVALID_SHA256_FORMAT"] });
-    expect(JSON.stringify(done.result)).not.toContain("secret");
-    for (const j of jobs) j.status = "SUCCESS"; // the job finished; a running one would block the next upload
-
-    calls = [];
-    partialFailure = { code: 3, message: "partial", details: [{ "@type": "type.googleapis.com/google.ads.googleads.v26.errors.GoogleAdsFailure", errors: [op(0)] }] };
-    const r2 = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "x@example.com" }], consent });
-    const d2 = await approve(r2.approval!.approval_id, kit.second);
-    expect(d2.status).toBe("failed");
-    expect(JSON.stringify(d2.result)).toContain("rejected every member");
-    expect(mutations().some((c) => c.path.endsWith(":run"))).toBe(false);
-
-    calls = [];
-    partialFailure = null;
-    addFails = err(500, "INTERNAL", "boom");
-    const r3 = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "y@example.com" }], consent });
-    const d3 = await approve(r3.approval!.approval_id, kit.second);
-    expect(d3.status).toBe("failed");
-    expect(JSON.stringify(d3.result)).toContain("No members were changed");
-    expect(mutations().some((c) => c.path.endsWith(":run"))).toBe(false);
-
-    calls = [];
-    addFails = null;
-    runFails = err(400, "INVALID_ARGUMENT", "Job cannot be run.");
-    const r4 = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "z@example.com" }], consent });
-    const d4 = await approve(r4.approval!.approval_id, kit.second);
-    expect(d4.status).toBe("failed");
-    expect(JSON.stringify(d4.result)).toContain("was not run");
-  });
-
-  it("surfaces Google's Customer Match allowlist refusal as a definite failure", async () => {
-    createFails = err(400, "INVALID_ARGUMENT", "The customer is not allowlisted for this feature.", { offlineUserDataJobError: "CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE" });
-    const r = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "a@example.com" }], consent });
-    const done = await approve(r.approval!.approval_id, kit.second);
-    expect(done.status).toBe("failed");
-    expect(JSON.stringify(done.result)).toContain("not allowlisted");
-  });
-
-  it("an interrupted run is an unknown outcome that verify never guesses; drift applies nothing", async () => {
-    runFails = err(500, "INTERNAL", "boom");
-    const r = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "a@example.com" }], consent });
-    expect((await approve(r.approval!.approval_id, kit.second)).status).toBe("unknown_outcome");
-    const tool = kit.deps.registry.get("upload_customer_match_members")!;
-    if (tool.kind !== "write") throw new Error("write tool expected");
-    const row = await kit.approvals.get(kit.tenantId, r.approval!.approval_id);
-    expect(await tool.verify(row!.args as never, {} as never, { snapshot: row!.planSnapshot })).toMatchObject({ outcome: "indeterminate" });
-
-    calls = [];
-    runFails = null;
-    const r2 = await kit.run("upload_customer_match_members", { user_list_id: "6", action: "add", members: [{ email: "drift@example.com" }], consent });
-    lists.find((l) => l.id === "6")!.name = "Renamed";
-    expect((await approve(r2.approval!.approval_id, kit.second)).status).toBe("failed");
-    expect(mutations()).toHaveLength(0);
   });
 });
 

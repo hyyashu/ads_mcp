@@ -300,7 +300,7 @@ export const analyzeSearchTerms = googleRead({
   name: "analyze_search_terms",
   title: "Analyze search terms",
   description:
-    "Sorts the search terms that triggered ads into fixed groups using real metrics: converting (conversions > 0), wasted (conversions = 0 and cost >= min_cost) and low-data (everything else). Lists the top terms of the first two groups. These are rules, not predictions or recommendations: review each term before excluding it, since a brand or relevant term can look wasted over a short period. Covers the top 1,000 terms by cost. Performance Max search terms are not included in this view.",
+    "Sorts the search terms that triggered ads into fixed groups using real metrics: converting (conversions > 0), wasted (conversions = 0 and cost >= min_cost) and low-data (everything else). Lists the top terms of the first two groups. These are rules, not predictions or recommendations: review each term before excluding it, since a brand or relevant term can look wasted over a short period. Covers the top 1,000 terms by cost. Performance Max search terms are not included in this view. For the account-wide wasted spend total and its share of spend, use analyze_wasted_spend.",
   input: z.object({ account_id: accountId, ...dateFields, campaign_id: id.optional(), ad_group_id: id.optional(), min_cost: z.number().min(0).max(1_000_000).default(10), limit: z.number().int().min(1).max(100).default(25) }).refine(datesOk, datesMsg),
   output: z.object({
     period: z.string(),
