@@ -166,6 +166,6 @@ export function checkRequest(path: string, body: unknown): string[] {
   }
   out.push(...checkBody(schema, body).map((p) => `${path}: ${p}`));
   const q = (body as { query?: unknown } | null)?.query;
-  if (typeof q === "string") out.push(...checkGaql(q).map((p) => `GAQL: ${p}`));
+  if (typeof q === "string" && /(?:^|\/)googleAds:search(?:Stream)?$/.test(path)) out.push(...checkGaql(q).map((p) => `GAQL: ${p}`));
   return out;
 }

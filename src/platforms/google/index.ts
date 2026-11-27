@@ -27,7 +27,8 @@ import { adGroupAdTools } from "./tools/ad-groups-ads";
 import { listingTreeTools } from "./tools/listing-trees";
 import { planningTools } from "./tools/planning";
 import { businessAssetTools } from "./tools/business-assets";
+import { gaqlTools } from "./tools/gaql-tools";
 import { keywordSegmentTools } from "./tools/keyword-segment-reports";
 
 /** Google Ads tools. A tool is added here only when it has a real handler, schemas and tests. */
-export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...assetReportTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools, ...pmaxWriteTools, ...campaignCreateTools, ...adGroupAdTools, ...listingTreeTools, ...planningTools, ...businessAssetTools, ...keywordSegmentTools, ...insightTools, ...conversionOpsTools, ...accountControlTools, ...biddingExperimentTools, ...audienceTools, ...moreAssetTools, ...accountAdminTools] as AnyTool[];
+export const googleTools: AnyTool[] = [...reportingTools, ...statusTools, ...settingsTools, ...keywordTools, ...negativeListTools, ...adTools, ...adContentTools, ...campaignReadTools, ...targetingReadTools, ...pmaxReadTools, ...assetWriteTools, ...assetReportTools, ...campaignTargetingWriteTools, ...adGroupCriteriaWriteTools, ...accountWriteTools, ...pmaxWriteTools, ...campaignCreateTools, ...adGroupAdTools, ...listingTreeTools, ...planningTools, ...businessAssetTools, ...keywordSegmentTools, ...gaqlTools, ...insightTools, ...conversionOpsTools, ...accountControlTools, ...biddingExperimentTools, ...audienceTools, ...moreAssetTools, ...accountAdminTools] as AnyTool[];
