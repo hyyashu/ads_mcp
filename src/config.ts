@@ -52,7 +52,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
   };
   if (e.GOOGLE_OAUTH_CLIENT_ID && e.GOOGLE_OAUTH_CLIENT_SECRET) {
     // No default version: Google Ads API versions are sunset on a schedule, so the operator must choose a current one.
-    if (!e.GOOGLE_ADS_API_VERSION) throw new Error("GOOGLE_ADS_API_VERSION (e.g. v23) is required when Google OAuth is configured. Check Google's release notes for the current version.");
+    if (!e.GOOGLE_ADS_API_VERSION) throw new Error("GOOGLE_ADS_API_VERSION (e.g. v26) is required when Google OAuth is configured. Check Google's release notes for the current version.");
     cfg.google = { clientId: e.GOOGLE_OAUTH_CLIENT_ID, clientSecret: e.GOOGLE_OAUTH_CLIENT_SECRET, apiVersion: e.GOOGLE_ADS_API_VERSION };
   }
   if (e.META_APP_ID && e.META_APP_SECRET) {

@@ -94,7 +94,7 @@ set -a; . ./.env; set +a
 npm run db:migrate                # embedded Postgres in .data/pglite, or set DATABASE_URL
 ADS_MCP_OWNER_PASSWORD='a-long-password' npm run tenant:create -- "My Agency" owner@example.com
 npm start                         # MCP endpoint: $PUBLIC_URL/mcp
-npm test                          # 1,239 tests
+npm test                          # 1,434 tests
 npm run inventory:matrix          # regenerate docs/TRACKING.md
 ```
 
