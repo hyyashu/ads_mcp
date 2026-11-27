@@ -90,7 +90,6 @@ describe("audiences", () => {
       { adGroupCriterionOperation: { create: { adGroup: `${C}/adGroups/21`, customAudience: { customAudience: `${C}/customAudiences/77` } } } },
     ]);
     expect((await run("add_ad_group_audiences", { ad_group_id: "21", audiences: [{ kind: "user_list", id: "501", exclude: true }] })).error?.message).toContain("remove it first");
-    expect((await run("add_display_audiences", { ad_group_id: "21", audiences: [{ kind: "user_list", id: "1" }] })).error?.message).toContain("SEARCH campaign");
   });
 
   it("replace_demandgen_audiences swaps the whole set atomically and is high impact", async () => {
@@ -105,11 +104,11 @@ describe("audiences", () => {
 
 describe("demographics", () => {
   it("excluding narrows; including again widens", async () => {
-    const r = await run("update_display_demographics", { ad_group_id: "61", exclude: { age_ranges: ["AGE_RANGE_18_24"], genders: ["UNDETERMINED"] } });
+    const r = await run("update_ad_group_demographics", { ad_group_id: "61", exclude: { age_ranges: ["AGE_RANGE_18_24"], genders: ["UNDETERMINED"] } });
     expect(r.approval?.risk).toBe("write");
     expect((await approve(r.approval!.approval_id)).status).toBe("executed");
     expect(mutates[0]![0]).toEqual({ adGroupCriterionOperation: { create: { adGroup: `${C}/adGroups/61`, negative: true, ageRange: { type: "AGE_RANGE_18_24" } } } });
-    const back = await run("update_display_demographics", { ad_group_id: "61", include_again: { age_ranges: ["AGE_RANGE_18_24"] } });
+    const back = await run("update_ad_group_demographics", { ad_group_id: "61", include_again: { age_ranges: ["AGE_RANGE_18_24"] } });
     expect(back.approval?.risk).toBe("high_impact");
     expect((await approve(back.approval!.approval_id, kit.second)).result).toEqual({ ad_group_id: "61", excluded: ["GENDER:UNDETERMINED"] });
     expect((await run("update_ad_group_demographics", { ad_group_id: "21", exclude: { genders: ["MALE"] }, include_again: { genders: ["MALE"] } })).error?.code).toBe("invalid_argument");

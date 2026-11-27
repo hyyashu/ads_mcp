@@ -34,53 +34,6 @@ export const createLabel = stateWrite({
   result: (a, after) => ({ label_id: after.labels.find((l) => l.name.toLowerCase() === a.name.toLowerCase())!.id, name: a.name }),
 });
 
-async function readCampaignLabels(ads: GoogleAdsClient, campaignIds: string[]) {
-  const camps = await ads.query(new Gaql().select("campaign.id", "campaign.name", "campaign.status").from("campaign").where(`campaign.id IN ${lit.list(campaignIds.map(lit.id))}`), { maxRows: 100 });
-  const found = new Set(camps.map((r) => String(pick(r, "campaign.id"))));
-  const missing = campaignIds.filter((c) => !found.has(c));
-  if (missing.length) throw new ToolError("not_found", `No campaign ${missing.join(", ")} in this account.`);
-  const links = await ads.query(new Gaql().select("campaign.id", "label.id").from("campaign_label").where(`campaign.id IN ${lit.list(campaignIds.map(lit.id))}`), { maxRows: 10_000 });
-  return { names: Object.fromEntries(camps.map((r) => [String(pick(r, "campaign.id")), str(r, "campaign.name")])), links: links.map((r) => `${pick(r, "campaign.id")}~${pick(r, "label.id")}`).sort() };
-}
-const labelInput = z.object({ account_id: accountId, campaign_ids: z.array(idSchema).min(1).max(50), label_id: idSchema });
-export const addCampaignLabel = stateWrite({
-  name: "add_campaign_label",
-  title: "Label campaigns",
-  risk: "write",
-  description: "Attaches an existing label to campaigns (ids from list_campaigns; label id from get_campaign_labels or create_label), after approval. Campaigns that already have the label are skipped. Confirmed by re-reading.",
-  input: labelInput,
-  output: z.object({ label_id: z.string(), labelled: z.array(z.string()) }),
-  read: async (a, ads) => {
-    const labels = await readLabels(ads);
-    if (!labels.some((l) => l.id === a.label_id)) throw new ToolError("not_found", `No label ${a.label_id} in this account.`);
-    return readCampaignLabels(ads, [...new Set(a.campaign_ids)].sort());
-  },
-  build: (a, s, ads) => {
-    const todo = [...new Set(a.campaign_ids)].filter((c) => !s.links.includes(`${c}~${a.label_id}`));
-    if (!todo.length) throw new ToolError("invalid_argument", "Nothing would change: every campaign already has this label.");
-    return { summary: `Label ${todo.length} campaign(s) with label ${a.label_id}: ${todo.map((c) => s.names[c] ?? c).join(", ")}`, changes: todo.map((c) => change({ resource: "campaign", id: c, name: s.names[c] }, "label", null, a.label_id, "neutral")), ops: todo.map((c) => ({ campaignLabelOperation: { create: { campaign: rn(ads, "campaigns", c), label: rn(ads, "labels", a.label_id) } } })) };
-  },
-  landed: (a, _b, after) => a.campaign_ids.every((c) => after.links.includes(`${c}~${a.label_id}`)),
-  result: (a) => ({ label_id: a.label_id, labelled: [...new Set(a.campaign_ids)].sort() }),
-});
-export const removeCampaignLabel = stateWrite({
-  name: "remove_campaign_label",
-  title: "Remove label from campaigns",
-  risk: "destructive",
-  description: "Detaches a label from campaigns after a person approves it (the label itself stays in the account). Confirmed by re-reading.",
-  input: labelInput,
-  output: z.object({ label_id: z.string(), unlabelled: z.array(z.string()) }),
-  read: (a, ads) => readCampaignLabels(ads, [...new Set(a.campaign_ids)].sort()),
-  build: (a, s, ads) => {
-    const ids = [...new Set(a.campaign_ids)].sort();
-    const missing = ids.filter((c) => !s.links.includes(`${c}~${a.label_id}`));
-    if (missing.length) throw new ToolError("invalid_argument", `These campaigns do not have label ${a.label_id}: ${missing.join(", ")}`);
-    return { summary: `Remove label ${a.label_id} from ${ids.length} campaign(s)`, changes: ids.map((c) => change({ resource: "campaign", id: c, name: s.names[c] }, "label", a.label_id, null, "remove")), ops: ids.map((c) => ({ campaignLabelOperation: { remove: `customers/${ads.customerId}/campaignLabels/${c}~${a.label_id}` } })) };
-  },
-  landed: (a, _b, after) => a.campaign_ids.every((c) => !after.links.includes(`${c}~${a.label_id}`)),
-  result: (a) => ({ label_id: a.label_id, unlabelled: [...new Set(a.campaign_ids)].sort() }),
-});
-
 // ------------------------------------------------------------------------------------------------ bulk statuses
 function bulkStatusTool(o: { name: "bulk_update_campaign_status" | "bulk_update_ad_group_status"; resource: "campaign" | "ad_group"; service: "campaignOperation" | "adGroupOperation"; collection: "campaigns" | "adGroups" }) {
   const label = o.resource.replace("_", " ");
@@ -118,50 +71,24 @@ export const bulkUpdateCampaignStatus = bulkStatusTool({ name: "bulk_update_camp
 export const bulkUpdateAdGroupStatus = bulkStatusTool({ name: "bulk_update_ad_group_status", resource: "ad_group", service: "adGroupOperation", collection: "adGroups" });
 
 // --------------------------------------------------------------------------------------------- ad group removal
-function removeAdGroupTool(name: "remove_ad_group" | "remove_display_ad_group", channel?: string) {
-  return stateWrite({
-    name,
-    title: channel ? "Remove Display ad group" : "Remove ad group",
-    risk: "destructive",
-    description: `Permanently removes ${channel ? "a Display" : "an"} ad group and with it its ads and targeting, after a person approves it. A removed ad group cannot be restored (pause it instead to keep its history). Confirmed by re-reading.`,
-    input: z.object({ account_id: accountId, ad_group_id: idSchema }),
-    output: z.object({ ad_group_id: z.string(), status: z.literal("REMOVED") }),
-    read: async (a, ads) => {
-      const [g] = await ads.query(new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status", "campaign.advertising_channel_type").from("ad_group").where(`ad_group.id = ${lit.id(a.ad_group_id)}`).limit(1), { maxRows: 1 });
-      if (!g) throw new ToolError("not_found", `No ad group ${a.ad_group_id} in this account.`);
-      if (channel && str(g, "campaign.advertising_channel_type") !== channel) throw new ToolError("invalid_argument", `Ad group ${a.ad_group_id} is not in a ${channel} campaign.`);
-      return { name: str(g, "ad_group.name"), status: str(g, "ad_group.status") ?? "" };
-    },
-    build: (a, s, ads) => {
-      if (s.status === "REMOVED") throw new ToolError("invalid_argument", "Nothing would change: the ad group is already removed.");
-      return { summary: `Permanently remove ad group "${s.name ?? a.ad_group_id}" (currently ${s.status}). This cannot be undone.`, changes: [statusChange({ resource: "ad_group", id: a.ad_group_id, name: s.name }, s.status, "REMOVED")], ops: [{ adGroupOperation: { remove: rn(ads, "adGroups", a.ad_group_id) } }] };
-    },
-    landed: (_a, _b, after) => after.status === "REMOVED",
-    result: (a) => ({ ad_group_id: a.ad_group_id, status: "REMOVED" as const }),
-  });
-}
-export const removeAdGroup = removeAdGroupTool("remove_ad_group");
-export const removeDisplayAdGroup = removeAdGroupTool("remove_display_ad_group", "DISPLAY");
-
-export const removeDisplayAd = stateWrite({
-  name: "remove_display_ad",
-  title: "Remove Display ad",
+export const removeAdGroup = stateWrite({
+  name: "remove_ad_group",
+  title: "Remove ad group",
   risk: "destructive",
-  description: "Permanently removes one ad from a Display ad group, after a person approves it. A removed ad cannot be restored and loses its history; pause it to keep the history. Confirmed by re-reading.",
-  input: z.object({ account_id: accountId, ad_group_id: idSchema, ad_id: idSchema }),
-  output: z.object({ ad_group_id: z.string(), ad_id: z.string(), status: z.literal("REMOVED") }),
+  description: "Permanently removes an ad group of any campaign type, and with it its ads and targeting, after a person approves it. A removed ad group cannot be restored (pause it instead to keep its history). Confirmed by re-reading.",
+  input: z.object({ account_id: accountId, ad_group_id: idSchema }),
+  output: z.object({ ad_group_id: z.string(), status: z.literal("REMOVED") }),
   read: async (a, ads) => {
-    const [r] = await ads.query(new Gaql().select("ad_group_ad.ad.id", "ad_group_ad.status", "ad_group_ad.ad.type", "campaign.advertising_channel_type").from("ad_group_ad").where(`ad_group.id = ${lit.id(a.ad_group_id)}`).where(`ad_group_ad.ad.id = ${lit.id(a.ad_id)}`).limit(1), { maxRows: 1 });
-    if (!r) throw new ToolError("not_found", `No ad ${a.ad_id} in ad group ${a.ad_group_id}.`);
-    if (str(r, "campaign.advertising_channel_type") !== "DISPLAY") throw new ToolError("invalid_argument", "This ad is not in a Display campaign.");
-    return { status: str(r, "ad_group_ad.status") ?? "", type: str(r, "ad_group_ad.ad.type") };
+    const [g] = await ads.query(new Gaql().select("ad_group.id", "ad_group.name", "ad_group.status").from("ad_group").where(`ad_group.id = ${lit.id(a.ad_group_id)}`).limit(1), { maxRows: 1 });
+    if (!g) throw new ToolError("not_found", `No ad group ${a.ad_group_id} in this account.`);
+    return { name: str(g, "ad_group.name"), status: str(g, "ad_group.status") ?? "" };
   },
   build: (a, s, ads) => {
-    if (s.status === "REMOVED") throw new ToolError("invalid_argument", "Nothing would change: the ad is already removed.");
-    return { summary: `Permanently remove ${s.type ?? ""} ad ${a.ad_id} from ad group ${a.ad_group_id} (currently ${s.status}). This cannot be undone.`, changes: [statusChange({ resource: "ad", id: `${a.ad_group_id}~${a.ad_id}` }, s.status, "REMOVED")], ops: [{ adGroupAdOperation: { remove: `customers/${ads.customerId}/adGroupAds/${a.ad_group_id}~${a.ad_id}` } }] };
+    if (s.status === "REMOVED") throw new ToolError("invalid_argument", "Nothing would change: the ad group is already removed.");
+    return { summary: `Permanently remove ad group "${s.name ?? a.ad_group_id}" (currently ${s.status}). This cannot be undone.`, changes: [statusChange({ resource: "ad_group", id: a.ad_group_id, name: s.name }, s.status, "REMOVED")], ops: [{ adGroupOperation: { remove: rn(ads, "adGroups", a.ad_group_id) } }] };
   },
   landed: (_a, _b, after) => after.status === "REMOVED",
-  result: (a) => ({ ad_group_id: a.ad_group_id, ad_id: a.ad_id, status: "REMOVED" as const }),
+  result: (a) => ({ ad_group_id: a.ad_group_id, status: "REMOVED" as const }),
 });
 
 // ------------------------------------------------------------------------------------------- conversion actions
@@ -258,4 +185,4 @@ export const updateConversionAction = stateWrite({
   result: (_a, x) => ({ conversion_action: { id: x.id, name: x.name, status: x.status, primary_for_goal: x.primary_for_goal, counting_type: x.counting_type, default_value: x.default_value, click_lookback_days: x.click_lookback_days } }),
 });
 
-export const accountWriteTools = [createLabel, addCampaignLabel, removeCampaignLabel, bulkUpdateCampaignStatus, bulkUpdateAdGroupStatus, removeAdGroup, removeDisplayAdGroup, removeDisplayAd, createConversionAction, updateConversionAction];
+export const accountWriteTools = [createLabel, bulkUpdateCampaignStatus, bulkUpdateAdGroupStatus, removeAdGroup, createConversionAction, updateConversionAction];

@@ -259,9 +259,7 @@ describe("other batch-1 reads", () => {
     expect(lastQuery()).toContain("FROM conversion_action WHERE conversion_action.status != 'REMOVED'");
   });
 
-  it("list_labels and list_negative_keyword_lists", async () => {
-    responder = () => ({ results: [{ label: { id: "1", name: "Seasonal", status: "ENABLED" } }] });
-    expect(((await run("list_labels", {})).data as any).labels[0]).toMatchObject({ id: "1", name: "Seasonal" });
+  it("list_negative_keyword_lists", async () => {
     responder = () => ({ results: [{ sharedSet: { id: "5", name: "Brand safety", status: "ENABLED", memberCount: "42" } }] });
     const d = (await run("list_negative_keyword_lists", {})).data as any;
     expect(d.lists[0]).toMatchObject({ id: "5", member_count: 42 });

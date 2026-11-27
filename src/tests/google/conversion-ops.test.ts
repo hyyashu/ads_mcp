@@ -2,7 +2,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import type { FetchLike } from "../../auth/token-providers";
 import { googleHarness, type GoogleHarness } from "../support/harness";
 
-/** Conversion uploads: upload_click_conversions, upload_call_conversions, upload_conversion_adjustments. */
+/** Conversion uploads: upload_call_conversions, upload_conversion_adjustments. */
 const C = "customers/1234567890";
 type Action = { id: string; name: string; status: string; type: string; category?: string; ownerCustomer?: string };
 let actions: Map<string, Action>;
@@ -60,113 +60,6 @@ const approve = (id: string) => kit.approveAs(id, kit.second);
 const err = async (name: string, args: Record<string, unknown>) => (await kit.run(name, args)).error;
 
 const click = (over: Record<string, unknown> = {}) => ({ gclid: "Cj0KCQjwAAA", conversion_date_time: "2026-11-01 14:30:00-04:00", ...over });
-
-describe("upload_click_conversions", () => {
-  it("queues a high-impact approval, sends partial_failure uploads with the documented fields, and reports accepted and failed rows", async () => {
-    const rows = [click({ value: 120, currency_code: "USD", order_id: "A-1" }), { gbraid: "GBR1", conversion_date_time: "2026-11-02 09:00:00+05:30", value: 30, currency_code: "USD" }, { wbraid: "WBR1", conversion_date_time: "2026-11-03 10:00:00+00:00" }];
-    const r = await kit.run("upload_click_conversions", { conversion_action_id: "71", conversions: rows, ad_user_data_consent: "GRANTED" });
-    expect(r.approval).toMatchObject({ risk: "high_impact", change_set: { changes: [{ resource: "conversion_action", id: "71", field: "uploaded_click_conversions", before: null, after: "3 row(s)" }] } });
-    expect(r.approval!.summary).toContain('Upload 3 offline click conversion(s) to conversion action "Offline sales" (UPLOAD_CLICKS): 1 by gclid, 1 by gbraid, 1 by wbraid; total value 150 USD; ad user data consent GRANTED.');
-    expect(r.approval!.summary).toContain("cannot be read back");
-    expect(uploads).toHaveLength(0);
-
-    respond = (_p, b) => J(partial(b.conversions.map((c: any) => ({ conversionAction: c.conversionAction, conversionDateTime: c.conversionDateTime, ...(c.gclid ? { gclid: c.gclid } : {}) })), { 1: "TOO_RECENT_CONVERSION_ACTION" }, "conversions", "4242"));
-    const done = await approve(r.approval!.approval_id);
-    expect(done.status).toBe("executed");
-    expect(uploads).toEqual([
-      {
-        path: `${C}:uploadClickConversions`,
-        body: {
-          conversions: [
-            { conversionAction: `${C}/conversionActions/71`, gclid: "Cj0KCQjwAAA", conversionDateTime: "2026-11-01 14:30:00-04:00", conversionValue: 120, currencyCode: "USD", orderId: "A-1", consent: { adUserData: "GRANTED" } },
-            { conversionAction: `${C}/conversionActions/71`, gbraid: "GBR1", conversionDateTime: "2026-11-02 09:00:00+05:30", conversionValue: 30, currencyCode: "USD", consent: { adUserData: "GRANTED" } },
-            { conversionAction: `${C}/conversionActions/71`, wbraid: "WBR1", conversionDateTime: "2026-11-03 10:00:00+00:00", consent: { adUserData: "GRANTED" } },
-          ],
-          partialFailure: true,
-        },
-      },
-    ]);
-    expect(done.result).toEqual({
-      conversion_action_id: "71",
-      conversion_action_name: "Offline sales",
-      job_id: "4242",
-      sent: 3,
-      accepted: 2,
-      failed: [{ index: 1, error_code: "conversionUploadError.TOO_RECENT_CONVERSION_ACTION", message: "row 1: TOO_RECENT_CONVERSION_ACTION" }],
-      request_errors: [],
-      confirmed_by_reread: false,
-      note: expect.stringContaining("not a confirmation from re-reading"),
-    });
-  });
-
-  it("omits consent when none is given", async () => {
-    const r = await kit.run("upload_click_conversions", { conversion_action_id: "71", conversions: [click()] });
-    expect(r.approval!.summary).toContain("no consent set");
-    expect((await approve(r.approval!.approval_id)).status).toBe("executed");
-    expect(uploads[0]!.body).toEqual({ conversions: [{ conversionAction: `${C}/conversionActions/71`, gclid: "Cj0KCQjwAAA", conversionDateTime: "2026-11-01 14:30:00-04:00" }], partialFailure: true });
-  });
-
-  it("validates rows: date-time format, exactly one click id, currency needs value, the 2,000-row limit and repeats", async () => {
-    const bad = [
-      [click({ conversion_date_time: "2026-11-01T14:30:00Z" })],
-      [click({ conversion_date_time: "2026-11-01 14:30:00" })],
-      [click({ conversion_date_time: "2026-02-30 14:30:00-04:00" })],
-      [click({ conversion_date_time: "2026-11-01 24:30:00-04:00" })],
-      [click({ gbraid: "X" })],
-      [{ conversion_date_time: "2026-11-01 14:30:00-04:00" }],
-      [click({ currency_code: "USD" })],
-      [click({ currency_code: "usd", value: 1 })],
-      [click({ value: -1 })],
-      Array.from({ length: 2001 }, (_, i) => click({ gclid: `g${i}` })),
-    ];
-    for (const conversions of bad) expect((await err("upload_click_conversions", { conversion_action_id: "71", conversions }))?.code).toBe("invalid_argument");
-    expect((await err("upload_click_conversions", { conversion_action_id: "71", conversions: [click({ order_id: "A" }), click({ gclid: "other", order_id: "A" })] }))?.message).toContain("same order_id");
-    expect((await err("upload_click_conversions", { conversion_action_id: "71", conversions: [click(), click({ conversion_date_time: "2026-11-01 18:30:00+00:00" })] }))?.message).toContain("same click id and conversion time");
-    expect(uploads).toHaveLength(0);
-  });
-
-  it("refuses unknown, disabled and wrong-type conversion actions, and accounts whose conversions another account manages", async () => {
-    expect((await err("upload_click_conversions", { conversion_action_id: "99", conversions: [click()] }))?.code).toBe("not_found");
-    expect((await err("upload_click_conversions", { conversion_action_id: "74", conversions: [click()] }))?.message).toContain("is HIDDEN");
-    expect((await err("upload_click_conversions", { conversion_action_id: "72", conversions: [click()] }))?.message).toContain("type UPLOAD_CALLS; click conversion uploads need a conversion action of type UPLOAD_CLICKS");
-    actions.set("76", { id: "76", name: "Manager action", status: "ENABLED", type: "UPLOAD_CLICKS", ownerCustomer: "customers/5550001111" });
-    expect((await err("upload_click_conversions", { conversion_action_id: "76", conversions: [click()] }))?.message).toContain("owned by account 5550001111");
-    conversionCustomer = "customers/5550001111";
-    expect((await err("upload_click_conversions", { conversion_action_id: "71", conversions: [click()] }))?.message).toContain("managed by account 5550001111");
-    expect(uploads).toHaveLength(0);
-  });
-
-  it("drift applies nothing; a server error is an unknown outcome that verify cannot settle; a rejected request fails definitely", async () => {
-    const r = await kit.run("upload_click_conversions", { conversion_action_id: "71", conversions: [click({ gclid: "drift" })] });
-    actions.get("71")!.status = "HIDDEN";
-    const drift = await approve(r.approval!.approval_id);
-    expect(drift.status).toBe("failed");
-    expect(uploads).toHaveLength(0);
-
-    actions.get("71")!.status = "ENABLED";
-    const r2 = await kit.run("upload_click_conversions", { conversion_action_id: "71", conversions: [click({ gclid: "second" })] });
-    respond = () => J({ error: { code: 500, status: "INTERNAL", message: "boom" } }, 500);
-    expect((await approve(r2.approval!.approval_id)).status).toBe("unknown_outcome");
-    expect(uploads).toHaveLength(1);
-    const tool = kit.deps.registry.get("upload_click_conversions")!;
-    if (tool.kind !== "write") throw new Error("write tool expected");
-    const row = await kit.approvals.get(kit.tenantId, r2.approval!.approval_id);
-    expect(await tool.verify(row!.args as never, {} as never, { snapshot: row!.planSnapshot })).toMatchObject({ outcome: "indeterminate" });
-
-    // The pipeline does not queue the identical request again (it could upload the rows twice): later requests use other rows.
-    expect((await err("upload_click_conversions", { conversion_action_id: "71", conversions: [click({ gclid: "second" })] }))?.code).toBe("conflict");
-    const r3 = await kit.run("upload_click_conversions", { conversion_action_id: "71", conversions: [click({ gclid: "third" })] });
-    respond = () => J({ error: { code: 403, status: "PERMISSION_DENIED", message: "not allowlisted", details: [{ "@type": "type.googleapis.com/google.ads.googleads.v26.errors.GoogleAdsFailure", errors: [{ errorCode: { notAllowlistedError: "CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE" }, message: "Customer is not allowlisted." }] }] } }, 403);
-    expect((await approve(r3.approval!.approval_id)).status).toBe("failed");
-  });
-
-  it("reports errors without a row position separately", async () => {
-    const r = await kit.run("upload_click_conversions", { conversion_action_id: "71", conversions: [click({ gclid: "fourth" })] });
-    respond = () => J({ results: [{}], partialFailureError: { code: 3, message: "Partial failure", details: [{ errors: [{ errorCode: { requestError: "UNKNOWN" }, message: "something" }] }] } });
-    const done = await approve(r.approval!.approval_id);
-    expect(done.result).toMatchObject({ accepted: 0, failed: [], request_errors: ["requestError.UNKNOWN: something"] });
-  });
-});
 
 describe("upload_call_conversions", () => {
   const call = (over: Record<string, unknown> = {}) => ({ caller_id: "+16502531234", call_start_date_time: "2026-11-01 10:00:00-08:00", conversion_date_time: "2026-11-01 12:00:00-08:00", ...over });

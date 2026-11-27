@@ -147,30 +147,6 @@ const editCore = {
 const ref = { account_id: accountId, ad_group_id: id, ad_id: id };
 const WARN = " Replaces the whole list: include every item you want to keep. Google validates the text (length limits, policy) before this is queued. Editing a live ad may trigger a new review. Assets Google created automatically cannot be removed this way.";
 
-export const updateAdHeadlines = googleWrite({
-  name: "update_ad_headlines",
-  title: "Update responsive search ad headlines",
-  risk: "write",
-  description: `Replaces the headlines of a responsive search ad (3 to 15; pinning only to HEADLINE_1, HEADLINE_2 or HEADLINE_3) after approval.${WARN}`,
-  input: z.object({ ...ref, headlines }),
-  output: contentOut,
-  plan: (a, ctx) => editCore.plan(ctx.services.ads, a.ad_group_id, a.ad_id, { headlines: a.headlines }),
-  verify: (a, ctx, run) => editCore.verify(ctx.services.ads, a.ad_group_id, a.ad_id, { headlines: a.headlines }, run.snapshot),
-  execute: (a, ctx, run) => editCore.execute(ctx.services.ads, a.ad_group_id, a.ad_id, { headlines: a.headlines }, run.snapshot),
-});
-
-export const updateAdDescriptions = googleWrite({
-  name: "update_ad_descriptions",
-  title: "Update responsive search ad descriptions",
-  risk: "write",
-  description: `Replaces the descriptions of a responsive search ad (2 to 4; pinning only to DESCRIPTION_1 or DESCRIPTION_2) after approval.${WARN}`,
-  input: z.object({ ...ref, descriptions }),
-  output: contentOut,
-  plan: (a, ctx) => editCore.plan(ctx.services.ads, a.ad_group_id, a.ad_id, { descriptions: a.descriptions }),
-  verify: (a, ctx, run) => editCore.verify(ctx.services.ads, a.ad_group_id, a.ad_id, { descriptions: a.descriptions }, run.snapshot),
-  execute: (a, ctx, run) => editCore.execute(ctx.services.ads, a.ad_group_id, a.ad_id, { descriptions: a.descriptions }, run.snapshot),
-});
-
 const contentInput = z.object({ ...ref, headlines: headlines.optional(), descriptions: descriptions.optional(), final_urls: finalUrls.optional(), path1: path.nullable().optional().describe("Display path 1. null clears it."), path2: path.nullable().optional().describe("Display path 2. Needs path1. null clears it.") }).refine((v) => v.headlines || v.descriptions || v.final_urls || v.path1 !== undefined || v.path2 !== undefined, "give at least one of headlines, descriptions, final_urls, path1, path2");
 const patchOf = (a: z.infer<typeof contentInput>): Patch => ({ headlines: a.headlines, descriptions: a.descriptions, final_urls: a.final_urls, path1: a.path1, path2: a.path2 });
 
@@ -230,4 +206,4 @@ function createOp(customerId: string, a: { ad_group_id: string; final_urls: stri
   };
 }
 
-export const adContentTools = [createAd, updateAdHeadlines, updateAdDescriptions, updateAdContent];
+export const adContentTools = [createAd, updateAdContent];

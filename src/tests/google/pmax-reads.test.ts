@@ -21,9 +21,7 @@ const data = async (name: string, args: Record<string, unknown> = {}) => {
 };
 
 describe("Performance Max reads", () => {
-  it("refuses non-PMax and unknown campaigns", async () => {
-    expect((await run("get_pmax_conversion_goals", { campaign_id: "11" })).error).toMatchObject({ code: "invalid_argument", message: expect.stringContaining("not a Performance Max") });
-    expect((await run("get_pmax_conversion_goals", { campaign_id: "99" })).error?.code).toBe("not_found");
+  it("requires a scope for asset group assets", async () => {
     expect((await run("list_pmax_asset_group_assets", {})).error?.code).toBe("invalid_argument");
   });
 
@@ -49,13 +47,11 @@ describe("Performance Max reads", () => {
     expect((await data("get_pmax_asset_performance", { asset_group_ids: ["901"] })).assets[0]).toMatchObject({ text: "Run faster", performance: { impressions: 500, clicks: 10, cost: 1, ctr: 0.02 } });
   });
 
-  it("audience signals with names, search themes, conversion goals and listing filters", async () => {
+  it("audience signals with names, search themes and listing filters", async () => {
     g.search.asset_group_signal = (q) => (q.includes("search_theme") ? [{ assetGroup: { id: "901" }, assetGroupSignal: { searchTheme: { text: "trail shoes" }, approvalStatus: "APPROVED", resourceName: `${C}/assetGroupSignals/901~5` } }] : [{ assetGroup: { id: "901" }, assetGroupSignal: { audience: { audience: `${C}/audiences/44` }, approvalStatus: "APPROVED" } }]);
     g.search.audience = [{ audience: { id: "44", name: "Runners", description: "people who run" } }];
     expect((await data("get_pmax_audience_signals", { campaign_id: "81" })).signals).toEqual([{ asset_group_id: "901", audience_id: "44", name: "Runners", description: "people who run", approval: "APPROVED" }]);
     expect((await data("get_pmax_search_themes", { campaign_id: "81" })).themes[0]).toMatchObject({ text: "trail shoes" });
-    g.search.campaign_conversion_goal = [{ campaign: { id: "81" }, campaignConversionGoal: { category: "PURCHASE", origin: "WEBSITE", biddable: true } }];
-    expect((await data("get_pmax_conversion_goals", { campaign_id: "81" })).goals).toEqual([{ category: "PURCHASE", origin: "WEBSITE", biddable: true }]);
     g.search.asset_group_listing_group_filter = [
       { assetGroup: { id: "901" }, assetGroupListingGroupFilter: { id: "1", type: "SUBDIVISION", listingSource: "SHOPPING" } },
       { assetGroup: { id: "901" }, assetGroupListingGroupFilter: { id: "2", type: "UNIT_INCLUDED", parentListingGroupFilter: `${C}/assetGroupListingGroupFilters/901~1`, caseValue: { productBrand: { value: "Acme" } } } },

@@ -1,7 +1,7 @@
 {
   "generated_from": "inventory/tool-registry.json",
   "summary": {
-    "implemented": 400,
+    "implemented": 379,
     "external_limitation": 3,
     "pending": 0
   },
@@ -110,23 +110,6 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "add_campaign_label",
-      "platform": "google_ads",
-      "action": "Create",
-      "domain": "labels",
-      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "add_campaign_proximity",
       "platform": "google_ads",
       "action": "Create",
@@ -202,23 +185,6 @@
       "action": "Create",
       "domain": "display",
       "api": "AdGroupService.MutateAdGroups",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "add_display_audiences",
-      "platform": "google_ads",
-      "action": "Create",
-      "domain": "display",
-      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
@@ -1247,23 +1213,6 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "get_demandgen_audiences",
-      "platform": "google_ads",
-      "action": "Read",
-      "domain": "demand_gen",
-      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
-      "risk": "read",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "get_demandgen_channel_controls",
       "platform": "google_ads",
       "action": "Read",
@@ -1292,58 +1241,6 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "get_display_audiences",
-      "platform": "google_ads",
-      "action": "Read",
-      "domain": "display",
-      "api": "AdGroupCriterionService / CampaignCriterionService (USER_LIST, USER_INTEREST, PLACEMENT, TOPIC)",
-      "risk": "read",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "get_display_demographics",
-      "platform": "google_ads",
-      "action": "Read",
-      "domain": "display",
-      "api": "AdGroupCriterionService (AGE_RANGE, GENDER, PARENTAL_STATUS, INCOME_RANGE)",
-      "risk": "read",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "get_display_frequency_caps",
-      "platform": "google_ads",
-      "action": "Read",
-      "domain": "display",
-      "api": "CampaignService (frequency caps) / GAQL: campaign.frequency_caps",
-      "risk": "read",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -1498,23 +1395,6 @@
       ],
       "accountScope": "required",
       "notes": "Audience signals are hints for Performance Max, not hard targeting.",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "get_pmax_conversion_goals",
-      "platform": "google_ads",
-      "action": "Read",
-      "domain": "performance_max",
-      "api": "GAQL: campaign_conversion_goal, customer_conversion_goal",
-      "risk": "read",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -1759,23 +1639,6 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "list_labels",
-      "platform": "google_ads",
-      "action": "Read",
-      "domain": "labels",
-      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
-      "risk": "read",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "list_negative_keyword_lists",
       "platform": "google_ads",
       "action": "Read",
@@ -1966,96 +1829,11 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "remove_call_assets",
-      "platform": "google_ads",
-      "action": "Delete",
-      "domain": "assets_extensions",
-      "api": "AssetService + CampaignAssetService / CustomerAssetService",
-      "risk": "destructive",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "remove_callouts",
-      "platform": "google_ads",
-      "action": "Delete",
-      "domain": "assets_extensions",
-      "api": "AssetService + CampaignAssetService / CustomerAssetService",
-      "risk": "destructive",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "remove_campaign_label",
-      "platform": "google_ads",
-      "action": "Delete",
-      "domain": "labels",
-      "api": "LabelService + CampaignLabelService (GAQL: label, campaign_label)",
-      "risk": "destructive",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "remove_campaign_proximity",
       "platform": "google_ads",
       "action": "Delete",
       "domain": "targeting_bidding_settings",
       "api": "CampaignCriterionService (LOCATION, PROXIMITY, LANGUAGE) / GAQL: campaign_criterion",
-      "risk": "destructive",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "remove_display_ad",
-      "platform": "google_ads",
-      "action": "Delete",
-      "domain": "display",
-      "api": "AdGroupAdService.MutateAdGroupAds (remove)",
-      "risk": "destructive",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "remove_display_ad_group",
-      "platform": "google_ads",
-      "action": "Delete",
-      "domain": "display",
-      "api": "AdGroupService.MutateAdGroups",
       "risk": "destructive",
       "feasibility": "api",
       "platformPermissions": [
@@ -2222,28 +2000,11 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "remove_sitelinks",
+      "tool": "remove_extensions",
       "platform": "google_ads",
       "action": "Delete",
       "domain": "assets_extensions",
-      "api": "AssetService + CampaignAssetService / CustomerAssetService",
-      "risk": "destructive",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "remove_structured_snippets",
-      "platform": "google_ads",
-      "action": "Delete",
-      "domain": "assets_extensions",
-      "api": "AssetService + CampaignAssetService / CustomerAssetService",
+      "api": "CampaignAssetService / AdGroupAssetService / CustomerAssetService remove (sitelink, callout, structured snippet, call links; the assets stay)",
       "risk": "destructive",
       "feasibility": "api",
       "platformPermissions": [
@@ -2598,23 +2359,6 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "upload_click_conversions",
-      "platform": "google_ads",
-      "action": "Create",
-      "domain": "conversions",
-      "api": "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)",
-      "risk": "high_impact",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "upload_call_conversions",
       "platform": "google_ads",
       "action": "Create",
@@ -2857,7 +2601,7 @@
       "platform": "google_ads",
       "action": "Create",
       "domain": "labels",
-      "api": "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService create",
+      "api": "CampaignLabelService / AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService create",
       "risk": "write",
       "feasibility": "api",
       "platformPermissions": [
@@ -2874,7 +2618,7 @@
       "platform": "google_ads",
       "action": "Delete",
       "domain": "labels",
-      "api": "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService remove",
+      "api": "CampaignLabelService / AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService remove",
       "risk": "destructive",
       "feasibility": "api",
       "platformPermissions": [
@@ -3148,23 +2892,6 @@
       "domain": "other",
       "api": "UserListService create (CRM-based)",
       "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "upload_customer_match_members",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "other",
-      "api": "OfflineUserDataJobService create, add operations, run (SHA-256 hashed emails and phone numbers)",
-      "risk": "high_impact",
       "feasibility": "api",
       "platformPermissions": [
         "https://www.googleapis.com/auth/adwords"
@@ -3569,24 +3296,6 @@
       "inputSchema": "defined"
     },
     {
-      "tool": "update_ad_descriptions",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "ads",
-      "api": "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
       "tool": "update_ad_group_demographics",
       "platform": "google_ads",
       "action": "Update",
@@ -3615,24 +3324,6 @@
         "https://www.googleapis.com/auth/adwords"
       ],
       "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "update_ad_headlines",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "ads",
-      "api": "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "notes": "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them.",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",
@@ -3755,58 +3446,6 @@
       ],
       "accountScope": "required",
       "notes": "Ads cannot be edited in place on many types: updates may require create-new + remove-old.",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "update_display_campaign_schedule",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "display",
-      "api": "CampaignCriterionService (AD_SCHEDULE)",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "update_display_demographics",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "display",
-      "api": "AdGroupCriterionService (AGE_RANGE, GENDER, PARENTAL_STATUS, INCOME_RANGE)",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "status": "implemented",
-      "verification": "schema-checked (v26), not live",
-      "tests": "see src/tests",
-      "inputSchema": "defined"
-    },
-    {
-      "tool": "update_display_frequency_caps",
-      "platform": "google_ads",
-      "action": "Update",
-      "domain": "display",
-      "api": "CampaignService (frequency caps) / GAQL: campaign.frequency_caps",
-      "risk": "write",
-      "feasibility": "api",
-      "platformPermissions": [
-        "https://www.googleapis.com/auth/adwords"
-      ],
-      "accountScope": "required",
-      "notes": "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen).",
       "status": "implemented",
       "verification": "schema-checked (v26), not live",
       "tests": "see src/tests",

@@ -179,31 +179,6 @@ function addTool<T>(o: {
   });
 }
 
-/** Builds "remove extensions" tools: unlinks the given assets from a campaign, ad group or the account (the asset stays in the library). */
-function removeTool(o: { name: string; title: string; description: string; fieldType: FieldType }) {
-  return stateWrite({
-    name: o.name,
-    title: o.title,
-    risk: "destructive",
-    description: `${o.description} Works at campaign (default), ad group or account level.`,
-    input: z.object({ account_id: accountId, ...scopeFields, asset_ids: z.array(idSchema).min(1).max(50) }).refine(scopeOk, scopeMsg),
-    output: z.object({ ...scopeOutput, removed: z.array(z.string()) }),
-    read: (a, ads) => readLinks(ads, a, o.fieldType),
-    build: (a, s, ads) => {
-      const ids = [...new Set(a.asset_ids)].sort();
-      const missing = ids.filter((id) => !s.links.some((l) => l.asset_id === id));
-      if (missing.length) throw new ToolError("invalid_argument", `Not linked to ${a.level === "account" ? "the account" : `this ${a.level === "campaign" ? "campaign" : "ad group"}`} as ${o.fieldType}: ${missing.join(", ")}`);
-      const ops = ids.map((id) => linkOp(ads, a, id, o.fieldType, "remove"));
-      const changes = ids.map((id) => textChange(ownerRef(ads, a, s), o.fieldType.toLowerCase(), s.links.find((l) => l.asset_id === id)!.label, "(removed)"));
-      // A removal is irreversible as a link: re-adding creates a new link without the old history.
-      for (const c of changes) c.effect = "remove";
-      return { summary: `Remove ${ids.length} ${o.fieldType.toLowerCase().replace("_", " ")}(s) from ${where(a, s)}: ${ids.map((id) => s.links.find((l) => l.asset_id === id)!.label).slice(0, 5).join("; ")}`, changes, ops };
-    },
-    landed: (a, _b, after) => a.asset_ids.every((id) => !after.links.some((l) => l.asset_id === id)),
-    result: (a) => ({ ...scopeResult(a), removed: [...new Set(a.asset_ids)].sort() }),
-  });
-}
-
 // ---------------------------------------------------------------------------------------------------- sitelinks
 const sitelink = z
   .object({ link_text: clean(25), final_url: url, description1: clean(35).optional(), description2: clean(35).optional() })
@@ -218,7 +193,6 @@ export const addSitelinks = addTool({
   asset: (s) => ({ finalUrls: [s.final_url], sitelinkAsset: { linkText: s.link_text, ...(s.description1 ? { description1: s.description1, description2: s.description2 } : {}) } }),
   key: (s) => ({ key: `${s.link_text.trim().toLowerCase()}|${s.final_url.trim().toLowerCase()}`, label: `${s.link_text} -> ${s.final_url}` }),
 });
-export const removeSitelinks = removeTool({ name: "remove_sitelinks", title: "Remove sitelinks", description: "Removes sitelinks from a campaign after a person approves it (the sitelink assets stay in the asset library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "SITELINK" });
 
 // ----------------------------------------------------------------------------------------------------- callouts
 export const addCalloutExtensions = addTool({
@@ -231,7 +205,6 @@ export const addCalloutExtensions = addTool({
   asset: (c) => ({ calloutAsset: { calloutText: c.text } }),
   key: (c) => ({ key: c.text.trim().toLowerCase(), label: c.text }),
 });
-export const removeCallouts = removeTool({ name: "remove_callouts", title: "Remove callouts", description: "Removes callouts from a campaign after a person approves it (the assets stay in the library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "CALLOUT" });
 
 // ------------------------------------------------------------------------------------------- structured snippets
 /** English headers from Google's "Structured snippet headers" reference (localized variants are not accepted here). */
@@ -246,7 +219,6 @@ export const addStructuredSnippets = addTool({
   asset: (s) => ({ structuredSnippetAsset: { header: s.header, values: s.values } }),
   key: (s) => ({ key: `${s.header.toLowerCase()}|${s.values.map((v) => v.trim().toLowerCase()).join(",")}`, label: `${s.header}: ${s.values.join(", ")}` }),
 });
-export const removeStructuredSnippets = removeTool({ name: "remove_structured_snippets", title: "Remove structured snippets", description: "Removes structured snippets from a campaign after a person approves it (the assets stay in the library). Give the asset ids from list_campaign_extensions. Confirmed by re-reading.", fieldType: "STRUCTURED_SNIPPET" });
 
 // ---------------------------------------------------------------------------------------------------- call assets
 export const addCallAsset = addTool({
@@ -259,7 +231,6 @@ export const addCallAsset = addTool({
   asset: (c) => ({ callAsset: { countryCode: c.country_code, phoneNumber: c.phone_number, callConversionReportingState: "USE_ACCOUNT_LEVEL_CALL_CONVERSION_ACTION" } }),
   key: (c) => ({ key: `${c.country_code.toLowerCase()}|${c.phone_number.replace(/[^\d+]/g, "")}`, label: `${c.country_code} ${c.phone_number}` }),
 });
-export const removeCallAssets = removeTool({ name: "remove_call_assets", title: "Remove call assets", description: "Removes phone numbers (call assets) from a campaign after a person approves it (the assets stay in the library). Give the asset ids from list_call_assets. Confirmed by re-reading.", fieldType: "CALL" });
 
 export const setCallAssetStatus = stateWrite({
   name: "set_call_asset_status",
@@ -521,4 +492,33 @@ export const addBusinessNameAsset = stateWrite({
   result: (a, after) => ({ campaign_id: a.campaign_id, asset_id: after.links[0]!.asset_id, business_name: a.business_name }),
 });
 
-export const assetWriteTools = [addSitelinks, removeSitelinks, addCalloutExtensions, removeCallouts, addStructuredSnippets, removeStructuredSnippets, addCallAsset, removeCallAssets, setCallAssetStatus, linkExistingAssets, updateExtensionAsset, excludeAccountAssetsFromCampaign, addBusinessNameAsset];
+// ----------------------------------------------------------------------------------------------- remove_extensions
+/**
+ * Unlinks extensions of one type from a campaign, ad group or the account (the assets stay in the library). Replaced
+ * remove_sitelinks, remove_callouts, remove_structured_snippets and remove_call_assets on 2026-11-11.
+ */
+export const removeExtensions = stateWrite({
+  name: "remove_extensions",
+  title: "Remove extensions",
+  risk: "destructive",
+  description:
+    "Removes sitelinks, callouts, structured snippets or phone numbers (call assets), chosen by field_type, from a campaign, an ad group or the account after a person approves it. The assets stay in the library. Give asset ids from list_campaign_extensions (or list_call_assets for phone numbers). Works at campaign (default), ad group or account level. Confirmed by re-reading.",
+  input: z.object({ account_id: accountId, ...scopeFields, field_type: z.enum(LINKABLE), asset_ids: z.array(idSchema).min(1).max(50) }).refine(scopeOk, scopeMsg),
+  output: z.object({ ...scopeOutput, field_type: z.string(), removed: z.array(z.string()) }),
+  read: (a, ads) => readLinks(ads, a, a.field_type),
+  build: (a, s, ads) => {
+    const t = a.field_type;
+    const ids = [...new Set(a.asset_ids)].sort();
+    const missing = ids.filter((id) => !s.links.some((l) => l.asset_id === id));
+    if (missing.length) throw new ToolError("invalid_argument", `Not linked to ${a.level === "account" ? "the account" : `this ${a.level === "campaign" ? "campaign" : "ad group"}`} as ${t}: ${missing.join(", ")}`);
+    const ops = ids.map((id) => linkOp(ads, a, id, t, "remove"));
+    const changes = ids.map((id) => textChange(ownerRef(ads, a, s), t.toLowerCase(), s.links.find((l) => l.asset_id === id)!.label, "(removed)"));
+    // A removal is irreversible as a link: re-adding creates a new link without the old history.
+    for (const c of changes) c.effect = "remove";
+    return { summary: `Remove ${ids.length} ${t.toLowerCase().replace("_", " ")}(s) from ${where(a, s)}: ${ids.map((id) => s.links.find((l) => l.asset_id === id)!.label).slice(0, 5).join("; ")}`, changes, ops };
+  },
+  landed: (a, _b, after) => a.asset_ids.every((id) => !after.links.some((l) => l.asset_id === id)),
+  result: (a) => ({ ...scopeResult(a), field_type: a.field_type, removed: [...new Set(a.asset_ids)].sort() }),
+});
+
+export const assetWriteTools = [addSitelinks, addCalloutExtensions, addStructuredSnippets, addCallAsset, removeExtensions, setCallAssetStatus, linkExistingAssets, updateExtensionAsset, excludeAccountAssetsFromCampaign, addBusinessNameAsset];

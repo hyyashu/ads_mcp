@@ -178,7 +178,7 @@ The four items the review left open were closed on 2026-11-10:
   `partial` because it shows a page and reports `truncated` itself. Fixed GAQL `LIMIT`s on lists that must be complete (duplicate
   checks before writes, negative list members and attached campaigns, label links, ad groups, frequency caps, shopping settings, PMax
   asset groups, the language list) were removed, because a LIMIT hides the overflow from the client. Paged reads that had no
-  `truncated` flag got one (`get_campaign_dates`, `get_ad_group_settings`, `list_conversion_actions`, `list_labels`,
+  `truncated` flag got one (`get_campaign_dates`, `get_ad_group_settings`, `list_conversion_actions`, `list_labels` (retired 2026-11-11),
   `list_negative_keyword_lists`, `get_campaign_tracking`, `search_audiences`, `analyze_pmax_search_categories`), and the change history
   in `explain_performance_anomaly` notes when it lists only the latest 200 changes. Regression tests in `row-caps.test.ts`.
 - **R7, several API calls per write.** Kept by design: plan, re-check at approval time, execute and read back are what make approvals
@@ -750,7 +750,8 @@ Defects found by the docs check:
 
 Restricted by Google (tools pass Google's error through; see README):
 - `UploadClickConversions` and Customer Match upload jobs: `CUSTOMER_NOT_ALLOWLISTED_FOR_THIS_FEATURE` for projects
-  without earlier use (since 2026-06-15 and 2026-04-01); Google points to the Data Manager API.
+  without earlier use (since 2026-06-15 and 2026-04-01); Google points to the Data Manager API. The two tools
+  (`upload_click_conversions`, `upload_customer_match_members`) were removed on 2026-11-11.
 - `metrics.auction_insight_search_*`: "not publicly available".
 - SET conversion value rules and itinerary conditions: allowlist only (not offered).
 - Keyword policy exemptions: an existing keyword exposes no exemptible violation keys in v26 (ads only).

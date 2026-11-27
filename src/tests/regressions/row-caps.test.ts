@@ -62,12 +62,12 @@ describe("R6: row caps are never silent", () => {
     expect((r.data as any).keywords_truncated).toBe(true);
   });
 
-  it("list_labels reports truncated when more labels exist than the limit", async () => {
-    const labels = Array.from({ length: 3 }, (_, i) => ({ label: { id: String(i + 1), name: `L${i}`, status: "ENABLED" } }));
-    const kit = await googleHarness("R6d", pagedFake((from) => (from === "label" ? labels : [])).fetch);
-    const cut = await kit.run("list_labels", { limit: 2 });
+  it("list_negative_keyword_lists reports truncated when more lists exist than the limit", async () => {
+    const lists = Array.from({ length: 3 }, (_, i) => ({ sharedSet: { id: String(i + 1), name: `L${i}`, status: "ENABLED", memberCount: "1" } }));
+    const kit = await googleHarness("R6d", pagedFake((from) => (from === "shared_set" ? lists : [])).fetch);
+    const cut = await kit.run("list_negative_keyword_lists", { limit: 2 });
     expect(cut.data).toMatchObject({ returned: 2, truncated: true });
-    const all = await kit.run("list_labels", { limit: 3 });
+    const all = await kit.run("list_negative_keyword_lists", { limit: 3 });
     expect(all.data).toMatchObject({ returned: 3, truncated: false });
   });
 });

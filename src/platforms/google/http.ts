@@ -11,7 +11,7 @@ import { type RetryOptions, sendWithRetry } from "../core/http-core";
  * is sent. `login-customer-id` is still the manager account to act through, and is per connected account.
  */
 export interface GoogleHttpOptions {
-  /** e.g. "v23". Deliberately has no default: the current version must be set and checked by the operator. */
+  /** e.g. "v26". Deliberately has no default: the current version must be set and checked by the operator. */
   apiVersion: string;
   fetch?: FetchLike;
   timeoutMs?: number;
@@ -68,7 +68,7 @@ export class GoogleAdsHttp {
   private retry: RetryOptions;
 
   constructor(private o: GoogleHttpOptions) {
-    if (!/^v\d+$/.test(o.apiVersion)) throw new Error("GOOGLE_ADS_API_VERSION must look like v23 and be set explicitly");
+    if (!/^v\d+$/.test(o.apiVersion)) throw new Error("GOOGLE_ADS_API_VERSION must look like v26 and be set explicitly");
     this.retry = { fetch: o.fetch ?? fetch, sleep: o.sleep ?? ((ms) => new Promise((r) => setTimeout(r, ms))), random: o.random ?? Math.random, timeoutMs: o.timeoutMs };
   }
 

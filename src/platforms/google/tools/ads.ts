@@ -94,7 +94,7 @@ export const removeAd = stateWrite({
   name: "remove_ad",
   title: "Remove ad",
   risk: "destructive",
-  description: "Permanently removes one ad after a person approves it. A removed ad cannot be restored; a new ad would have to be created and loses its history. To stop an ad temporarily, pause it instead.",
+  description: "Permanently removes one ad of any campaign type (Search, Display, Demand Gen and others) after a person approves it. A removed ad cannot be restored; a new ad would have to be created and loses its history. To stop an ad temporarily, pause it instead.",
   input: z.object({ account_id: accountId, ad_group_id: id, ad_id: id }),
   output: z.object({ ad_group_id: z.string(), ad_id: z.string(), removed: z.literal(true) }),
   read: (a, ads) => readAd(ads, a),

@@ -72,7 +72,6 @@ const googleApi: Rule[] = [
   [/^list_google_languages$/, { api: "GAQL: language_constant", feasibility: "api" }],
   [/^search_audiences$/, { api: "GAQL: user_interest, user_list, custom_audience, combined_audience, detailed_demographic, life_event", feasibility: "api" }],
   [/^get_reach_frequency$/, { api: "GAQL: campaign metrics (unique_users, average_impression_frequency_per_user)", feasibility: "api", notes: "Reach metrics exist only for some campaign types and date ranges. ReachPlanService is forecasting, not reporting." }],
-  [/^get_pmax_conversion_goals$/, { api: "GAQL: campaign_conversion_goal, customer_conversion_goal", feasibility: "api" }],
   [/^get_merchant_center_links$/, { api: "GAQL: product_link (MERCHANT_CENTER)", feasibility: "api" }],
   [/^link_merchant_center$/, { api: "ProductLinkService.CreateProductLink", feasibility: "api", notes: "The Merchant Center side may need to accept the link: the call can succeed while the link stays pending." }],
   [/^unlink_merchant_center$/, { api: "ProductLinkService.RemoveProductLink", feasibility: "api" }],
@@ -98,7 +97,6 @@ const googleApi: Rule[] = [
   [/^dismiss_recommendations$/, { api: "RecommendationService.DismissRecommendation", feasibility: "api" }],
   [/^get_change_history$/, { api: "GAQL: change_event (who, when, what, old/new values; last 30 days) and change_status", feasibility: "api" }],
   [/^get_auction_insights$/, { api: "GAQL: customer / campaign / ad_group with metrics.auction_insight_search_* segmented by segments.auction_insight_domain (access may be restricted by Google)", feasibility: "api" }],
-  [/^upload_click_conversions$/, { api: "ConversionUploadService.UploadClickConversions (gclid / gbraid / wbraid)", feasibility: "api" }],
   [/^upload_call_conversions$/, { api: "ConversionUploadService.UploadCallConversions", feasibility: "api" }],
   [/^upload_conversion_adjustments$/, { api: "ConversionAdjustmentUploadService.UploadConversionAdjustments (retraction, restatement)", feasibility: "api" }],
   [/^get_conversion_goals$/, { api: "GAQL: customer_conversion_goal, campaign_conversion_goal, conversion_goal_campaign_config", feasibility: "api" }],
@@ -113,8 +111,9 @@ const googleApi: Rule[] = [
   [/^set_auto_tagging$/, { api: "GoogleAdsService.Mutate customer_operation (CustomerOperation, as CustomerService.MutateCustomer): customer.auto_tagging_enabled", feasibility: "api" }],
   [/^set_location_bid_modifiers$/, { api: "CampaignCriterionService update: bid_modifier on LOCATION criteria", feasibility: "api" }],
   [/^get_entity_labels$/, { api: "GAQL: ad_group_label, ad_group_ad_label, ad_group_criterion_label", feasibility: "api" }],
-  [/^add_entity_labels$/, { api: "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService create", feasibility: "api" }],
-  [/^remove_entity_labels$/, { api: "AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService remove", feasibility: "api" }],
+  [/^add_entity_labels$/, { api: "CampaignLabelService / AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService create", feasibility: "api" }],
+  [/^remove_entity_labels$/, { api: "CampaignLabelService / AdGroupLabelService / AdGroupAdLabelService / AdGroupCriterionLabelService remove", feasibility: "api" }],
+  [/^remove_extensions$/, { api: "CampaignAssetService / AdGroupAssetService / CustomerAssetService remove (sitelink, callout, structured snippet, call links; the assets stay)", feasibility: "api" }],
   [/^list_bid_strategies$/, { api: "GAQL: bidding_strategy and accessible_bidding_strategy (portfolio strategies, including ones a manager account shares) and the campaigns using them", feasibility: "api" }],
   [/^create_bid_strategy$/, { api: "BiddingStrategyService create (portfolio)", feasibility: "api" }],
   [/^assign_bid_strategy$/, { api: "CampaignService update: campaign.bidding_strategy, or a standard scheme to detach (campaign_bidding_strategy union)", feasibility: "api" }],
@@ -131,7 +130,6 @@ const googleApi: Rule[] = [
   [/^list_user_lists$/, { api: "GAQL: user_list (type, size, membership status)", feasibility: "api" }],
   [/^create_remarketing_list$/, { api: "UserListService create (rule-based website visitors)", feasibility: "api" }],
   [/^create_customer_match_list$/, { api: "UserListService create (CRM-based)", feasibility: "api" }],
-  [/^upload_customer_match_members$/, { api: "OfflineUserDataJobService create, add operations, run (SHA-256 hashed emails and phone numbers)", feasibility: "api" }],
   [/^remove_user_list$/, { api: "UserListService remove; GAQL ad_group_criterion, campaign_criterion, audience and user_list to check where the list is used", feasibility: "api" }],
   [/^add_promotion_asset$/, { api: "AssetService (PromotionAsset) + CustomerAsset / CampaignAsset / AdGroupAsset", feasibility: "api" }],
   [/^add_price_asset$/, { api: "AssetService (PriceAsset) + CustomerAsset / CampaignAsset / AdGroupAsset", feasibility: "api" }],
@@ -155,21 +153,20 @@ const googleApi: Rule[] = [
   [/^add_negative_keywords_to_list$/, { api: "SharedCriterionService.MutateSharedCriteria (KEYWORD in a NEGATIVE_KEYWORDS shared set)", feasibility: "api" }],
   [/^(add|get|update|remove)_pmax_audience_signals?$/, { api: "AssetGroupSignalService (audience signals) / GAQL: asset_group_signal", feasibility: "api", notes: "Audience signals are hints for Performance Max, not hard targeting." }],
   [/^(add|remove)_app_ad_asset$/, { api: "AdGroupAdService.MutateAdGroupAds (AppAdInfo asset fields) / AssetService", feasibility: "api", notes: "App ad assets are fields on the ad itself: adding or removing one is a replace-style update of the ad. Verify exact semantics against the current API." }],
-  [/^remove_display_ad$/, { api: "AdGroupAdService.MutateAdGroupAds (remove)", feasibility: "api" }],
   [/^update_demandgen_channel_controls$/, { api: "AdGroupService.MutateAdGroups (demand_gen_ad_group_settings.channel_controls)", feasibility: "api", notes: "Field location varies by API version: verify before implementing." }],
   // --- generic families
   [/^(get|list)_campaign_performance$|^get_ad_performance$|^get_placement_performance$|^get_pmax_asset_performance$/, { api: "GAQL: campaign / ad_group_ad / group_placement_view / asset_group_asset metrics", feasibility: "api" }],
   [/^(pause|resume)_campaign$|^update_campaign(_dates)?$|^bulk_update_campaign_status$/, { api: "CampaignService.MutateCampaigns", feasibility: "api" }],
   [/^(pause|resume)_ad_group$|^update_ad_group_settings$|^bulk_update_ad_group_status$/, { api: "AdGroupService.MutateAdGroups", feasibility: "api" }],
-  [/^update_ad_(content|headlines|descriptions)$/, { api: "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)", feasibility: "api", notes: "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them." }],
+  [/^update_ad_content$/, { api: "AdService.MutateAds (update responsive_search_ad by customers/{c}/ads/{ad_id}; verified against docs 2026-11-02)", feasibility: "api", notes: "MutateAds does not support TextAd, ExpandedDynamicSearchAd, GmailAd or ImageAd; automatically created assets cannot be removed through it. Headline/description character limits are not stated in the reachable docs, so plan() runs validate_only instead of hard-coding them." }],
   [/^create_ad$/, { api: "AdGroupAdService.MutateAdGroupAds (create; responsive search ad, always PAUSED)", feasibility: "api", notes: "Responsive search ads only. Counts 3-15 headlines, 2-4 descriptions confirmed in docs; limits validated by Google via validate_only." }],
-  [/^(pause|resume)_ad$|^bulk_update_ad_status$|^update_ad_(content|headlines|descriptions)$|^create_ad$|^remove_ad$|^update_display_ad_creative$|^add_display_ad$|^add_demandgen_ad$|^add_shopping_product_ad$/, { api: "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)", feasibility: "api", notes: "Ads cannot be edited in place on many types: updates may require create-new + remove-old." }],
-  [/^add_(search|display|demandgen|shopping)_ad_group$|^add_display_ad_group$|^add_demandgen_ad_group$|^remove_(display_)?ad_group$/, { api: "AdGroupService.MutateAdGroups", feasibility: "api" }],
+  [/^(pause|resume)_ad$|^bulk_update_ad_status$|^update_ad_content$|^create_ad$|^remove_ad$|^update_display_ad_creative$|^add_display_ad$|^add_demandgen_ad$|^add_shopping_product_ad$/, { api: "AdGroupAdService.MutateAdGroupAds (+ AssetService for responsive assets)", feasibility: "api", notes: "Ads cannot be edited in place on many types: updates may require create-new + remove-old." }],
+  [/^add_(search|display|demandgen|shopping)_ad_group$|^add_display_ad_group$|^add_demandgen_ad_group$|^remove_ad_group$/, { api: "AdGroupService.MutateAdGroups", feasibility: "api" }],
   [/keyword(s)?$|^add_display_keywords$|^remove_keywords$|^update_keyword$|^bulk_update_keyword_status$/, { api: "AdGroupCriterionService.MutateAdGroupCriteria (keyword)", feasibility: "api" }],
   [/negative_keyword_list|attach_negative/, { api: "SharedSetService + SharedCriterionService + CampaignSharedSetService (NEGATIVE_KEYWORDS)", feasibility: "api" }],
   [/^(add|remove)_negative_keywords$/, { api: "CampaignCriterionService / AdGroupCriterionService (negative keyword)", feasibility: "api" }],
   [/sitelink|callout|snippet|call_asset|business_name|campaign_image|logo/, { api: "AssetService + CampaignAssetService / CustomerAssetService", feasibility: "api" }],
-  [/_label$|^create_label$|^list_labels$|^get_campaign_labels$/, { api: "LabelService + CampaignLabelService (GAQL: label, campaign_label)", feasibility: "api" }],
+  [/^create_label$|^get_campaign_labels$/, { api: "LabelService + CampaignLabelService (GAQL: label, campaign_label)", feasibility: "api" }],
   [/conversion_action/, { api: "ConversionActionService (GAQL: conversion_action)", feasibility: "api" }],
   [/bid_strategy|device_bid_modifiers/, { api: "BiddingStrategyService / CampaignService / AdGroupBidModifierService / CampaignBidModifierService", feasibility: "api" }],
   [/frequency_caps/, { api: "CampaignService (frequency caps) / GAQL: campaign.frequency_caps", feasibility: "api", notes: "Frequency caps apply to a subset of campaign types (Display, Video, Demand Gen)." }],
@@ -180,7 +177,7 @@ const googleApi: Rule[] = [
   [/pmax_(asset_group|audience_signal|search_themes)|asset_group|audience_signal|search_themes/, { api: "AssetGroupService + AssetGroupAssetService + AssetGroupSignalService + AssetGroupListingGroupFilterService", feasibility: "api" }],
   [/product_group|shopping_settings/, { api: "AdGroupCriterionService (LISTING_GROUP) / CampaignService (shopping_setting)", feasibility: "api" }],
   [/^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$/, { api: "CampaignBudgetService + CampaignService + AdGroupService + (type-specific) in one GoogleAdsService.Mutate batch", feasibility: "api", notes: "Created PAUSED. Must be one atomic Mutate with temporary resource names so a partial failure cannot leave orphans." }],
-  [/^get_(ad_creative|campaign_dates|campaign_structure|ad_group_settings|display_ad_group_settings|demandgen_(audiences|channel_controls)|ad_group_(audiences|demographics|device_bid_modifiers)|display_(audiences|demographics|frequency_caps|keywords|placements|topics)|negative_keyword_list|pmax_(asset_groups|audience_signals|search_themes)|product_groups|asset_group_listing_filters|shopping_settings|campaign_targeting|campaign_frequency_caps)$|^list_(campaigns|call_assets|campaign_extensions|conversion_actions|pmax_asset_group_(assets|images))$/, { api: "GAQL query on the corresponding resource", feasibility: "api" }],
+  [/^get_(ad_creative|campaign_dates|campaign_structure|ad_group_settings|display_ad_group_settings|demandgen_channel_controls|ad_group_(audiences|demographics|device_bid_modifiers)|display_(keywords|placements|topics)|negative_keyword_list|pmax_(asset_groups|audience_signals|search_themes)|product_groups|asset_group_listing_filters|shopping_settings|campaign_targeting|campaign_frequency_caps)$|^list_(campaigns|call_assets|campaign_extensions|conversion_actions|pmax_asset_group_(assets|images))$/, { api: "GAQL query on the corresponding resource", feasibility: "api" }],
 ];
 
 // ----------------------------------------------------------------- Meta Ads ----
@@ -418,7 +415,7 @@ const productRisk: Record<string, Risk> = {
 };
 const PRODUCTS = new Set(["google_search_console", "google_analytics", "google_tag_manager", "bing_webmaster"]);
 
-const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$|^apply_recommendations$|^upload_(click|call)_conversions$|^upload_conversion_adjustments$|^update_conversion_goals$|^create_conversion_value_rule$|^add_account_exclusions$|^set_auto_tagging$|^set_location_bid_modifiers$|^assign_bid_strategy$|^create_(seasonality_adjustment|data_exclusion|experiment)$|^(schedule|end|promote)_experiment$|^upload_customer_match_members$|^request_policy_exemption$|^update_user_access$|^invite_user$|^(create|link)_client_account$/;
+const googleHighImpact = /^create_(search|shopping|pmax|demandgen|app|youtube)_campaign$|^resume_(campaign|ad_group|ad)$|^update_campaign$|^update_bid_strategy$|^bulk_update_|^replace_demandgen_audiences$|^(create|update)_conversion_action$|^link_merchant_center$|^set_campaign_ad_schedule$|^set_.*device_bid_modifiers$|^update_campaign_dates$|^apply_recommendations$|^upload_call_conversions$|^upload_conversion_adjustments$|^update_conversion_goals$|^create_conversion_value_rule$|^add_account_exclusions$|^set_auto_tagging$|^set_location_bid_modifiers$|^assign_bid_strategy$|^create_(seasonality_adjustment|data_exclusion|experiment)$|^(schedule|end|promote)_experiment$|^request_policy_exemption$|^update_user_access$|^invite_user$|^(create|link)_client_account$/;
 const metaHighImpact = /^create_meta_.*_campaign$|^duplicate_meta_campaign$|^resume_meta_campaign$|^update_meta_(campaign|catalog_campaign|ad_set|catalog_ad_set|ad|catalog_ad)$|^add_meta_(ad_set|catalog_ad_set|ad|catalog_ad)$|^create_meta_dco_ad$/;
 
 function firstMatch<T>(rules: [RegExp, T][], name: string, fallback: T): T {
