@@ -51,7 +51,7 @@ const googleDomain: [RegExp, string][] = [
   [/ad_group/, "ad_groups"],
   [/(^|_)ad(_|$)|ad_content|headline|description|creative/, "ads"],
   [/campaign/, "campaigns"],
-  [/anomaly|wasted|optimize|benchmark|usage|performance|business_profile|infer|suggest|research|validate|help_user|select_/, "analysis_and_helpers"],
+  [/anomaly|wasted|optimize|benchmark|usage|performance|business_profile|infer|suggest|research|validate|help_user|select_|gaql/, "analysis_and_helpers"],
 ];
 
 const googleApi: Rule[] = [
@@ -148,6 +148,8 @@ const googleApi: Rule[] = [
   [/^create_client_account$/, { api: "CustomerService.CreateCustomerClient (manager account)", feasibility: "api" }],
   [/^link_client_account$/, { api: "CustomerClientLinkService mutate (single operation, create, status PENDING; the client accepts outside this server)", feasibility: "api" }],
   [/^get_local_services_leads$/, { api: "GAQL: local_services_lead, local_services_lead_conversation", feasibility: "api" }],
+  [/^run_gaql$/, { api: "GoogleAdsService.Search (googleAds:search, read-only SELECT)", feasibility: "api" }],
+  [/^get_gaql_fields$/, { api: "GoogleAdsFieldService.SearchGoogleAdsFields (googleAdsFields:search)", feasibility: "api" }],
   // --- corrections found by auditing the generic rules (must come before them)
   [/^(add|remove)_negative_keywords$/, { api: "CampaignCriterionService / AdGroupCriterionService (negative keyword criteria)", feasibility: "api" }],
   [/^add_negative_keywords_to_list$/, { api: "SharedCriterionService.MutateSharedCriteria (KEYWORD in a NEGATIVE_KEYWORDS shared set)", feasibility: "api" }],

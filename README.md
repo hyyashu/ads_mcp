@@ -1,12 +1,12 @@
 # ads-mcp
 
 A remote MCP server (Streamable HTTP), product name JackOfAds, for Google Ads, Meta Ads, Google Search Console, Google
-Analytics 4, Google Tag Manager and Bing Webmaster Tools: 382 tools from `inventory/tool-registry.json`, implemented against the official
+Analytics 4, Google Tag Manager and Bing Webmaster Tools: 384 tools from `inventory/tool-registry.json`, implemented against the official
 platform APIs. Advertising and analytics data is fetched on demand and never stored.
 
 ## Status (read this first)
 
-**379 of 382 tools are implemented**: 211 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
+**381 of 384 tools are implemented**: 213 Google Ads, 60 Meta Ads, 12 Search Console, 18 GA4 (plus the cross-product
 `get_property_links`), 12 Tag Manager, 54 Bing Webmaster Tools, and 11 combined tools that join ad data with Search
 Console (or Bing, or both) and GA4 (for example paid vs organic overlap, conversion tracking gaps, landing page quality,
 tracking setup audit). The remaining three are documented external limitations: `create_youtube_campaign` (the Google
@@ -54,7 +54,7 @@ MCP client (Claude, ChatGPT, Cursor)             Human in a browser
 | `src/platforms/cross` | Combined tools that join ad accounts with their linked Search Console / Bing site and GA4 property |
 | `src/security` | AES-256-GCM credentials, approval service, rate limiters (memory and Postgres), audit |
 | `src/db` | Drizzle schema (Postgres). Stores tenants, users, encrypted connection credentials, account associations, approvals, usage counters, minimal audit. **No campaign, metric, creative or lead data.** |
-| `inventory` | The 382-tool source of truth, the implementation plan (`mapping.ts`), documented limitations |
+| `inventory` | The 384-tool source of truth, the implementation plan (`mapping.ts`), documented limitations |
 
 ### Two separate OAuth systems
 
@@ -94,7 +94,7 @@ set -a; . ./.env; set +a
 npm run db:migrate                # embedded Postgres in .data/pglite, or set DATABASE_URL
 ADS_MCP_OWNER_PASSWORD='a-long-password' npm run tenant:create -- "My Agency" owner@example.com
 npm start                         # MCP endpoint: $PUBLIC_URL/mcp
-npm test                          # 1,434 tests
+npm test                          # 1,445 tests
 npm run inventory:matrix          # regenerate docs/TRACKING.md
 ```
 
